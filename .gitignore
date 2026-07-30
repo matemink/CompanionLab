@@ -1,0 +1,15 @@
+build/
+build-*/
+.cache/
+.venv/
+__pycache__/
+*.py[cod]
+.idea/
+.vscode/
+compile_commands.json
+artifacts/
+tools/images/
+tools/imager-v*.exe
+tools/provisioning/*.log
+tools/provisioning/*-status.json
+CompanionLabLocal.cmd

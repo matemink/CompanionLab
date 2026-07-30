@@ -1,0 +1,34 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  native-linux:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug
+      - name: Build
+        run: cmake --build build
+      - name: Test C++
+        run: ctest --test-dir build --output-on-failure
+      - name: Test Python scenarios
+        run: python3 -m unittest discover -s python/tests -v
+
+  arm64-build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install cross compiler
+        run: sudo apt-get update && sudo apt-get install -y g++-aarch64-linux-gnu ninja-build
+      - name: Configure ARM64
+        run: >-
+          cmake -S . -B build-arm64 -G Ninja
+          -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_TOOLCHAIN_FILE=cmake/toolchains/aarch64-linux-gnu.cmake
+          -DBUILD_TESTING=OFF
+      - name: Build ARM64
+        run: cmake --build build-arm64
