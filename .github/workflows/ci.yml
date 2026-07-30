@@ -13,10 +13,25 @@ jobs:
         run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug
       - name: Build
         run: cmake --build build
+      - name: Prepare test reports
+        run: mkdir -p artifacts/ci
       - name: Test C++
-        run: ctest --test-dir build --output-on-failure
+        run: >-
+          ctest --test-dir build --output-on-failure
+          --output-junit "$PWD/artifacts/ci/cpp-tests.xml"
+          2>&1 | tee artifacts/ci/cpp-tests.log
       - name: Test Python scenarios
-        run: python3 -m unittest discover -s python/tests -v
+        run: >-
+          python3 -m unittest discover -s python/tests -v
+          2>&1 | tee artifacts/ci/python-tests.log
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-linux-test-reports
+          path: artifacts/ci/
+          if-no-files-found: error
+          retention-days: 14
 
   arm64-build:
     runs-on: ubuntu-24.04
@@ -32,3 +47,19 @@ jobs:
           -DBUILD_TESTING=OFF
       - name: Build ARM64
         run: cmake --build build-arm64
+      - name: Describe ARM64 binary
+        run: |
+          mkdir -p artifacts/ci-arm64
+          file build-arm64/companionlab |
+            tee artifacts/ci-arm64/binary-info.txt
+          sha256sum build-arm64/companionlab |
+            tee artifacts/ci-arm64/sha256.txt
+      - name: Upload ARM64 release candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: companionlab-linux-arm64
+          path: |
+            build-arm64/companionlab
+            artifacts/ci-arm64/
+          if-no-files-found: error
+          retention-days: 14

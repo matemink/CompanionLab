@@ -28,9 +28,11 @@ This work can proceed alongside the technical milestones.
   sensitive data from the publishable project.
 - [x] Create one honest initial Git snapshot; do not manufacture past
   history.
-- [ ] Use focused commits for each subsequent feature and test.
+- [x] Establish a focused-commit workflow for subsequent features and
+  tests.
 - [ ] Publish the repository only after a clean-build and secret scan.
-- [ ] Store useful test and benchmark reports as CI artifacts.
+- [x] Store C++ and Python test reports as CI artifacts and keep
+  hardware benchmark evidence in versioned documentation.
 
 ## Milestone 1: Telemetry foundation
 
