@@ -30,7 +30,8 @@ This work can proceed alongside the technical milestones.
   history.
 - [x] Establish a focused-commit workflow for subsequent features and
   tests.
-- [ ] Publish the repository only after a clean-build and secret scan.
+- [x] Publish the repository privately after a clean-build and secret
+  scan; change visibility separately before portfolio review.
 - [x] Store C++ and Python test reports as CI artifacts and keep
   hardware benchmark evidence in versioned documentation.
 
