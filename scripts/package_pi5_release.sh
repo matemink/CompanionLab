@@ -51,8 +51,10 @@ cmake -E make_directory "${stage_dir}/bin"
 cmake --install "${build_dir}" --prefix "${stage_dir}"
 
 install -m 0755 \
+    "${project_dir}/python/calibrate_camera.py" \
     "${project_dir}/python/camera_benchmark.py" \
     "${project_dir}/scripts/benchmark_pi_camera.sh" \
+    "${project_dir}/scripts/capture_camera_calibration.sh" \
     "${project_dir}/scripts/configure_pi5_uart.sh" \
     "${project_dir}/scripts/diagnose_pi_hardware.sh" \
     "${project_dir}/scripts/run_companionlab_pi.sh" \
@@ -60,6 +62,9 @@ install -m 0755 \
 install -m 0644 \
     "${project_dir}/docs/raspberry-pi-5-bench.md" \
     "${stage_dir}/BENCH.md"
+install -m 0644 \
+    "${project_dir}/python/requirements.txt" \
+    "${stage_dir}/requirements.txt"
 install -m 0644 \
     "${project_dir}/LICENSE" \
     "${stage_dir}/LICENSE"

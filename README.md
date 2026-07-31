@@ -332,6 +332,29 @@ The bounded benchmark validates the camera independently. The regular
 launcher validates the integrated runtime where Pixhawk serial traffic
 and camera frames are handled concurrently.
 
+Prepare a Camera Module 3 calibration dataset with the printable
+`assets/calibration/checkerboard-9x6-25mm-a4.svg` target:
+
+```bash
+python3 -m venv .venv
+.venv/bin/python -m pip install -r python/requirements.txt
+COMPANIONLAB_PYTHON=.venv/bin/python \
+    bash scripts/capture_camera_calibration.sh
+```
+
+In the extracted ARM64 package, use its root-level `requirements.txt`
+instead of `python/requirements.txt`.
+
+The capture uses the runtime's `rpicam-vid` pipeline, `640x480`
+resolution, and fixed `manual/default` hyperfocal lens policy. Keeping
+the lens position fixed prevents camera intrinsics from changing between
+calibration and AprilTag pose estimation. The Python/OpenCV analyzer
+accepts only complete checkerboard views, calculates pinhole intrinsics
+and Brown-Conrady distortion, records input hashes and per-view
+reprojection errors, and returns failure when the quality gate is not
+met. No sample intrinsics are committed as if they belonged to the
+physical camera.
+
 See [docs/raspberry-pi-5-bench.md](docs/raspberry-pi-5-bench.md) before
 connecting hardware.
 

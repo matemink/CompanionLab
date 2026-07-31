@@ -15,6 +15,7 @@ struct RpicamCameraConfig {
     std::uint32_t height{480};
     std::uint32_t frames_per_second{30};
     std::uint32_t camera_index{0};
+    std::string lens_position{"default"};
     std::string command{"rpicam-vid"};
 };
 

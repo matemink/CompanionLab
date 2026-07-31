@@ -187,6 +187,10 @@ AprilTag як visual fiducial, application port, `std::span`, HTTP adapter
 і live grayscale preview з target overlay:
 [28-apriltag-live-preview.uk.md](28-apriltag-live-preview.uk.md)
 
+Camera intrinsics, distortion, printable checkerboard, OpenCV quality
+gate і reproducible calibration JSON:
+[29-camera-calibration.uk.md](29-camera-calibration.uk.md)
+
 ### 9. Raspberry Pi 5 і Pixhawk 6C
 
 Збираємо ARM64 binary на Pi, працюємо з `/dev/ttyACM0`, Linux groups,
