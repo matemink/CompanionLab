@@ -1,8 +1,8 @@
 #include "TestCases.hpp"
 
-#include "companionlab/adapters/camera/RpicamCameraSource.hpp"
-#include "companionlab/application/AppSnapshot.hpp"
-#include "companionlab/application/CameraMonitor.hpp"
+#include "onboard_autonomy/adapters/camera/RpicamCameraSource.hpp"
+#include "onboard_autonomy/application/AppSnapshot.hpp"
+#include "onboard_autonomy/application/CameraMonitor.hpp"
 
 #include <chrono>
 #include <cstdint>
@@ -21,20 +21,20 @@ void require(const bool condition, const std::string& message) {
 }
 
 class FakeCameraSource final
-    : public companionlab::application::ports::CameraSource {
+    : public onboard_autonomy::application::ports::CameraSource {
 public:
     void emit(
-        companionlab::application::ports::CameraFrame frame
+        onboard_autonomy::application::ports::CameraFrame frame
     ) {
         latest_ = std::move(frame);
         ++status_.produced_frames;
         status_.phase =
-            companionlab::application::ports::
+            onboard_autonomy::application::ports::
                 CameraSourcePhase::streaming;
     }
 
     [[nodiscard]] std::optional<
-        companionlab::application::ports::CameraFrame
+        onboard_autonomy::application::ports::CameraFrame
     > take_latest_frame() override {
         auto frame = std::move(latest_);
         latest_.reset();
@@ -42,26 +42,26 @@ public:
     }
 
     [[nodiscard]]
-    companionlab::application::ports::CameraSourceStatus
+    onboard_autonomy::application::ports::CameraSourceStatus
     status() const override {
         return status_;
     }
 
 private:
-    companionlab::application::ports::CameraSourceStatus status_{
+    onboard_autonomy::application::ports::CameraSourceStatus status_{
         .description = "fake camera",
         .error = "",
     };
     std::optional<
-        companionlab::application::ports::CameraFrame
+        onboard_autonomy::application::ports::CameraFrame
     > latest_;
 };
 
 class FakeTargetDetector final
-    : public companionlab::application::ports::TargetDetector {
+    : public onboard_autonomy::application::ports::TargetDetector {
 public:
-    [[nodiscard]] companionlab::domain::TargetDetectionBatch detect(
-        const companionlab::application::ports::CameraFrame& input
+    [[nodiscard]] onboard_autonomy::domain::TargetDetectionBatch detect(
+        const onboard_autonomy::application::ports::CameraFrame& input
     ) override {
         return {
             .frame_sequence = input.sequence,
@@ -88,12 +88,12 @@ public:
 };
 
 class FakeCameraPreviewSink final
-    : public companionlab::application::ports::CameraPreviewSink {
+    : public onboard_autonomy::application::ports::CameraPreviewSink {
 public:
     void publish(
-        const companionlab::application::ports::CameraFrame& input,
+        const onboard_autonomy::application::ports::CameraFrame& input,
         const std::span<
-            const companionlab::domain::TargetObservation
+            const onboard_autonomy::domain::TargetObservation
         > input_targets
     ) override {
         sequence = input.sequence;
@@ -108,10 +108,10 @@ public:
 
     std::uint64_t sequence{0};
     std::size_t luma_size{0};
-    std::vector<companionlab::domain::TargetObservation> targets;
+    std::vector<onboard_autonomy::domain::TargetObservation> targets;
 };
 
-companionlab::application::ports::CameraFrame frame(
+onboard_autonomy::application::ports::CameraFrame frame(
     const std::uint64_t sequence,
     const std::chrono::system_clock::time_point captured_at,
     const double latency_ms
@@ -134,10 +134,10 @@ void monitor_calculates_frame_rate_latency_and_gaps() {
     using namespace std::chrono_literals;
 
     FakeCameraSource source;
-    companionlab::application::CameraMonitor monitor{source};
+    onboard_autonomy::application::CameraMonitor monitor{source};
     const auto wall_start =
         std::chrono::system_clock::time_point{1000s};
-    const companionlab::domain::TimePoint app_start{};
+    const onboard_autonomy::domain::TimePoint app_start{};
 
     source.emit(frame(1, wall_start, 20.0));
     monitor.poll(app_start);
@@ -149,7 +149,7 @@ void monitor_calculates_frame_rate_latency_and_gaps() {
     const auto snapshot = monitor.snapshot(app_start + 90ms);
     require(
         snapshot.phase ==
-            companionlab::application::ports::
+            onboard_autonomy::application::ports::
                 CameraSourcePhase::streaming,
         "camera monitor must expose streaming state"
     );
@@ -183,7 +183,7 @@ void monitor_calculates_frame_rate_latency_and_gaps() {
 
 void metadata_parser_accepts_only_frame_wall_clock() {
     const auto parsed =
-        companionlab::adapters::camera::
+        onboard_autonomy::adapters::camera::
             parse_rpicam_frame_wall_clock_ns(
                 "    \"FrameWallClock\": 1785440325818936064,"
             );
@@ -193,7 +193,7 @@ void metadata_parser_accepts_only_frame_wall_clock() {
         "rpicam parser must read the nanosecond wall-clock timestamp"
     );
     require(
-        !companionlab::adapters::camera::
+        !onboard_autonomy::adapters::camera::
              parse_rpicam_frame_wall_clock_ns(
                  "    \"SensorTimestamp\": 413528965000"
              ).has_value(),
@@ -205,7 +205,7 @@ void monitor_forwards_the_processed_frame_to_preview() {
     FakeCameraSource source;
     FakeTargetDetector detector;
     FakeCameraPreviewSink preview;
-    companionlab::application::CameraMonitor monitor{
+    onboard_autonomy::application::CameraMonitor monitor{
         source,
         &detector,
         &preview,
@@ -218,7 +218,7 @@ void monitor_forwards_the_processed_frame_to_preview() {
             10.0
         )
     );
-    monitor.poll(companionlab::domain::TimePoint{});
+    monitor.poll(onboard_autonomy::domain::TimePoint{});
 
     require(
         preview.sequence == 21U &&
@@ -230,10 +230,10 @@ void monitor_forwards_the_processed_frame_to_preview() {
 }
 
 void app_snapshot_json_preserves_vehicle_and_adds_camera() {
-    companionlab::application::AppSnapshot snapshot;
-    snapshot.camera = companionlab::application::CameraSnapshot{
+    onboard_autonomy::application::AppSnapshot snapshot;
+    snapshot.camera = onboard_autonomy::application::CameraSnapshot{
         .phase =
-            companionlab::application::ports::
+            onboard_autonomy::application::ports::
                 CameraSourcePhase::streaming,
         .source = "Camera Module 3 \"Wide\"",
         .error = "",

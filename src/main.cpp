@@ -1,11 +1,11 @@
-#include "companionlab/adapters/ardupilot/BoardTypeCatalog.hpp"
-#include "companionlab/adapters/camera/RpicamCameraSource.hpp"
-#include "companionlab/adapters/preview/HttpCameraPreviewServer.hpp"
-#include "companionlab/adapters/transport/TransportFactory.hpp"
-#include "companionlab/adapters/vision/AprilTagTargetDetector.hpp"
-#include "companionlab/application/CompanionApplication.hpp"
-#include "companionlab/presentation/console/ConsoleInput.hpp"
-#include "companionlab/presentation/console/ConsoleView.hpp"
+#include "onboard_autonomy/adapters/ardupilot/BoardTypeCatalog.hpp"
+#include "onboard_autonomy/adapters/camera/RpicamCameraSource.hpp"
+#include "onboard_autonomy/adapters/preview/HttpCameraPreviewServer.hpp"
+#include "onboard_autonomy/adapters/transport/TransportFactory.hpp"
+#include "onboard_autonomy/adapters/vision/AprilTagTargetDetector.hpp"
+#include "onboard_autonomy/application/CompanionApplication.hpp"
+#include "onboard_autonomy/presentation/console/ConsoleInput.hpp"
+#include "onboard_autonomy/presentation/console/ConsoleView.hpp"
 
 #include <algorithm>
 #include <atomic>
@@ -47,7 +47,7 @@ struct Options {
     std::uint32_t camera_fps{30};
     std::string board_types_file;
     bool json_output{false};
-    std::optional<companionlab::application::ScenarioId>
+    std::optional<onboard_autonomy::application::ScenarioId>
         startup_scenario;
     bool exit_after_scenario{false};
     bool interactive{false};
@@ -164,7 +164,7 @@ Options parse_options(const int argc, char** argv) {
                 );
             }
             options.startup_scenario =
-                companionlab::application::ScenarioId::hover_check;
+                onboard_autonomy::application::ScenarioId::hover_check;
         } else if (argument == "--scenario") {
             if (options.startup_scenario.has_value()) {
                 throw std::invalid_argument(
@@ -182,7 +182,7 @@ Options parse_options(const int argc, char** argv) {
             }
             options.startup_scenario =
                 static_cast<
-                    companionlab::application::ScenarioId
+                    onboard_autonomy::application::ScenarioId
                 >(value);
         } else if (argument == "--exit-after-scenario") {
             options.exit_after_scenario = true;
@@ -201,7 +201,7 @@ Options parse_options(const int argc, char** argv) {
 }
 
 std::optional<
-    companionlab::adapters::ardupilot::BoardTypeCatalog
+    onboard_autonomy::adapters::ardupilot::BoardTypeCatalog
 > load_board_type_catalog(
     const Options& options,
     const std::filesystem::path& executable
@@ -215,7 +215,7 @@ std::optional<
                 executable.parent_path() /
                 ".." /
                 "share" /
-                "companionlab" /
+                "onboard_autonomy" /
                 "ardupilot-board-types.txt"
             ).lexically_normal()
         );
@@ -229,7 +229,7 @@ std::optional<
         if (!std::filesystem::is_regular_file(candidate, error)) {
             continue;
         }
-        return companionlab::adapters::ardupilot::
+        return onboard_autonomy::adapters::ardupilot::
             BoardTypeCatalog::from_file(candidate);
     }
 
@@ -250,7 +250,7 @@ std::filesystem::path find_camera_preview_page(
             executable.parent_path() /
             ".." /
             "share" /
-            "companionlab" /
+            "onboard_autonomy" /
             "camera-preview.html"
         ).lexically_normal(),
         "assets/camera-preview/index.html",
@@ -270,12 +270,12 @@ std::filesystem::path find_camera_preview_page(
 
 void print_help() {
     std::cout
-        << "CompanionLab companion service\n\n"
+        << "OnboardAutonomy companion service\n\n"
         << "SITL UDP mode:\n"
-        << "  companionlab [--udp-bind 0.0.0.0]"
+        << "  onboard_autonomy [--udp-bind 0.0.0.0]"
         << " [--udp-port 14550]\n\n"
         << "Pixhawk serial mode on Linux:\n"
-        << "  companionlab --serial /dev/ttyACM0"
+        << "  onboard_autonomy --serial /dev/ttyACM0"
         << " [--baud 115200]\n\n"
         << "Options:\n"
         << "  --snapshot-ms N   Refresh/output interval, default 1000\n"
@@ -312,7 +312,7 @@ int main(const int argc, char** argv) {
 
         auto board_type_catalog = options.json_output
             ? std::optional<
-                  companionlab::adapters::ardupilot::BoardTypeCatalog
+                  onboard_autonomy::adapters::ardupilot::BoardTypeCatalog
               >{}
             : load_board_type_catalog(options, argv[0]);
 
@@ -340,7 +340,7 @@ int main(const int argc, char** argv) {
             );
         }
 
-        companionlab::presentation::console::ConsoleInput console_input{
+        onboard_autonomy::presentation::console::ConsoleInput console_input{
             options.interactive && !options.json_output
         };
         if (options.interactive && !console_input.active()) {
@@ -350,28 +350,28 @@ int main(const int argc, char** argv) {
         }
 
         std::unique_ptr<
-            companionlab::application::ports::Transport
+            onboard_autonomy::application::ports::Transport
         > transport;
         if (options.serial_device.empty()) {
             transport =
-                companionlab::adapters::transport::make_udp_transport(
+                onboard_autonomy::adapters::transport::make_udp_transport(
                 options.udp_bind,
                 options.udp_port
             );
         } else {
             transport =
-                companionlab::adapters::transport::make_serial_transport(
+                onboard_autonomy::adapters::transport::make_serial_transport(
                 options.serial_device,
                 options.baud_rate
             );
         }
 
         std::unique_ptr<
-            companionlab::application::ports::CameraSource
+            onboard_autonomy::application::ports::CameraSource
         > camera_source;
         if (options.camera_enabled) {
             camera_source =
-                companionlab::adapters::camera::
+                onboard_autonomy::adapters::camera::
                     make_rpicam_camera_source(
                         {
                             .width = options.camera_width,
@@ -382,19 +382,19 @@ int main(const int argc, char** argv) {
                     );
         }
         std::unique_ptr<
-            companionlab::application::ports::TargetDetector
+            onboard_autonomy::application::ports::TargetDetector
         > target_detector;
         if (options.apriltag_enabled) {
             target_detector =
-                companionlab::adapters::vision::
+                onboard_autonomy::adapters::vision::
                     make_apriltag_target_detector();
         }
         std::unique_ptr<
-            companionlab::application::ports::CameraPreviewSink
+            onboard_autonomy::application::ports::CameraPreviewSink
         > camera_preview;
         if (options.camera_preview_enabled) {
             camera_preview =
-                companionlab::adapters::preview::
+                onboard_autonomy::adapters::preview::
                     make_http_camera_preview_server(
                         {
                             .bind_address = "0.0.0.0",
@@ -406,7 +406,7 @@ int main(const int argc, char** argv) {
                     );
         }
 
-        companionlab::application::CompanionApplication application{
+        onboard_autonomy::application::CompanionApplication application{
             *transport,
             {
                 .scenario_runner =
@@ -415,7 +415,7 @@ int main(const int argc, char** argv) {
                             options.startup_scenario.has_value(),
                         .initial_scenario =
                             options.startup_scenario.value_or(
-                                companionlab::application::ScenarioId::
+                                onboard_autonomy::application::ScenarioId::
                                     hover_check
                             ),
                     },
@@ -438,7 +438,7 @@ int main(const int argc, char** argv) {
                   std::chrono::milliseconds(100)
               );
 
-        std::cerr << "CompanionLab listening on "
+        std::cerr << "OnboardAutonomy listening on "
                   << transport->description() << '\n';
         if (camera_preview != nullptr) {
             std::cerr << "Camera preview: http://companionpi.local:"
@@ -453,7 +453,7 @@ int main(const int argc, char** argv) {
                 if (*key >= '1' && *key <= '5') {
                     const auto scenario_id =
                         static_cast<
-                            companionlab::application::ScenarioId
+                            onboard_autonomy::application::ScenarioId
                         >(*key - '0');
                     static_cast<void>(
                         application.trigger_scenario(
@@ -486,7 +486,7 @@ int main(const int argc, char** argv) {
                 } else {
                     std::cout
                         << "\x1b[H"
-                        << companionlab::presentation::console::render_console(
+                        << onboard_autonomy::presentation::console::render_console(
                                snapshot,
                                transport->description(),
                                true,
@@ -498,14 +498,14 @@ int main(const int argc, char** argv) {
                 }
                 if (options.exit_after_scenario &&
                     (snapshot.scenario.phase ==
-                         companionlab::application::
+                         onboard_autonomy::application::
                              ScenarioRunnerPhase::completed ||
                      snapshot.scenario.phase ==
-                         companionlab::application::
+                         onboard_autonomy::application::
                              ScenarioRunnerPhase::failed)) {
                     startup_scenario_failed =
                         snapshot.scenario.phase ==
-                        companionlab::application::
+                        onboard_autonomy::application::
                             ScenarioRunnerPhase::failed;
                     keep_running = false;
                 }
@@ -516,7 +516,7 @@ int main(const int argc, char** argv) {
 
         return startup_scenario_failed ? 2 : 0;
     } catch (const std::exception& error) {
-        std::cerr << "CompanionLab error: " << error.what() << '\n';
+        std::cerr << "OnboardAutonomy error: " << error.what() << '\n';
         return 1;
     }
 }

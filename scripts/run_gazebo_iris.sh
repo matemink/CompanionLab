@@ -4,7 +4,7 @@ set -euo pipefail
 
 readonly gazebo_source_dir="${ARDUPILOT_GAZEBO_SOURCE_DIR:-${HOME}/src/ardupilot_gazebo}"
 readonly gazebo_build_dir="${ARDUPILOT_GAZEBO_BUILD_DIR:-${HOME}/build/ardupilot_gazebo}"
-readonly world_file="${COMPANIONLAB_GAZEBO_WORLD:-${gazebo_source_dir}/worlds/iris_runway.sdf}"
+readonly world_file="${ONBOARD_AUTONOMY_GAZEBO_WORLD:-${gazebo_source_dir}/worlds/iris_runway.sdf}"
 
 if ! command -v gz >/dev/null 2>&1; then
     printf 'Gazebo is not installed. Run scripts/install_gazebo_harmonic.sh first.\n' >&2
@@ -32,5 +32,5 @@ if [[ -e /dev/dxg ]]; then
     export MESA_D3D12_DEFAULT_ADAPTER_NAME="${MESA_D3D12_DEFAULT_ADAPTER_NAME:-NVIDIA}"
 fi
 
-printf 'CompanionLab Gazebo world: %s\n' "${world_file}"
+printf 'OnboardAutonomy Gazebo world: %s\n' "${world_file}"
 exec gz sim -v4 -r "${world_file}"

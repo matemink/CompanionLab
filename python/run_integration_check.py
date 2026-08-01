@@ -1,4 +1,4 @@
-"""Run a real UDP message path through the CompanionLab C++ process."""
+"""Run a real UDP message path through the OnboardAutonomy C++ process."""
 
 from __future__ import annotations
 
@@ -20,7 +20,7 @@ def parse_args() -> argparse.Namespace:
         "--companion",
         type=Path,
         required=True,
-        help="Path to the companionlab executable",
+        help="Path to the onboard_autonomy executable",
     )
     parser.add_argument("--port", type=int, default=14650)
     return parser.parse_args()
@@ -86,7 +86,7 @@ def main() -> int:
         if snapshot["battery_remaining_pct"] != 88:
             raise RuntimeError("Expected 88% battery remaining")
 
-        print("CompanionLab UDP integration check passed")
+        print("OnboardAutonomy UDP integration check passed")
         return 0
     finally:
         process.terminate()

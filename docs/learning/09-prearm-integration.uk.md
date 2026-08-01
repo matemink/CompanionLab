@@ -155,7 +155,7 @@ C++ CTest: 1/1 passed (C++ код у цій ітерації не змінюва
 
 ## Що показали живі SITL-прогони
 
-Перший прогін реально доставив у CompanionLab:
+Перший прогін реально доставив у OnboardAutonomy:
 
 ```text
 warnings=["PreArm: Motors: MOT_SPIN_ARM > MOT_SPIN_MIN"]
@@ -172,7 +172,7 @@ armable=false
 експериментальна вимога знайти останній `STATUSTEXT` у MAVProxy tlog:
 відомий daemon `log_writer` не встиг записати tail перед shutdown.
 Цю крихку дубль-перевірку прибрано; production-шлях перевіряється
-безпосередньо через snapshot CompanionLab.
+безпосередньо через snapshot OnboardAutonomy.
 
 Повторний запуск фінальної команди був заблокований лімітом WSL
 execution у Codex, а не помилкою коду. Команда для наступної перевірки:

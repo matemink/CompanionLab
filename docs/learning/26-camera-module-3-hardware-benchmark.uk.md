@@ -54,7 +54,7 @@ Hardware runner:
 3. Кожні `100 ms` читає CPU ticks і RSS із `/proc/<pid>`.
 4. Передає artifacts у analyzer.
 5. Зберігає все під
-   `~/.local/state/companionlab/camera/<run-id>/`.
+   `~/.local/state/onboard_autonomy/camera/<run-id>/`.
 
 `trap cleanup EXIT INT TERM` гарантує завершення camera process після
 помилки або `Ctrl+C`.

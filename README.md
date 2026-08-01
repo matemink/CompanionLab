@@ -1,9 +1,8 @@
-# CompanionLab
+# OnboardAutonomy
 
-CompanionLab is a portfolio-grade UAV companion-computer testbench for
-ArduPilot. It combines a C++20 Linux service, Python test scenarios,
-MAVLink telemetry, software-in-the-loop simulation, and Raspberry Pi 5
-deployment.
+OnboardAutonomy is a C++20 onboard autonomy runtime for ArduPilot-based
+UAVs. It combines MAVLink command and telemetry handling, onboard computer
+vision, software-in-the-loop verification, and Raspberry Pi 5 deployment.
 
 The long-term demonstration is a precision-landing pipeline:
 
@@ -46,11 +45,11 @@ Milestone 1 provides:
 ## Repository layout
 
 ```text
-include/companionlab/domain/                Vehicle concepts and rules
-include/companionlab/application/           Use cases and snapshots
-include/companionlab/application/ports/     I/O contracts owned by application
-include/companionlab/adapters/              MAVLink and transport adapters
-include/companionlab/presentation/          Presentation interfaces
+include/onboard_autonomy/domain/                Vehicle concepts and rules
+include/onboard_autonomy/application/           Use cases and snapshots
+include/onboard_autonomy/application/ports/     I/O contracts owned by application
+include/onboard_autonomy/adapters/              MAVLink and transport adapters
+include/onboard_autonomy/presentation/          Presentation interfaces
 src/domain/                                 Protocol-independent vehicle state
 src/application/                            Use-case orchestration
 src/adapters/mavlink/                       MAVLink protocol adapter
@@ -66,9 +65,9 @@ third_party/ardupilot/                      Pinned board table and license
 ```
 
 CMake enforces the main dependency boundaries through separate
-`companionlab_domain`, `companionlab_transport_port`,
-`companionlab_mavlink_adapter`, `companionlab_transport_adapter`,
-`companionlab_application`, and `companionlab_console_presentation`
+`onboard_autonomy_domain`, `onboard_autonomy_transport_port`,
+`onboard_autonomy_mavlink_adapter`, `onboard_autonomy_transport_adapter`,
+`onboard_autonomy_application`, and `onboard_autonomy_console_presentation`
 targets.
 
 ## Build on Ubuntu or Raspberry Pi OS
@@ -104,7 +103,7 @@ sudo bash scripts/bootstrap_ubuntu.sh
 Start the companion:
 
 ```bash
-./build/companionlab --udp-port 14550
+./build/onboard_autonomy --udp-port 14550
 ```
 
 In another terminal, prepare the Python environment and send a healthy
@@ -134,14 +133,14 @@ virtual flight controller:
 bash scripts/run_arducopter_sitl.sh
 ```
 
-In a second Ubuntu terminal, start CompanionLab:
+In a second Ubuntu terminal, start OnboardAutonomy:
 
 ```bash
-bash scripts/run_companionlab_sitl.sh
+bash scripts/run_onboard_autonomy_sitl.sh
 ```
 
-ArduCopter and CompanionLab exchange MAVLink over
-`udp://127.0.0.1:14550`. CompanionLab discovers the vehicle system ID
+ArduCopter and OnboardAutonomy exchange MAVLink over
+`udp://127.0.0.1:14550`. OnboardAutonomy discovers the vehicle system ID
 and advertises itself as onboard-computer component `191`. It then
 requests health at 1 Hz, GPS at 2 Hz, and battery data at 1 Hz. MAVProxy
 does not request a competing stream rate. Stop either process with
@@ -150,7 +149,7 @@ does not request a competing stream rate. Stop either process with
 The interactive command shows the terminal dashboard by default. Add
 `--json` when another process needs machine-readable snapshots.
 
-On Windows, `StartCompanionLabDemo.cmd` opens both processes in separate
+On Windows, `StartOnboardAutonomyDemo.cmd` opens both processes in separate
 visible WSL consoles.
 
 Inspect the latest `SYS_STATUS` sensor masks recorded by MAVProxy:
@@ -169,7 +168,7 @@ Run the automated end-to-end UDP check:
 
 ```bash
 python python/run_integration_check.py \
-    --companion ./build/companionlab
+    --companion ./build/onboard_autonomy
 ```
 
 Run the complete ArduCopter SITL stack without opening manual
@@ -204,7 +203,7 @@ Force an invalid motor spin configuration and verify ArduPilot's real
 python python/run_sitl_smoke_test.py --scenario prearm
 ```
 
-The smoke test starts ArduCopter, MAVProxy, and CompanionLab; verifies
+The smoke test starts ArduCopter, MAVProxy, and OnboardAutonomy; verifies
 required telemetry, interval commands, accepted acknowledgements, and
 the companion heartbeat; requires a genuinely ready GPS, battery, and
 system baseline; stores logs under `artifacts/sitl-smoke/`; then
@@ -225,12 +224,12 @@ Then start the three processes in separate terminals:
 ```bash
 bash scripts/run_gazebo_iris.sh
 bash scripts/run_arducopter_gazebo.sh
-COMPANIONLAB_DEMO_FLIGHT=1 bash scripts/run_companionlab_sitl.sh
+ONBOARD_AUTONOMY_DEMO_FLIGHT=1 bash scripts/run_onboard_autonomy_sitl.sh
 ```
 
-On Windows, `StartCompanionLabGazeboDemo.cmd` opens all three WSL
+On Windows, `StartOnboardAutonomyGazeboDemo.cmd` opens all three WSL
 terminals. Gazebo owns the 3D world and vehicle physics, ArduCopter SITL
-owns the flight-control logic, and CompanionLab uses MAVLink on UDP port
+owns the flight-control logic, and OnboardAutonomy uses MAVLink on UDP port
 `14550`. Its interactive terminal exposes five guarded SITL scenarios:
 
 - `[1] HOVER`: take off, hold, and land.
@@ -246,7 +245,7 @@ owns the flight-control logic, and CompanionLab uses MAVLink on UDP port
 exits. Command steps require `COMMAND_ACK`, movement steps are confirmed
 from `LOCAL_POSITION_NED`, and landing completes only after `DISARMED`.
 
-The CompanionLab terminal uses a fixed MS-DOS-style control panel.
+The OnboardAutonomy terminal uses a fixed MS-DOS-style control panel.
 An ASCII companion computer and flight controller are connected by two
 MAVLink wires. The wires briefly show the latest complete frame actually
 transmitted or received, using the generated MAVLink message name, and
@@ -283,17 +282,17 @@ After transferring and extracting the archive on the Pi:
 
 ```bash
 bin/diagnose_pi_hardware.sh
-bin/run_companionlab_pi.sh
+bin/run_onboard_autonomy_pi.sh
 bin/benchmark_pi_camera.sh
 ```
 
 The launcher selects a single `/dev/serial/by-id`, `/dev/ttyACM`, or
 `/dev/ttyUSB` candidate, refuses ambiguous hardware, writes JSONL
-telemetry under `~/.local/state/companionlab`, and never enables the
+telemetry under `~/.local/state/onboard_autonomy`, and never enables the
 interactive flight scenarios. It also starts the C++ Camera Module
 receiver by default at `640x480 YUV420 @ 30 FPS`. Every JSON snapshot
 includes camera phase, consumed FPS, dropped frames, frame age, and
-sensor-to-application latency. Set `COMPANIONLAB_CAMERA_ENABLED=0` to
+sensor-to-application latency. Set `ONBOARD_AUTONOMY_CAMERA_ENABLED=0` to
 run telemetry only.
 
 The launcher also enables the read-only grayscale camera preview:
@@ -304,21 +303,24 @@ http://companionpi.local:8080/
 
 It uses the same Y plane consumed by AprilTag and overlays confirmed
 target corners, center, and ID. No second camera process is started.
-`StartCompanionLabPixhawk.cmd` starts the Pi runtime and opens the
-preview automatically. Set `COMPANIONLAB_CAMERA_PREVIEW_ENABLED=0` to
+`StartOnboardAutonomyPixhawk.cmd` starts the Pi runtime and opens the
+preview automatically. Set `ONBOARD_AUTONOMY_CAMERA_PREVIEW_ENABLED=0` to
 disable it.
 
 The Windows launcher defaults to `companion@companionpi.local` and lets
 the Pi launcher auto-detect one serial device. Machine-specific values
-belong in the ignored `CompanionLabLocal.cmd` file:
+belong in the ignored `OnboardAutonomyLocal.cmd` file:
 
 ```bat
-set "COMPANIONLAB_PI_HOST=companionpi.local"
-set "COMPANIONLAB_PI_USER=companion"
-set "COMPANIONLAB_SSH_KEY=%USERPROFILE%\.ssh\companionlab_ed25519"
-set "COMPANIONLAB_REMOTE_ROOT=/home/companion/companionlab-pi5"
-set "COMPANIONLAB_SERIAL=/dev/serial/by-id/<your-pixhawk-device>"
+set "ONBOARD_AUTONOMY_PI_HOST=companionpi.local"
+set "ONBOARD_AUTONOMY_PI_USER=companion"
+set "ONBOARD_AUTONOMY_SSH_KEY=%USERPROFILE%\.ssh\onboard_autonomy_ed25519"
+set "ONBOARD_AUTONOMY_REMOTE_ROOT=/home/companion/onboard_autonomy-pi5"
+set "ONBOARD_AUTONOMY_SERIAL=/dev/serial/by-id/<your-pixhawk-device>"
 ```
+
+During the rename transition, the launcher also reads an existing ignored
+`CompanionLabLocal.cmd` and maps its legacy variables automatically.
 
 A cross-built binary still has to pass the runtime-library check on the
 target Raspberry Pi OS; a native Pi build is the compatibility fallback.
@@ -326,7 +328,7 @@ target Raspberry Pi OS; a native Pi build is the compatibility fallback.
 The camera benchmark is bounded and hardware-read-only. Its default
 profile captures 300 `1280x720 YUV420` frames, measures cadence and
 estimated gaps from PTS, samples process CPU/RSS, and writes JSON plus
-Markdown reports under `~/.local/state/companionlab/camera`.
+Markdown reports under `~/.local/state/onboard_autonomy/camera`.
 
 The bounded benchmark validates the camera independently. The regular
 launcher validates the integrated runtime where Pixhawk serial traffic
@@ -337,7 +339,7 @@ connecting hardware.
 
 ## Safety boundary
 
-Normal CompanionLab startup remains read-only. Automated motion requires
+Normal OnboardAutonomy startup remains read-only. Automated motion requires
 the explicit `--demo-flight` flag or a keyboard trigger enabled by
 `--interactive`. The application rejects both modes when a serial
 transport is selected, and interactive input additionally requires a

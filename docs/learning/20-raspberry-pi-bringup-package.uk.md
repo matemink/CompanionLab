@@ -2,22 +2,22 @@
 
 ## Мета ітерації
 
-До цього CompanionLab працював на x86-64 Ubuntu у WSL:
+До цього OnboardAutonomy працював на x86-64 Ubuntu у WSL:
 
 ```text
-CompanionLab -> MAVLink/UDP -> ArduCopter SITL -> Gazebo
+OnboardAutonomy -> MAVLink/UDP -> ArduCopter SITL -> Gazebo
 ```
 
 Тепер готуємо той самий application code до реального ARM64 Linux:
 
 ```text
-CompanionLab on Raspberry Pi 5
+OnboardAutonomy on Raspberry Pi 5
     -> USB serial
     -> Pixhawk 6C
 ```
 
 Польотна батарея та пропелери для цього етапу не потрібні. Hardware mode
-не є буквально read-only: CompanionLab надсилає безпечні
+не є буквально read-only: OnboardAutonomy надсилає безпечні
 `MAV_CMD_SET_MESSAGE_INTERVAL`, щоб отримати потрібну телеметрію. Він не
 надсилає ARM, TAKEOFF, LAND або route commands.
 
@@ -44,8 +44,8 @@ glibc. Ubuntu host toolchain може вимагати новішу glibc, ні�
 Тому deployment candidate проходить другий gate вже на Pi:
 
 ```bash
-file bin/companionlab
-ldd bin/companionlab
+file bin/onboard_autonomy
+ldd bin/onboard_autonomy
 ```
 
 Якщо runtime несумісний, правильне рішення для першої ітерації —
@@ -99,7 +99,7 @@ Packaging script містить ABI gate й відхиляє binary, якщо в
 ```cmake
 include(GNUInstallDirs)
 install(
-    TARGETS companionlab
+    TARGETS onboard_autonomy
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 ```
@@ -108,12 +108,12 @@ install(
 стандартний CMake install layout:
 
 ```text
-companionlab-pi5/
+onboard_autonomy-pi5/
   bin/
-    companionlab
+    onboard_autonomy
     configure_pi5_uart.sh
     diagnose_pi_hardware.sh
-    run_companionlab_pi.sh
+    run_onboard_autonomy_pi.sh
   BENCH.md
   LICENSE
 ```
@@ -136,8 +136,8 @@ Symlink і його `/dev/tty*` target дедуплікуються через `
 вибору навмання. Потрібний пристрій тоді задається явно:
 
 ```bash
-COMPANIONLAB_SERIAL=/dev/serial/by-id/usb-... \
-    bin/run_companionlab_pi.sh
+ONBOARD_AUTONOMY_SERIAL=/dev/serial/by-id/usb-... \
+    bin/run_onboard_autonomy_pi.sh
 ```
 
 Це важлива production-властивість: ambiguity перетворюється на явну
@@ -174,7 +174,7 @@ COMPANIONLAB_SERIAL=/dev/serial/by-id/usb-... \
 Safe launcher зберігає machine-readable snapshots:
 
 ```text
-~/.local/state/companionlab/
+~/.local/state/onboard_autonomy/
   telemetry-YYYYMMDDTHHMMSSZ.jsonl
 ```
 
@@ -186,7 +186,7 @@ Safe launcher зберігає machine-readable snapshots:
 Етап завершений, коли на реальному Raspberry Pi 5:
 
 1. Diagnostics бачить `aarch64`, IMX708 і один Pixhawk serial device.
-2. CompanionLab запускається без missing libraries.
+2. OnboardAutonomy запускається без missing libraries.
 3. HEARTBEAT переводить `connected` у `true`.
 4. У JSON видно реальний ArduPilot system ID та тип vehicle.
 5. USB disconnect не запускає жодної motion command.
@@ -202,19 +202,19 @@ Compiler: GNU aarch64-linux-gnu-g++ 12.4
 ELF:      64-bit ARM aarch64
 GLIBC:    2.34
 GLIBCXX:  3.4.29
-Archive:  companionlab-pi5-arm64.tar.gz
+Archive:  onboard_autonomy-pi5-arm64.tar.gz
 ```
 
 Archive містить лише:
 
 ```text
-companionlab-pi5/
+onboard_autonomy-pi5/
   BENCH.md
   LICENSE
-  bin/companionlab
+  bin/onboard_autonomy
   bin/configure_pi5_uart.sh
   bin/diagnose_pi_hardware.sh
-  bin/run_companionlab_pi.sh
+  bin/run_onboard_autonomy_pi.sh
 ```
 
 Diagnostics запущено у WSL як negative bench: він правильно розпізнав
@@ -222,5 +222,5 @@ Diagnostics запущено у WSL як negative bench: він правильн
 беззмістовний `ldd` для іншої архітектури.
 
 Safe launcher без serial candidate завершився очікуваним кодом `2` і не
-запустив CompanionLab. Наступна неперевірена межа — виконання того самого
+запустив OnboardAutonomy. Наступна неперевірена межа — виконання того самого
 archive безпосередньо на Raspberry Pi 5.

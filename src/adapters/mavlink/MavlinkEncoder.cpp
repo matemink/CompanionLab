@@ -1,4 +1,4 @@
-#include "companionlab/adapters/mavlink/MavlinkEncoder.hpp"
+#include "onboard_autonomy/adapters/mavlink/MavlinkEncoder.hpp"
 
 #include <ardupilotmega/mavlink.h>
 
@@ -7,7 +7,7 @@
 #include <cstdint>
 #include <vector>
 
-namespace companionlab::adapters::mavlink {
+namespace onboard_autonomy::adapters::mavlink {
 namespace {
 
 constexpr std::array<char, 16> kBatteryArmingVoltageParameter{
@@ -339,4 +339,4 @@ std::vector<std::uint8_t> encode_landing_target(
     return {buffer.begin(), buffer.begin() + length};
 }
 
-}  // namespace companionlab::adapters::mavlink
+}  // namespace onboard_autonomy::adapters::mavlink

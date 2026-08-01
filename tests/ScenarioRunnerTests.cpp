@@ -1,6 +1,6 @@
 #include "TestCases.hpp"
 
-#include "companionlab/application/ScenarioRunner.hpp"
+#include "onboard_autonomy/application/ScenarioRunner.hpp"
 
 #include <algorithm>
 #include <chrono>
@@ -11,14 +11,14 @@
 
 namespace {
 
-using companionlab::application::FlightAction;
-using companionlab::application::FlightActionRequest;
-using companionlab::application::FlightCommandAckOutcome;
-using companionlab::application::ScenarioId;
-using companionlab::application::ScenarioRunner;
-using companionlab::application::ScenarioRunnerPhase;
-using companionlab::domain::TimePoint;
-using companionlab::domain::VehicleSnapshot;
+using onboard_autonomy::application::FlightAction;
+using onboard_autonomy::application::FlightActionRequest;
+using onboard_autonomy::application::FlightCommandAckOutcome;
+using onboard_autonomy::application::ScenarioId;
+using onboard_autonomy::application::ScenarioRunner;
+using onboard_autonomy::application::ScenarioRunnerPhase;
+using onboard_autonomy::domain::TimePoint;
+using onboard_autonomy::domain::VehicleSnapshot;
 
 void require(const bool condition, const std::string& message) {
     if (!condition) {
@@ -115,7 +115,7 @@ void reach_takeoff(
 
 void catalog_contains_five_typed_scenarios() {
     const auto scenarios =
-        companionlab::application::demo_scenarios();
+        onboard_autonomy::application::demo_scenarios();
     require(scenarios.size() == 5, "demo catalog must contain five entries");
 
     for (std::size_t index = 0; index < scenarios.size(); ++index) {
@@ -131,7 +131,7 @@ void catalog_contains_five_typed_scenarios() {
     }
 
     const auto& precision =
-        companionlab::application::scenario_definition(
+        onboard_autonomy::application::scenario_definition(
             ScenarioId::precision_landing
         );
     require(
@@ -140,7 +140,7 @@ void catalog_contains_five_typed_scenarios() {
             precision.steps.end(),
             [](const auto& step) {
                 return std::holds_alternative<
-                    companionlab::application::PrecisionLandStep
+                    onboard_autonomy::application::PrecisionLandStep
                 >(step);
             }
         ),

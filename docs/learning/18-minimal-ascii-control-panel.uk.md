@@ -1,4 +1,4 @@
-# Мінімальна ASCII-панель CompanionLab
+# Мінімальна ASCII-панель OnboardAutonomy
 
 ## Що змінилось
 
@@ -31,7 +31,7 @@ MAVLink-подій, часові мітки, напрямки `TX/RX` і баг�
 Колір тепер групує інформацію за її власником або призначенням, а не фарбує
 весь рядок одним статусом:
 
-- cyan: `Raspberry Pi 5`, CompanionLab і команди від companion;
+- cyan: `Raspberry Pi 5`, OnboardAutonomy і команди від companion;
 - yellow: `Pixhawk 6C`, ArduPilot, телеметрія та відповіді контролера;
 - green: успішний загальний стан, наприклад `ONLINE` або `READY`;
 - red: помилка команди чи неготовність;

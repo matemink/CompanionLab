@@ -1,8 +1,8 @@
-#include "companionlab/application/CompanionApplication.hpp"
+#include "onboard_autonomy/application/CompanionApplication.hpp"
 
-#include "companionlab/adapters/mavlink/MavlinkDecoder.hpp"
-#include "companionlab/adapters/mavlink/MavlinkEncoder.hpp"
-#include "companionlab/adapters/mavlink/TelemetryStreamConfigurator.hpp"
+#include "onboard_autonomy/adapters/mavlink/MavlinkDecoder.hpp"
+#include "onboard_autonomy/adapters/mavlink/MavlinkEncoder.hpp"
+#include "onboard_autonomy/adapters/mavlink/TelemetryStreamConfigurator.hpp"
 
 #include <array>
 #include <chrono>
@@ -17,7 +17,7 @@
 #include <utility>
 #include <vector>
 
-namespace companionlab::application {
+namespace onboard_autonomy::application {
 namespace {
 
 TelemetrySetupState map_telemetry_state(
@@ -910,4 +910,4 @@ AppSnapshot CompanionApplication::snapshot(const domain::TimePoint now) {
     return impl_->snapshot(now);
 }
 
-}  // namespace companionlab::application
+}  // namespace onboard_autonomy::application

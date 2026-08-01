@@ -2,7 +2,7 @@
 
 ## Мета
 
-Перевірити не запуск процесів, а поведінку CompanionLab після реальної
+Перевірити не запуск процесів, а поведінку OnboardAutonomy після реальної
 втрати MAVLink link:
 
 ```bash
@@ -23,14 +23,14 @@ start full SITL stack
 
 ## Чому зупиняємо MAVProxy
 
-ArduCopter і CompanionLab залишаються живими, але між ними зникає
+ArduCopter і OnboardAutonomy залишаються живими, але між ними зникає
 маршрутизатор:
 
 ```text
-ArduCopter -X- MAVProxy -X- CompanionLab
+ArduCopter -X- MAVProxy -X- OnboardAutonomy
 ```
 
-Це моделює обрив MAVLink-каналу краще, ніж завершення CompanionLab.
+Це моделює обрив MAVLink-каналу краще, ніж завершення OnboardAutonomy.
 Ми тестуємо реакцію production-коду на відсутність даних, а не
 реакцію операційної системи на crash нашого процесу.
 
@@ -47,7 +47,7 @@ supervisor.stop("MAVProxy")
 
 PID спочатку позначається як expected stop, а потім process group
 отримує `SIGTERM`. Тому наступна перевірка продовжує вимагати живі
-ArduCopter і CompanionLab, але не падає через навмисно завершений
+ArduCopter і OnboardAutonomy, але не падає через навмисно завершений
 MAVProxy.
 
 ## Predicate-based waiting

@@ -4,7 +4,7 @@
 
 **Не працює для користувача. Повністю відкочено.**
 
-Після rollback CompanionLab знову запускає офіційний
+Після rollback OnboardAutonomy знову запускає офіційний
 `ardupilot_gazebo/worlds/iris_runway.sdf`. У ньому залишилися лише
 штатні `axes`, `runway` та `iris_with_gimbal`.
 
@@ -16,7 +16,7 @@
 Було створено project-owned world:
 
 ```text
-simulation/worlds/companionlab_airfield.sdf
+simulation/worlds/onboard_autonomy_airfield.sdf
 ```
 
 До нього додавалися:
@@ -100,14 +100,14 @@ Gazebo GUI state з новим world або проблемою WSLg/OpenGL prese
 Видалено:
 
 ```text
-simulation/worlds/companionlab_airfield.sdf
+simulation/worlds/onboard_autonomy_airfield.sdf
 docs/learning/14-gazebo-airfield-world.uk.md
 ```
 
 Повернено:
 
 ```bash
-readonly world_file="${COMPANIONLAB_GAZEBO_WORLD:-${gazebo_source_dir}/worlds/iris_runway.sdf}"
+readonly world_file="${ONBOARD_AUTONOMY_GAZEBO_WORLD:-${gazebo_source_dir}/worlds/iris_runway.sdf}"
 ```
 
 Також прибрано project world directory з

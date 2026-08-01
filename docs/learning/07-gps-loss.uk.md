@@ -3,7 +3,7 @@
 ## Мета
 
 Довести не просто отримання `GPS_RAW_INT`, а правильну реакцію
-CompanionLab на реальне вимкнення simulated GPS у вже готовому
+OnboardAutonomy на реальне вимкнення simulated GPS у вже готовому
 ArduCopter:
 
 ```bash
@@ -65,7 +65,7 @@ Failure test завжди має спочатку довести другий с
 ArduCopter SITL відкриває окремі serial endpoints:
 
 ```text
-SERIAL0, TCP 5760 → MAVProxy → CompanionLab
+SERIAL0, TCP 5760 → MAVProxy → OnboardAutonomy
 SERIAL1, TCP 5762 → Python fault injector
 ```
 
@@ -80,7 +80,7 @@ system ID:    250
 component ID: 190
 ```
 
-Він чекає heartbeat саме автопілота. Heartbeat CompanionLab
+Він чекає heartbeat саме автопілота. Heartbeat OnboardAutonomy
 відкидається через `MAV_AUTOPILOT_INVALID`, тому параметр не може бути
 помилково адресований component `191`.
 
@@ -165,7 +165,7 @@ SIGINT
 ```
 
 Нормальний шлях використовує `SIGINT`, тому ArduCopter, MAVProxy і
-CompanionLab отримують можливість штатно завершити cleanup. Сильніші
+OnboardAutonomy отримують можливість штатно завершити cleanup. Сильніші
 сигнали залишаються страховкою від зависання.
 
 Є відомий residual у локальному MAVProxy 1.8.74: після unloading усіх
@@ -179,7 +179,7 @@ window і зміна порядку shutdown не усунули його, то�
 - tlog встигає записатися й проходить protocol assertions;
 - MAVProxy process завершується;
 - фонових процесів не залишається;
-- production CompanionLab не падає;
+- production OnboardAutonomy не падає;
 - traceback лишається дефектом зовнішнього test tool.
 
 ## Фактичний результат

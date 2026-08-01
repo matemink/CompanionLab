@@ -1,4 +1,4 @@
-#include "companionlab/presentation/console/ConsoleView.hpp"
+#include "onboard_autonomy/presentation/console/ConsoleView.hpp"
 
 #include <algorithm>
 #include <chrono>
@@ -11,7 +11,7 @@
 #include <string_view>
 #include <vector>
 
-namespace companionlab::presentation::console {
+namespace onboard_autonomy::presentation::console {
 namespace {
 
 constexpr std::size_t kConsoleWidth = 88;
@@ -170,7 +170,7 @@ void write_header(
     const bool connected,
     const bool use_color
 ) {
-    constexpr std::string_view title{" COMPANIONLAB   "};
+    constexpr std::string_view title{" ONBOARD AUTONOMY   "};
     constexpr std::string_view link_label{"LINK: "};
     const std::string transport =
         "   " + std::string(transport_description);
@@ -795,7 +795,7 @@ std::string render_console(
     );
     write_topology_line(
         output,
-        device_line("COMPANIONLAB"),
+        device_line("ONBOARD AUTONOMY"),
         Tone::accent,
         "",
         Tone::dim,
@@ -934,4 +934,4 @@ std::string render_console(
     return output.str();
 }
 
-}  // namespace companionlab::presentation::console
+}  // namespace onboard_autonomy::presentation::console

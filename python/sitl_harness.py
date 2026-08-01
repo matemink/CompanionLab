@@ -1,4 +1,4 @@
-"""Process harness for a complete CompanionLab ArduCopter SITL session."""
+"""Process harness for a complete OnboardAutonomy ArduCopter SITL session."""
 
 from __future__ import annotations
 
@@ -499,7 +499,7 @@ def validate_paths(paths: HarnessPaths) -> None:
     required = {
         "ArduCopter": arducopter,
         "MAVProxy": paths.mavproxy,
-        "CompanionLab": paths.companion,
+        "OnboardAutonomy": paths.companion,
     }
     missing = [
         f"{name}: {path}"
@@ -605,7 +605,7 @@ def run_smoke_test(
                 text=True,
                 start_new_session=True,
             )
-        supervisor.track("CompanionLab", companion)
+        supervisor.track("OnboardAutonomy", companion)
 
         with (artifacts / "companion.snapshots.jsonl").open(
             "w",

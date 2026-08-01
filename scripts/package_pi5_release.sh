@@ -4,14 +4,14 @@ set -euo pipefail
 
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 project_dir="$(cd -- "${script_dir}/.." && pwd)"
-build_dir="${COMPANIONLAB_ARM64_BUILD_DIR:-${project_dir}/build-arm64-gcc12-c-cxx-release}"
+build_dir="${ONBOARD_AUTONOMY_ARM64_BUILD_DIR:-${project_dir}/build-arm64-gcc12-c-cxx-release}"
 artifact_dir="${project_dir}/artifacts"
-stage_dir="${artifact_dir}/companionlab-pi5"
-archive="${artifact_dir}/companionlab-pi5-arm64.tar.gz"
-cross_compiler="${COMPANIONLAB_ARM64_CXX:-aarch64-linux-gnu-g++-12}"
-cross_c_compiler="${COMPANIONLAB_ARM64_CC:-aarch64-linux-gnu-gcc-12}"
-maximum_glibc="${COMPANIONLAB_MAX_GLIBC:-GLIBC_2.41}"
-maximum_glibcxx="${COMPANIONLAB_MAX_GLIBCXX:-GLIBCXX_3.4.30}"
+stage_dir="${artifact_dir}/onboard_autonomy-pi5"
+archive="${artifact_dir}/onboard_autonomy-pi5-arm64.tar.gz"
+cross_compiler="${ONBOARD_AUTONOMY_ARM64_CXX:-aarch64-linux-gnu-g++-12}"
+cross_c_compiler="${ONBOARD_AUTONOMY_ARM64_CC:-aarch64-linux-gnu-gcc-12}"
+maximum_glibc="${ONBOARD_AUTONOMY_MAX_GLIBC:-GLIBC_2.41}"
+maximum_glibcxx="${ONBOARD_AUTONOMY_MAX_GLIBCXX:-GLIBCXX_3.4.30}"
 
 if ! command -v "${cross_compiler}" >/dev/null 2>&1; then
     printf 'ARM64 cross-compiler is missing: %s\n' \
@@ -38,7 +38,7 @@ cmake \
 cmake --build "${build_dir}" --parallel
 
 case "${stage_dir}" in
-    "${project_dir}"/artifacts/companionlab-pi5) ;;
+    "${project_dir}"/artifacts/onboard_autonomy-pi5) ;;
     *)
         printf 'Refusing to replace unexpected stage path: %s\n' \
             "${stage_dir}" >&2
@@ -55,7 +55,7 @@ install -m 0755 \
     "${project_dir}/scripts/benchmark_pi_camera.sh" \
     "${project_dir}/scripts/configure_pi5_uart.sh" \
     "${project_dir}/scripts/diagnose_pi_hardware.sh" \
-    "${project_dir}/scripts/run_companionlab_pi.sh" \
+    "${project_dir}/scripts/run_onboard_autonomy_pi.sh" \
     "${stage_dir}/bin/"
 install -m 0644 \
     "${project_dir}/docs/raspberry-pi-5-bench.md" \
@@ -64,7 +64,7 @@ install -m 0644 \
     "${project_dir}/LICENSE" \
     "${stage_dir}/LICENSE"
 
-binary="${stage_dir}/bin/companionlab"
+binary="${stage_dir}/bin/onboard_autonomy"
 required_glibc="$(
     strings "${binary}" |
         grep '^GLIBC_[0-9]' |
@@ -100,7 +100,7 @@ fi
 tar \
     -C "${artifact_dir}" \
     -czf "${archive}" \
-    companionlab-pi5
+    onboard_autonomy-pi5
 
 printf '\nARM64 release package created:\n'
 printf '  %s\n' "${archive}"

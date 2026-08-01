@@ -1,11 +1,11 @@
-#include "companionlab/application/AppSnapshot.hpp"
+#include "onboard_autonomy/application/AppSnapshot.hpp"
 
 #include <iomanip>
 #include <sstream>
 #include <string>
 #include <string_view>
 
-namespace companionlab::application {
+namespace onboard_autonomy::application {
 namespace {
 
 std::string_view camera_phase_name(
@@ -151,4 +151,4 @@ std::string AppSnapshot::to_json() const {
     return output.str();
 }
 
-}  // namespace companionlab::application
+}  // namespace onboard_autonomy::application

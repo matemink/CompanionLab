@@ -13,4 +13,5 @@ tools/imager-v*.exe
 tools/gh/
 tools/provisioning/*.log
 tools/provisioning/*-status.json
+OnboardAutonomyLocal.cmd
 CompanionLabLocal.cmd

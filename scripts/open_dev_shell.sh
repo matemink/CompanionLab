@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-printf 'CompanionLab development environment\n\n'
+printf 'OnboardAutonomy development environment\n\n'
 printf 'User: '
 whoami
 printf 'Architecture: '
@@ -16,8 +16,8 @@ printf 'Ninja: '
 ninja --version
 cmake --version
 
-printf '\nRunning CompanionLab C++ tests...\n'
-build_dir="${COMPANIONLAB_BUILD_DIR:-${HOME}/build/companionlab}"
+printf '\nRunning OnboardAutonomy C++ tests...\n'
+build_dir="${ONBOARD_AUTONOMY_BUILD_DIR:-${HOME}/build/onboard_autonomy}"
 ctest --test-dir "${build_dir}" --output-on-failure
 
 printf '\nUbuntu shell is ready. Type exit to close it.\n\n'

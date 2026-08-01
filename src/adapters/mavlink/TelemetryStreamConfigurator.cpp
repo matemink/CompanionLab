@@ -1,6 +1,6 @@
-#include "companionlab/adapters/mavlink/TelemetryStreamConfigurator.hpp"
+#include "onboard_autonomy/adapters/mavlink/TelemetryStreamConfigurator.hpp"
 
-#include "companionlab/adapters/mavlink/MavlinkEncoder.hpp"
+#include "onboard_autonomy/adapters/mavlink/MavlinkEncoder.hpp"
 
 #include <ardupilotmega/mavlink.h>
 
@@ -9,7 +9,7 @@
 #include <cstdint>
 #include <string_view>
 
-namespace companionlab::adapters::mavlink {
+namespace onboard_autonomy::adapters::mavlink {
 namespace {
 
 struct StreamRequest {
@@ -178,4 +178,4 @@ void TelemetryStreamConfigurator::begin(
     vehicle_system_id_ = vehicle_system_id;
 }
 
-}  // namespace companionlab::adapters::mavlink
+}  // namespace onboard_autonomy::adapters::mavlink

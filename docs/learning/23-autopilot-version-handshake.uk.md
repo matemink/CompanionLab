@@ -16,7 +16,7 @@ Raspberry Pi 5                  Pixhawk 6C
       |<-----------------------------|
 ```
 
-CompanionLab послідовно налаштовує шість потоків телеметрії. Наступний
+OnboardAutonomy послідовно налаштовує шість потоків телеметрії. Наступний
 запит надсилається лише після `MAV_RESULT_ACCEPTED` для попереднього.
 Технічний стан `6/6 ACK` означає, що працюють обидва напрямки link і
 контролер прийняв усі шість налаштувань. В операторському UI він
@@ -31,7 +31,7 @@ CompanionLab послідовно налаштовує шість потоків
 Версія запитується окремо:
 
 ```text
-CompanionLab
+OnboardAutonomy
     -> COMMAND_LONG
        MAV_CMD_REQUEST_MESSAGE
        param1 = AUTOPILOT_VERSION (message id 148)
@@ -46,7 +46,7 @@ Pixhawk
 
 ## Які дані повертаються
 
-CompanionLab зберігає тільки документовані MAVLink-поля:
+OnboardAutonomy зберігає тільки документовані MAVLink-поля:
 
 - firmware `major.minor.patch`;
 - release type: `DEV`, `ALPHA`, `BETA`, `RC` або `OFFICIAL`;

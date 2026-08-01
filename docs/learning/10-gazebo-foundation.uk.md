@@ -8,11 +8,11 @@
 ```text
 Gazebo Iris
 <-> ArduCopter SITL
-<-> CompanionLab
+<-> OnboardAutonomy
 ```
 
 Очікуваний результат — у Gazebo видно Iris, ArduCopter отримує
-simulated sensor data і керує його моторами, а CompanionLab отримує
+simulated sensor data і керує його моторами, а OnboardAutonomy отримує
 MAVLink telemetry так само, як у попередніх SITL-тестах.
 
 ## Хто за що відповідає
@@ -30,7 +30,7 @@ ArduCopter SITL
 MAVProxy
   MAVLink routing and developer console/map
 
-CompanionLab
+OnboardAutonomy
   companion-computer telemetry and future autonomy logic
 ```
 
@@ -47,11 +47,11 @@ simulation interface:
 Gazebo <-> JSON <-> ArduCopter
 ```
 
-CompanionLab не підключається до цього JSON. Його production boundary
+OnboardAutonomy не підключається до цього JSON. Його production boundary
 залишається MAVLink:
 
 ```text
-ArduCopter <-> MAVProxy <-> MAVLink UDP 14550 <-> CompanionLab
+ArduCopter <-> MAVProxy <-> MAVLink UDP 14550 <-> OnboardAutonomy
 ```
 
 Це важлива архітектурна межа: зміна physics simulator не повинна
@@ -77,7 +77,7 @@ Pin потрібен, щоб через кілька місяців installer н
 
 ## Де лежать зовнішні файли
 
-Репозиторій CompanionLab не містить копії Gazebo plugin:
+Репозиторій OnboardAutonomy не містить копії Gazebo plugin:
 
 ```text
 ~/src/ardupilot_gazebo
@@ -132,7 +132,7 @@ mavproxy.py --out=udp:127.0.0.1:14550 --non-interactive
 wrapper, а JSON backend, default parameters і MAVLink routing
 залишилися тими самими.
 
-`scripts/run_companionlab_sitl.sh` не змінювався. Для CompanionLab
+`scripts/run_onboard_autonomy_sitl.sh` не змінювався. Для OnboardAutonomy
 джерело MAVLink залишається UDP `14550`.
 
 ## Цікавий Bash-синтаксис
@@ -193,12 +193,12 @@ gz sim server
 gz sim gui
 arducopter --model JSON
 mavproxy.py
-companionlab
+onboard_autonomy
 ```
 
 One-click launcher також перевірено після повного cleanup попереднього
-stack. `StartCompanionLabGazeboDemo.cmd` з нуля сам відкрив Gazebo,
-ArduCopter/MAVProxy та CompanionLab; ручного проміжного запуску не
+stack. `StartOnboardAutonomyGazeboDemo.cmd` з нуля сам відкрив Gazebo,
+ArduCopter/MAVProxy та OnboardAutonomy; ручного проміжного запуску не
 знадобилося.
 
 Активні runtime endpoints:
@@ -206,7 +206,7 @@ ArduCopter/MAVProxy та CompanionLab; ручного проміжного за�
 ```text
 Gazebo JSON plugin: UDP 9002
 ArduCopter MAVLink: TCP 5760
-CompanionLab MAVLink: UDP 14550
+OnboardAutonomy MAVLink: UDP 14550
 Gazebo camera H264: UDP 5600
 ```
 
