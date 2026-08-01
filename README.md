@@ -18,22 +18,40 @@ is performed on a propeller-free bench.
 
 ```mermaid
 flowchart LR
+    Camera["Camera Module 3"]
+
     subgraph Pi["Raspberry Pi 5"]
         Runtime["OnboardAutonomy"]
     end
-    Camera["Camera Module 3"] --> Runtime
-    Runtime --> Pixhawk["Pixhawk 6C / real drone"]
-    Runtime --> SITL["ArduPilot SITL / simulation"]
+
+    subgraph FC["Pixhawk 6C"]
+        Firmware["ArduPilot firmware"]
+    end
+
+    Camera --> Runtime
+    Runtime --> Firmware
+    Runtime --> SITL["ArduPilot SITL"]
     SITL <--> Gazebo["Gazebo Harmonic"]
+
+    classDef hardware fill:#FFF3C4,stroke:#B7791F,color:#3D2C00,stroke-width:2px
+    classDef software fill:#DCEBFF,stroke:#2563EB,color:#0F2A52,stroke-width:2px
+    class Camera hardware
+    class Runtime,Firmware,SITL,Gazebo software
+    style Pi fill:#FFF8DE,stroke:#B7791F,stroke-width:2px,color:#3D2C00
+    style FC fill:#FFF8DE,stroke:#B7791F,stroke-width:2px,color:#3D2C00
 ```
+
+Amber containers and nodes represent physical hardware; blue nodes
+represent software.
 
 ArduPilot remains responsible for stabilization and flight control.
 OnboardAutonomy owns companion-computer concerns: telemetry, health,
 scenario orchestration, vision, diagnostics, and future landing-target
 guidance. The diagram shows the target deployment: camera frames enter
-OnboardAutonomy on Raspberry Pi 5, which sends guidance through either a
-physical Pixhawk or ArduPilot SITL. In simulation, the same runtime can run
-on the Ubuntu/WSL development host instead of the Pi.
+OnboardAutonomy on Raspberry Pi 5, which sends guidance through either
+ArduPilot firmware on a physical Pixhawk or ArduPilot SITL. In simulation,
+the same runtime can run on the Ubuntu/WSL development host instead of the
+Pi.
 
 ## Capabilities
 
