@@ -1,9 +1,11 @@
 #include "TestCases.hpp"
 
+#include "onboard_autonomy/adapters/camera/GStreamerCameraSource.hpp"
 #include "onboard_autonomy/adapters/camera/RpicamCameraSource.hpp"
 #include "onboard_autonomy/application/AppSnapshot.hpp"
 #include "onboard_autonomy/application/CameraMonitor.hpp"
 
+#include <algorithm>
 #include <chrono>
 #include <cstdint>
 #include <optional>
@@ -206,6 +208,43 @@ void metadata_parser_accepts_only_frame_wall_clock() {
     );
 }
 
+void gstreamer_pipeline_is_explicit_and_machine_readable() {
+    const auto arguments =
+        onboard_autonomy::adapters::camera::
+            make_gstreamer_camera_arguments(
+                {
+                    .width = 640,
+                    .height = 480,
+                    .frames_per_second = 30,
+                    .udp_port = 5601,
+                    .jitter_latency_ms = 75,
+                    .command = "gst-launch-test",
+                }
+            );
+    const auto contains = [&arguments](const std::string& value) {
+        return std::find(
+            arguments.begin(),
+            arguments.end(),
+            value
+        ) != arguments.end();
+    };
+    require(
+        arguments.front() == "gst-launch-test" &&
+            contains("port=5601") &&
+            contains("latency=75") &&
+            contains(
+                "caps=application/x-rtp,media=video,"
+                "clock-rate=90000,encoding-name=H264,payload=96"
+            ) &&
+            contains(
+                "video/x-raw,format=I420,width=640,height=480,"
+                "framerate=30/1"
+            ) &&
+            contains("fdsink"),
+        "GStreamer camera pipeline must decode RTP/H.264 into I420"
+    );
+}
+
 void monitor_forwards_the_processed_frame_to_preview() {
     FakeCameraSource source;
     FakeTargetDetector detector;
@@ -276,6 +315,7 @@ void app_snapshot_json_preserves_vehicle_and_adds_camera() {
 void run_camera_monitor_tests() {
     monitor_calculates_frame_rate_latency_and_gaps();
     metadata_parser_accepts_only_frame_wall_clock();
+    gstreamer_pipeline_is_explicit_and_machine_readable();
     monitor_forwards_the_processed_frame_to_preview();
     app_snapshot_json_preserves_vehicle_and_adds_camera();
 }

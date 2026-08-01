@@ -138,6 +138,7 @@ target_link_libraries(
 
 add_library(
     onboard_autonomy_camera_adapter
+    src/adapters/camera/GStreamerCameraSource.cpp
     src/adapters/camera/RpicamCameraSource.cpp
 )
 target_link_libraries(
