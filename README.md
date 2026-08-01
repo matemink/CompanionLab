@@ -168,4 +168,3 @@ validated in simulation before hardware-in-the-loop testing.
 - [Raspberry Pi 5 and Pixhawk 6C bench](docs/raspberry-pi-5-bench.md)
 - [Camera calibration workflow](docs/learning/29-camera-calibration.uk.md)
 - [Roadmap](docs/roadmap.md)
-- [Ukrainian learning track](docs/learning/README.uk.md)
