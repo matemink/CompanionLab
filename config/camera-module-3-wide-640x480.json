@@ -1,0 +1,279 @@
+{
+  "camera": {
+    "focus_mode": "manual",
+    "height": 480,
+    "lens_position": "default",
+    "model": "imx708_wide",
+    "width": 640
+  },
+  "created_at_utc": "2026-08-01T13:48:28.453041+00:00",
+  "distortion": {
+    "coefficient_order": [
+      "k1",
+      "k2",
+      "p1",
+      "p2",
+      "k3"
+    ],
+    "coefficients": [
+      0.03619207570705001,
+      -0.29695439282829167,
+      -0.0317304913857726,
+      -0.02031687845495864,
+      0.4749880305495665
+    ]
+  },
+  "intrinsics": {
+    "camera_matrix": [
+      [
+        543.625989446945,
+        0.0,
+        282.09086407254074
+      ],
+      [
+        0.0,
+        575.80897433143,
+        210.35524107629166
+      ],
+      [
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "cx_px": 282.09086407254074,
+    "cy_px": 210.35524107629166,
+    "fx_px": 543.625989446945,
+    "fy_px": 575.80897433143
+  },
+  "model": "opencv_pinhole_brown_conrady_5",
+  "pattern": {
+    "inner_corners_columns": 9,
+    "inner_corners_rows": 6,
+    "square_size_m": 0.02375
+  },
+  "quality": {
+    "checks": {
+      "every_view_error_within_limit": true,
+      "minimum_views_reached": true,
+      "rms_error_within_limit": true
+    },
+    "maximum_allowed_rms_error_px": 1.0,
+    "maximum_allowed_view_error_px": 1.5,
+    "maximum_view_rms_error_px": 1.0224047899246216,
+    "mean_view_rms_error_px": 0.6535381972789764,
+    "rms_reprojection_error_px": 0.672817073233076
+  },
+  "result": "PASS",
+  "schema_version": 1,
+  "tool": {
+    "name": "OnboardAutonomy camera calibration",
+    "opencv_version": "4.13.0"
+  },
+  "views": {
+    "accepted": [
+      {
+        "file": "view000.jpg",
+        "rms_reprojection_error_px": 0.6434544920921326,
+        "sha256": "9c8be24da969fe860779b2efa8b1ed9474e4301fbe906747fccf9ff227802c8e"
+      },
+      {
+        "file": "view001.jpg",
+        "rms_reprojection_error_px": 0.665424108505249,
+        "sha256": "3852367d94e69f48f5edc1359459150234c135004f6c30b12b0505385cf6d3d6"
+      },
+      {
+        "file": "view002.jpg",
+        "rms_reprojection_error_px": 0.6461164951324463,
+        "sha256": "1dfa19d6e81aad488d5487053e51b93c697fe30011f7ccd26309948503863f1e"
+      },
+      {
+        "file": "view003.jpg",
+        "rms_reprojection_error_px": 0.647475004196167,
+        "sha256": "cf4da33f9b9a7a4eb556bbe8bb07add3bb4708dc3f7291f7ab5c15bed28bf2f4"
+      },
+      {
+        "file": "view004.jpg",
+        "rms_reprojection_error_px": 0.647909939289093,
+        "sha256": "a3fc0f12003780444c270a5fe05dbaaf7d74eea47208da23e9e728a5f27d20c1"
+      },
+      {
+        "file": "view005.jpg",
+        "rms_reprojection_error_px": 0.6477370262145996,
+        "sha256": "8778dd549af13c464d082697ba59152ab0ab954f479a31612f1b061683a9f495"
+      },
+      {
+        "file": "view006.jpg",
+        "rms_reprojection_error_px": 0.6591706871986389,
+        "sha256": "67fe5481c5d820a2ae63dc1180fde5b7a094b60f1dd38850918ebc4b1d500a34"
+      },
+      {
+        "file": "view007.jpg",
+        "rms_reprojection_error_px": 0.6513540148735046,
+        "sha256": "edfafc8b91c804569658a9cd7a0e053d7fe45883fd2035222f28872f8b9e79dc"
+      },
+      {
+        "file": "view008.jpg",
+        "rms_reprojection_error_px": 0.6939678192138672,
+        "sha256": "d9ca98a51288c13b220f619a4943ccf91fef3aafb5577d2918b50986ef496265"
+      },
+      {
+        "file": "view009.jpg",
+        "rms_reprojection_error_px": 0.6523658037185669,
+        "sha256": "c84a236b303c15383d93bbe5f6ef88e479be84a7b7f89959faa025192128e877"
+      },
+      {
+        "file": "view010.jpg",
+        "rms_reprojection_error_px": 0.48786723613739014,
+        "sha256": "b3cb6e5a10ccd29d5d315d3878f20820e6c278a0b80d5bdce40e38222fafe311"
+      },
+      {
+        "file": "view011.jpg",
+        "rms_reprojection_error_px": 0.5027821063995361,
+        "sha256": "3a9d82984dd1ff23ebc4d759cbb6a843f3f20196ec0cee6f06b08e3226f76452"
+      },
+      {
+        "file": "view012.jpg",
+        "rms_reprojection_error_px": 0.5007997155189514,
+        "sha256": "40abf979db440b12b7f581bca1d98ab010f3d276dc0bdc9c59d9279dc449b000"
+      },
+      {
+        "file": "view013.jpg",
+        "rms_reprojection_error_px": 0.6216754913330078,
+        "sha256": "180a32d123659313a89a9e90004b9d8fe54d3c171d039f09839d748dac1e0628"
+      },
+      {
+        "file": "view014.jpg",
+        "rms_reprojection_error_px": 0.6056732535362244,
+        "sha256": "4693b319a383b442e9502c1c07713e9d2324d710617b7f52c2eee1432716fa41"
+      },
+      {
+        "file": "view015.jpg",
+        "rms_reprojection_error_px": 0.6084879040718079,
+        "sha256": "225054282e0b433a518ab29601fbbd60bcb321b372b59a30b757118b7d2aff4a"
+      },
+      {
+        "file": "view016.jpg",
+        "rms_reprojection_error_px": 0.589971125125885,
+        "sha256": "d6d9e52ed330ae9be6af2166f2299cc24097d8ca44e9019b7364eb2165804b33"
+      },
+      {
+        "file": "view017.jpg",
+        "rms_reprojection_error_px": 0.5835664868354797,
+        "sha256": "2bcc02d2eb480e29ef04e3b9ccff61552027f19bb225046aa177c5f4045735a3"
+      },
+      {
+        "file": "view018.jpg",
+        "rms_reprojection_error_px": 0.5541112422943115,
+        "sha256": "29850d152bdc4b6d71c915eb23e248eb14e84dd4b1f471d3cd794e25d7f2fc8d"
+      },
+      {
+        "file": "view019.jpg",
+        "rms_reprojection_error_px": 0.5213461518287659,
+        "sha256": "6c97e16e345ae811a741c47672e369af141e45c049abd2797e8c0e64688c8c2c"
+      },
+      {
+        "file": "view020.jpg",
+        "rms_reprojection_error_px": 0.5461946129798889,
+        "sha256": "a56bb6c86a988ec500959382c85a717a585e7e732670385ac54ee63807c49db0"
+      },
+      {
+        "file": "view021.jpg",
+        "rms_reprojection_error_px": 0.4869269132614136,
+        "sha256": "60b6325aa61faefea1cecdabfc6b69b61366a8496cd58f68cc9a2cf4ba5423c6"
+      },
+      {
+        "file": "view022.jpg",
+        "rms_reprojection_error_px": 0.5205570459365845,
+        "sha256": "5596e40bb2885015e3599dcbebbbb629bb6afd5bf72cf99f90982da99ab7638b"
+      },
+      {
+        "file": "view023.jpg",
+        "rms_reprojection_error_px": 0.4849390685558319,
+        "sha256": "4370656f5e584e3ea4643afabdac5659121851d91e7552004b8c7ded32bc941a"
+      },
+      {
+        "file": "view024.jpg",
+        "rms_reprojection_error_px": 0.4935847520828247,
+        "sha256": "fa6b575c5fad557593ba3f2b4d163f9f1f9677426b81e4c7e4af04afe6fbee74"
+      },
+      {
+        "file": "view025.jpg",
+        "rms_reprojection_error_px": 0.516802966594696,
+        "sha256": "c17286153fb0d23e6d770a1960c069e4605cdfbc328fb365c453d19839d78945"
+      },
+      {
+        "file": "view026.jpg",
+        "rms_reprojection_error_px": 0.5171133875846863,
+        "sha256": "0b49af990e0896f6e814277383aa9298314cbaacae3db86dc1ed34e1ef08fa75"
+      },
+      {
+        "file": "view027.jpg",
+        "rms_reprojection_error_px": 0.4945097267627716,
+        "sha256": "5ed0db842a9368c2edcec2b9c1799d43d970cdeeec5bd477d3c1fee30e43a627"
+      },
+      {
+        "file": "view028.jpg",
+        "rms_reprojection_error_px": 0.4957774579524994,
+        "sha256": "e1dabb343b9484b7c6520c05dd3f7a5ed45b8133f270f3213c2b6bcaa0428481"
+      },
+      {
+        "file": "view029.jpg",
+        "rms_reprojection_error_px": 0.5065593719482422,
+        "sha256": "ad8ff6d66488354e81b23203d739e201d03b776b51365ace44c09b7a5be63aee"
+      },
+      {
+        "file": "view031.jpg",
+        "rms_reprojection_error_px": 0.8708959817886353,
+        "sha256": "87a53069642245861da230d0d03aac6a5993f87d7f5a9375020704330e85d838"
+      },
+      {
+        "file": "view032.jpg",
+        "rms_reprojection_error_px": 0.904109537601471,
+        "sha256": "17cd5cdc4b4fc6336a7400468d766067c1cf563a3d9e7b7034070b8ce92874bd"
+      },
+      {
+        "file": "view033.jpg",
+        "rms_reprojection_error_px": 0.9123737215995789,
+        "sha256": "16fb89c849e2d140d0b1c22954d0c2f5650cb447a888f42b74084048c3ff5e13"
+      },
+      {
+        "file": "view034.jpg",
+        "rms_reprojection_error_px": 0.9127658009529114,
+        "sha256": "782be7aa790ac4455e4f6dbbeef67e19bc37fe6b021c5dbcf036634fccfe5513"
+      },
+      {
+        "file": "view035.jpg",
+        "rms_reprojection_error_px": 0.9212149977684021,
+        "sha256": "107c76b34a3d5ce14715f533237b6215223a098baf82d3f7dfcfd66856eba45a"
+      },
+      {
+        "file": "view036.jpg",
+        "rms_reprojection_error_px": 0.9033718705177307,
+        "sha256": "814f12fd2cca1be15567ebb2d99853114db08f617d8cede167161642fae11022"
+      },
+      {
+        "file": "view037.jpg",
+        "rms_reprojection_error_px": 0.9173165559768677,
+        "sha256": "091f962be8013445ae74c325afc636e803675dee6a4b8ad1a4621fab43d880c0"
+      },
+      {
+        "file": "view038.jpg",
+        "rms_reprojection_error_px": 0.9293150305747986,
+        "sha256": "fd110244c77884fea0baae086862c7ee76331c36d15f7b411fbb87a17c6be515"
+      },
+      {
+        "file": "view039.jpg",
+        "rms_reprojection_error_px": 1.0224047899246216,
+        "sha256": "2f4e75135f5d296b2ab21674a681fb1fe0bfdd8885f3e7fec43af77b02263efa"
+      }
+    ],
+    "provided": 40,
+    "rejected": [
+      {
+        "file": "view030.jpg",
+        "reason": "complete checkerboard not found"
+      }
+    ]
+  }
+}

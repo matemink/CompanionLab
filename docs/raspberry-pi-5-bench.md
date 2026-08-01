@@ -182,6 +182,33 @@ ONBOARD_AUTONOMY_CAMERA_PREVIEW_ENABLED=0 \
   bin/run_onboard_autonomy_pi.sh
 ```
 
+## Camera calibration
+
+Print `assets/calibration/checkerboard-9x6-25mm-a4.svg` at 100% scale and
+verify its 100 mm reference line with a ruler. Then capture the calibration
+views on the Raspberry Pi:
+
+```bash
+python3 -m venv .venv
+.venv/bin/python -m pip install -r python/requirements.txt
+ONBOARD_AUTONOMY_PYTHON=.venv/bin/python \
+  bash scripts/capture_camera_calibration.sh
+```
+
+In the extracted ARM64 package, use its root-level `requirements.txt`
+instead of `python/requirements.txt`.
+
+The capture uses `640x480` and the same fixed `manual/default` hyperfocal
+lens policy as the runtime. The analyzer accepts only complete
+checkerboard views, calculates pinhole intrinsics and Brown-Conrady
+distortion, records input hashes and per-view reprojection errors, and
+fails when the quality gate is not met. Do not commit guessed or generic
+Camera Module 3 intrinsics as if they belonged to the physical camera.
+
+See the
+[camera calibration learning note](learning/29-camera-calibration.uk.md)
+for the geometry, quality thresholds, and code path.
+
 ## Windows launcher
 
 `StartOnboardAutonomyPixhawk.cmd` opens the Raspberry Pi runtime over SSH

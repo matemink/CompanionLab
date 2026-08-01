@@ -77,7 +77,8 @@ not stall camera or scenario polling.
 
 The application-owned `CameraSource` port returns typed YUV420 frames
 without exposing Linux processes or `rpicam` arguments. The Linux
-`RpicamCameraSource` adapter starts `rpicam-vid`, receives fixed-size raw
+`RpicamCameraSource` adapter starts `rpicam-vid` with a fixed manual
+hyperfocal lens position, receives fixed-size raw
 frames through one pipe, and receives per-frame metadata through another.
 
 `FrameWallClock` is paired with each completed frame. `CameraMonitor`

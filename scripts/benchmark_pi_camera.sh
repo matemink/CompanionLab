@@ -98,7 +98,8 @@ rpicam-vid \
     --save-pts "${pts_file}" \
     --metadata "${metadata_file}" \
     --metadata-format json \
-    --autofocus-mode continuous \
+    --autofocus-mode manual \
+    --lens-position default \
     >"${capture_log}" 2>&1 &
 camera_pid=$!
 

@@ -317,7 +317,9 @@ private:
             "--metadata-format",
             "json",
             "--autofocus-mode",
-            "continuous",
+            "manual",
+            "--lens-position",
+            config_.lens_position,
         };
     }
 
