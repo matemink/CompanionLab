@@ -166,4 +166,3 @@ validated in simulation before hardware-in-the-loop testing.
 - [Gazebo simulation runbook](docs/simulation.md)
 - [Raspberry Pi 5 and Pixhawk 6C bench](docs/raspberry-pi-5-bench.md)
 - [Roadmap](docs/roadmap.md)
-- [Ukrainian learning track](docs/learning/README.uk.md)
