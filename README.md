@@ -18,21 +18,22 @@ is performed on a propeller-free bench.
 
 ```mermaid
 flowchart LR
-    Camera["Camera Module 3"] --> Runtime["OnboardAutonomy"]
-    Runtime <--> SITL["ArduPilot SITL"]
-    Runtime <--> Pixhawk["Pixhawk 6C"]
+    subgraph Pi["Raspberry Pi 5"]
+        Runtime["OnboardAutonomy"]
+    end
+    Camera["Camera Module 3"] --> Runtime
+    Runtime --> Pixhawk["Pixhawk 6C / real drone"]
+    Runtime --> SITL["ArduPilot SITL / simulation"]
     SITL <--> Gazebo["Gazebo Harmonic"]
-    Runtime --> State["Current vehicle state"]
-    State --> Console["Operator terminal"]
-    State --> JSON["JSON snapshots"]
 ```
 
 ArduPilot remains responsible for stabilization and flight control.
 OnboardAutonomy owns companion-computer concerns: telemetry, health,
 scenario orchestration, vision, diagnostics, and future landing-target
-guidance. It connects to either SITL or a physical Pixhawk over MAVLink.
-`AppSnapshot` is the shared read-only state rendered as a terminal view or
-serialized as JSON for automation and logs.
+guidance. The diagram shows the target deployment: camera frames enter
+OnboardAutonomy on Raspberry Pi 5, which sends guidance through either a
+physical Pixhawk or ArduPilot SITL. In simulation, the same runtime can run
+on the Ubuntu/WSL development host instead of the Pi.
 
 ## Capabilities
 
