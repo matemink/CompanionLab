@@ -182,6 +182,27 @@ ONBOARD_AUTONOMY_CAMERA_PREVIEW_ENABLED=0 \
   bin/run_onboard_autonomy_pi.sh
 ```
 
+## Windows launcher
+
+`StartOnboardAutonomyPixhawk.cmd` opens the Raspberry Pi runtime over SSH
+and then opens the local camera-preview page. Machine-specific values
+belong in the ignored `OnboardAutonomyLocal.cmd` file at the repository
+root:
+
+```bat
+set "ONBOARD_AUTONOMY_PI_HOST=companionpi.local"
+set "ONBOARD_AUTONOMY_PI_USER=companion"
+set "ONBOARD_AUTONOMY_SSH_KEY=%USERPROFILE%\.ssh\onboard_autonomy_ed25519"
+set "ONBOARD_AUTONOMY_REMOTE_ROOT=/home/companion/onboard_autonomy-pi5"
+set "ONBOARD_AUTONOMY_SERIAL=/dev/serial/by-id/<your-pixhawk-device>"
+```
+
+The launcher lets the Pi auto-detect one serial device when
+`ONBOARD_AUTONOMY_SERIAL` is unset. It also reads an existing ignored
+`CompanionLabLocal.cmd` and maps its legacy variables during the rename
+transition; this compatibility path is not part of the public runtime
+configuration.
+
 ## UART milestone
 
 The Pixhawk TELEM port uses serial signaling and requires correct voltage,
