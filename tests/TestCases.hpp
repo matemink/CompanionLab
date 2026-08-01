@@ -10,3 +10,4 @@ void run_scenario_runner_tests();
 void run_board_type_catalog_tests();
 void run_camera_monitor_tests();
 void run_vision_monitor_tests();
+void run_camera_calibration_loader_tests();
