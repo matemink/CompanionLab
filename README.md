@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/matemink/OnboardAutonomy/actions/workflows/ci.yml/badge.svg)](https://github.com/matemink/OnboardAutonomy/actions/workflows/ci.yml)
 [![C++20](https://img.shields.io/badge/C%2B%2B-20-00599C.svg)](https://isocpp.org/)
-[![Platform](https://img.shields.io/badge/platform-Linux%20x86__64%20%7C%20ARM64-FCC624.svg)](https://www.raspberrypi.com/)
+[![Platform](https://img.shields.io/badge/Platform-Linux%20x86__64%20%7C%20ARM64-FCC624.svg)](https://www.raspberrypi.com/)
 
 OnboardAutonomy is a C++20 onboard autonomy runtime for ArduPilot-based
 UAVs. It runs against ArduCopter SITL or a physical Pixhawk, handles
