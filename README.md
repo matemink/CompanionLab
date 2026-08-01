@@ -18,19 +18,21 @@ is performed on a propeller-free bench.
 
 ```mermaid
 flowchart LR
-    Camera["Camera Module 3"] -->|"YUV420 frames"| Runtime["OnboardAutonomy C++20"]
-    Runtime <-->|"MAVLink commands and telemetry"| ArduPilot["ArduPilot: SITL or Pixhawk 6C"]
-    ArduPilot <-->|"SITL sensors and actuators"| Gazebo["Gazebo Harmonic"]
-    Runtime -->|"Builds current state"| Snapshot["Current vehicle state: AppSnapshot"]
-    Snapshot -->|"Human-readable view"| Console["Operator terminal (TUI)"]
-    Snapshot -->|"Tests and logging"| JSON["JSON snapshots"]
+    Camera["Camera Module 3"] --> Runtime["OnboardAutonomy"]
+    Runtime <--> SITL["ArduPilot SITL"]
+    Runtime <--> Pixhawk["Pixhawk 6C"]
+    SITL <--> Gazebo["Gazebo Harmonic"]
+    Runtime --> State["Current vehicle state"]
+    State --> Console["Operator terminal"]
+    State --> JSON["JSON snapshots"]
 ```
 
 ArduPilot remains responsible for stabilization and flight control.
 OnboardAutonomy owns companion-computer concerns: telemetry, health,
 scenario orchestration, vision, diagnostics, and future landing-target
-guidance. `AppSnapshot` is the shared read-only state: the TUI renders it
-for an operator, while JSON exposes the same facts to automation and logs.
+guidance. It connects to either SITL or a physical Pixhawk over MAVLink.
+`AppSnapshot` is the shared read-only state rendered as a terminal view or
+serialized as JSON for automation and logs.
 
 ## Capabilities
 
