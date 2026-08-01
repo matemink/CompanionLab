@@ -1,6 +1,6 @@
 # Architecture
 
-CompanionLab keeps flight-controller I/O, protocol decoding, state, vision,
+OnboardAutonomy keeps flight-controller I/O, protocol decoding, state, vision,
 and test orchestration separate.
 
 ```mermaid
@@ -40,24 +40,24 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-    Domain["companionlab_domain"]
-    TransportPort["companionlab_transport_port"]
-    CameraPort["companionlab_camera_port"]
-    PreviewPort["companionlab_camera_preview_port"]
-    DetectorPort["companionlab_target_detector_port"]
-    Mavlink["companionlab_mavlink_adapter"] --> Domain
-    Application["companionlab_application"] --> Domain
+    Domain["onboard_autonomy_domain"]
+    TransportPort["onboard_autonomy_transport_port"]
+    CameraPort["onboard_autonomy_camera_port"]
+    PreviewPort["onboard_autonomy_camera_preview_port"]
+    DetectorPort["onboard_autonomy_target_detector_port"]
+    Mavlink["onboard_autonomy_mavlink_adapter"] --> Domain
+    Application["onboard_autonomy_application"] --> Domain
     Application --> Mavlink
     Application --> TransportPort
     Application --> CameraPort
     Application --> PreviewPort
     Application --> DetectorPort
-    Transport["companionlab_transport_adapter"] --> TransportPort
-    Camera["companionlab_camera_adapter"] --> CameraPort
-    Preview["companionlab_camera_preview_adapter"] --> PreviewPort
-    AprilTag["companionlab_apriltag_adapter"] --> DetectorPort
-    Presentation["companionlab_console_presentation"] --> Application
-    Executable["companionlab"] --> Application
+    Transport["onboard_autonomy_transport_adapter"] --> TransportPort
+    Camera["onboard_autonomy_camera_adapter"] --> CameraPort
+    Preview["onboard_autonomy_camera_preview_adapter"] --> PreviewPort
+    AprilTag["onboard_autonomy_apriltag_adapter"] --> DetectorPort
+    Presentation["onboard_autonomy_console_presentation"] --> Application
+    Executable["onboard_autonomy"] --> Application
     Executable --> Transport
     Executable --> Presentation
 ```
@@ -109,7 +109,7 @@ components are ignored when selecting the vehicle identity.
 ### MAVLink encoder
 
 The encoder uses the same generated MAVLink headers to create outbound
-frames. CompanionLab discovers the autopilot system ID, uses component ID
+frames. OnboardAutonomy discovers the autopilot system ID, uses component ID
 `191`, and broadcasts an onboard-controller heartbeat at 1 Hz.
 
 ### Vehicle state

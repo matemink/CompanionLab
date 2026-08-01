@@ -2,8 +2,8 @@
 
 set -euo pipefail
 
-readonly udp_port="${COMPANIONLAB_CAMERA_UDP_PORT:-5600}"
-readonly enable_topic="${COMPANIONLAB_CAMERA_ENABLE_TOPIC:-/world/iris_runway/model/iris_with_gimbal/model/gimbal/link/pitch_link/sensor/camera/image/enable_streaming}"
+readonly udp_port="${ONBOARD_AUTONOMY_CAMERA_UDP_PORT:-5600}"
+readonly enable_topic="${ONBOARD_AUTONOMY_CAMERA_ENABLE_TOPIC:-/world/iris_runway/model/iris_with_gimbal/model/gimbal/link/pitch_link/sensor/camera/image/enable_streaming}"
 
 export GZ_VERSION="${GZ_VERSION:-harmonic}"
 

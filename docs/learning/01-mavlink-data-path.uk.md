@@ -21,7 +21,7 @@ Pixhawk або SITL
 ## 1. Transport схожий на InputStream, але не зовсім
 
 Файл:
-`include/companionlab/application/ports/Transport.hpp`
+`include/onboard_autonomy/application/ports/Transport.hpp`
 
 ```cpp
 virtual std::size_t read(std::span<std::uint8_t> destination) = 0;
@@ -97,7 +97,7 @@ UDP зберігає межі datagram, але одна datagram теж може
 
 Файли:
 
-- `include/companionlab/adapters/mavlink/MavlinkDecoder.hpp`
+- `include/onboard_autonomy/adapters/mavlink/MavlinkDecoder.hpp`
 - `src/adapters/mavlink/MavlinkDecoder.cpp`
 
 Decoder зберігає між викликами:
@@ -233,7 +233,7 @@ ctest --test-dir build --output-on-failure
 Потім у двох terminal:
 
 ```bash
-./build/companionlab --udp-port 14550
+./build/onboard_autonomy --udp-port 14550
 ```
 
 ```bash

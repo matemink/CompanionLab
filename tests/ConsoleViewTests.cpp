@@ -1,7 +1,7 @@
 #include "TestCases.hpp"
 
-#include "companionlab/adapters/ardupilot/BoardTypeCatalog.hpp"
-#include "companionlab/presentation/console/ConsoleView.hpp"
+#include "onboard_autonomy/adapters/ardupilot/BoardTypeCatalog.hpp"
+#include "onboard_autonomy/presentation/console/ConsoleView.hpp"
 
 #include <chrono>
 #include <optional>
@@ -18,7 +18,7 @@ void require(const bool condition, const std::string& message) {
 }
 
 void healthy_snapshot_is_human_readable() {
-    companionlab::application::AppSnapshot app_snapshot;
+    onboard_autonomy::application::AppSnapshot app_snapshot;
     auto& snapshot = app_snapshot.vehicle;
     snapshot.connected = true;
     snapshot.gps_ready = true;
@@ -38,7 +38,7 @@ void healthy_snapshot_is_human_readable() {
     snapshot.battery_current_a = 0.0;
     snapshot.battery_remaining_pct = 100;
     snapshot.autopilot_metadata =
-        companionlab::domain::AutopilotMetadata{
+        onboard_autonomy::domain::AutopilotMetadata{
             .firmware_major = 4,
             .firmware_minor = 6,
             .firmware_patch = 3,
@@ -50,7 +50,7 @@ void healthy_snapshot_is_human_readable() {
         };
     app_snapshot.companion_heartbeat_active = true;
     app_snapshot.telemetry.state =
-        companionlab::application::TelemetrySetupState::active;
+        onboard_autonomy::application::TelemetrySetupState::active;
     app_snapshot.telemetry.completed_requests = 6;
     app_snapshot.telemetry.total_requests = 6;
 
@@ -58,9 +58,9 @@ void healthy_snapshot_is_human_readable() {
         "Reserved \"PX4 [BL] FMU v6C.x\" 56\n"
     };
     const auto board_catalog =
-        companionlab::adapters::ardupilot::
+        onboard_autonomy::adapters::ardupilot::
             BoardTypeCatalog::from_stream(board_table);
-    const auto output = companionlab::presentation::console::render_console(
+    const auto output = onboard_autonomy::presentation::console::render_console(
         app_snapshot,
         "udp://127.0.0.1:14550",
         false,
@@ -104,8 +104,8 @@ void healthy_snapshot_is_human_readable() {
 }
 
 void disconnected_snapshot_is_waiting() {
-    const companionlab::application::AppSnapshot snapshot;
-    const auto output = companionlab::presentation::console::render_console(
+    const onboard_autonomy::application::AppSnapshot snapshot;
+    const auto output = onboard_autonomy::presentation::console::render_console(
         snapshot,
         "udp://127.0.0.1:14550",
         false
@@ -118,32 +118,32 @@ void disconnected_snapshot_is_waiting() {
 }
 
 void command_bus_shows_both_directions() {
-    companionlab::application::AppSnapshot snapshot;
+    onboard_autonomy::application::AppSnapshot snapshot;
     snapshot.motion_commands_allowed = true;
     snapshot.scenario.phase =
-        companionlab::application::ScenarioRunnerPhase::executing;
+        onboard_autonomy::application::ScenarioRunnerPhase::executing;
     snapshot.scenario.scenario_id =
-        companionlab::application::ScenarioId::square_patrol;
+        onboard_autonomy::application::ScenarioId::square_patrol;
     snapshot.scenario.scenario_name = "SQUARE PATROL";
     snapshot.scenario.step_name = "MOVE EAST";
     snapshot.scenario.detail = "EAST: 4.00 m remaining";
     snapshot.scenario.current_step = 5;
     snapshot.scenario.total_steps = 9;
     snapshot.elapsed = std::chrono::milliseconds(1200);
-    snapshot.tx_activity = companionlab::application::LinkActivity{
+    snapshot.tx_activity = onboard_autonomy::application::LinkActivity{
         .sequence = 1,
         .observed_at = std::chrono::milliseconds(1100),
         .message_name = "COMMAND_LONG",
         .detail = "SET_MODE",
     };
-    snapshot.rx_activity = companionlab::application::LinkActivity{
+    snapshot.rx_activity = onboard_autonomy::application::LinkActivity{
         .sequence = 2,
         .observed_at = std::chrono::milliseconds(1100),
         .message_name = "COMMAND_ACK",
         .detail = "SET_MODE ACCEPTED",
     };
 
-    const auto output = companionlab::presentation::console::render_console(
+    const auto output = onboard_autonomy::presentation::console::render_console(
         snapshot,
         "udp://127.0.0.1:14550",
         false
@@ -180,7 +180,7 @@ void command_bus_shows_both_directions() {
 
     snapshot.elapsed = std::chrono::milliseconds(1320);
     const auto dim_pulse =
-        companionlab::presentation::console::render_console(
+        onboard_autonomy::presentation::console::render_console(
             snapshot,
             "udp://127.0.0.1:14550",
             false
@@ -193,7 +193,7 @@ void command_bus_shows_both_directions() {
 
     snapshot.elapsed = std::chrono::milliseconds(1800);
     const auto stale =
-        companionlab::presentation::console::render_console(
+        onboard_autonomy::presentation::console::render_console(
             snapshot,
             "udp://127.0.0.1:14550",
             false
@@ -206,8 +206,8 @@ void command_bus_shows_both_directions() {
 }
 
 void colors_group_related_elements() {
-    const companionlab::application::AppSnapshot snapshot;
-    const auto output = companionlab::presentation::console::render_console(
+    const onboard_autonomy::application::AppSnapshot snapshot;
+    const auto output = onboard_autonomy::presentation::console::render_console(
         snapshot,
         "udp://127.0.0.1:14550",
         true
@@ -232,16 +232,16 @@ void colors_group_related_elements() {
 }
 
 void long_mavlink_message_names_are_safely_clipped() {
-    companionlab::application::AppSnapshot snapshot;
+    onboard_autonomy::application::AppSnapshot snapshot;
     snapshot.elapsed = std::chrono::milliseconds(1200);
-    snapshot.tx_activity = companionlab::application::LinkActivity{
+    snapshot.tx_activity = onboard_autonomy::application::LinkActivity{
         .sequence = 1,
         .observed_at = std::chrono::milliseconds(1200),
         .message_name =
             "OPEN_DRONE_ID_MESSAGE_PACK_REGISTRATION",
         .detail = "TRANSMITTED",
     };
-    snapshot.rx_activity = companionlab::application::LinkActivity{
+    snapshot.rx_activity = onboard_autonomy::application::LinkActivity{
         .sequence = 2,
         .observed_at = std::chrono::milliseconds(1200),
         .message_name =
@@ -249,7 +249,7 @@ void long_mavlink_message_names_are_safely_clipped() {
         .detail = "RECEIVED",
     };
 
-    const auto output = companionlab::presentation::console::render_console(
+    const auto output = onboard_autonomy::presentation::console::render_console(
         snapshot,
         "serial:///dev/ttyACM0?baud=115200",
         false
@@ -264,10 +264,10 @@ void long_mavlink_message_names_are_safely_clipped() {
 }
 
 void camera_pipeline_metrics_are_visible() {
-    companionlab::application::AppSnapshot snapshot;
-    snapshot.camera = companionlab::application::CameraSnapshot{
+    onboard_autonomy::application::AppSnapshot snapshot;
+    snapshot.camera = onboard_autonomy::application::CameraSnapshot{
         .phase =
-            companionlab::application::ports::
+            onboard_autonomy::application::ports::
                 CameraSourcePhase::streaming,
         .source = "rpicam-vid camera 0",
         .error = "",
@@ -283,7 +283,7 @@ void camera_pipeline_metrics_are_visible() {
     };
 
     const auto output =
-        companionlab::presentation::console::render_console(
+        onboard_autonomy::presentation::console::render_console(
             snapshot,
             "serial:///dev/ttyACM0?baud=115200",
             false
@@ -304,8 +304,8 @@ void camera_pipeline_metrics_are_visible() {
 }
 
 void vision_pipeline_and_target_are_visible() {
-    companionlab::application::AppSnapshot snapshot;
-    snapshot.vision = companionlab::application::VisionSnapshot{
+    onboard_autonomy::application::AppSnapshot snapshot;
+    snapshot.vision = onboard_autonomy::application::VisionSnapshot{
         .detector = "AprilTag 3 / tagStandard41h12",
         .processed_frames = 42,
         .frames_with_targets = 3,
@@ -328,7 +328,7 @@ void vision_pipeline_and_target_are_visible() {
     };
 
     const auto output =
-        companionlab::presentation::console::render_console(
+        onboard_autonomy::presentation::console::render_console(
             snapshot,
             "serial:///dev/ttyACM0?baud=115200",
             false

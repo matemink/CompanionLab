@@ -2,7 +2,7 @@
 
 ## Мета ітерації
 
-Перенести CompanionLab із симуляційного x86-64 середовища на реальний
+Перенести OnboardAutonomy із симуляційного x86-64 середовища на реальний
 ARM64 Linux і перевірити deployment до підключення Pixhawk та камери.
 
 На цьому етапі жодні команди польоту не надсилаються.
@@ -95,12 +95,12 @@ ssh <pi-user>@companionpi.local
 Private key залишається на Windows PC. Raspberry Pi зберігає лише
 public key, з якого неможливо відновити private key.
 
-## Deployment CompanionLab
+## Deployment OnboardAutonomy
 
 Готовий cross-compiled ARM64 package:
 
 ```text
-artifacts/companionlab-pi5-arm64.tar.gz
+artifacts/onboard_autonomy-pi5-arm64.tar.gz
 ```
 
 Локальний і віддалений SHA-256 збіглися:
@@ -112,7 +112,7 @@ artifacts/companionlab-pi5-arm64.tar.gz
 Архів розгорнуто в:
 
 ```text
-$HOME/companionlab-pi5/
+$HOME/onboard_autonomy-pi5/
 ```
 
 Це не native build на Raspberry Pi. Binary зібрано cross-compiler під
@@ -123,8 +123,8 @@ ARM64 у WSL, скопійовано через SCP і запущено на ц�
 ```text
 [PASS] 64-bit ARM operating system (aarch64)
 [PASS] Current user belongs to the dialout group
-[PASS] CompanionLab binary is ARM64
-[PASS] CompanionLab runtime libraries are available
+[PASS] OnboardAutonomy binary is ARM64
+[PASS] OnboardAutonomy runtime libraries are available
 [WARN] No USB serial controller detected
 [WARN] Camera Module 3 was not detected
 ```

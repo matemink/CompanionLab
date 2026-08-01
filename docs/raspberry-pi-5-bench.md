@@ -1,7 +1,7 @@
 # Raspberry Pi 5 and Pixhawk 6C bench setup
 
 This procedure validates ARM64 Linux deployment and physical MAVLink
-communication without running motors. CompanionLab may request telemetry
+communication without running motors. OnboardAutonomy may request telemetry
 message rates, but the serial hardware mode cannot start ARM, TAKEOFF,
 LAND, route, or precision-landing scenarios.
 
@@ -49,16 +49,16 @@ It writes PTS, per-frame metadata, process samples, the raw `rpicam` log,
 and JSON/Markdown reports under:
 
 ```text
-~/.local/state/companionlab/camera/<run-id>/
+~/.local/state/onboard_autonomy/camera/<run-id>/
 ```
 
 This baseline measures cadence, estimated frame gaps, CPU, RSS, and
-sensor metadata independently from CompanionLab.
+sensor metadata independently from OnboardAutonomy.
 
 The deployed runtime receiver can then be tested together with Pixhawk:
 
 ```bash
-bin/run_companionlab_pi.sh
+bin/run_onboard_autonomy_pi.sh
 ```
 
 The launcher enables `640x480 YUV420 @ 30 FPS` camera reception by
@@ -67,7 +67,7 @@ processing drops, frame age, and `FrameWallClock` to application
 latency. Disable it for a telemetry-only run with:
 
 ```bash
-COMPANIONLAB_CAMERA_ENABLED=0 bin/run_companionlab_pi.sh
+ONBOARD_AUTONOMY_CAMERA_ENABLED=0 bin/run_onboard_autonomy_pi.sh
 ```
 
 ## Install the Milestone 1 toolchain
@@ -111,13 +111,13 @@ On the Ubuntu development host:
 bash scripts/package_pi5_release.sh
 ```
 
-Transfer `artifacts/companionlab-pi5-arm64.tar.gz` to the Pi, then:
+Transfer `artifacts/onboard_autonomy-pi5-arm64.tar.gz` to the Pi, then:
 
 ```bash
-tar -xzf companionlab-pi5-arm64.tar.gz
-cd companionlab-pi5
+tar -xzf onboard_autonomy-pi5-arm64.tar.gz
+cd onboard_autonomy-pi5
 bin/diagnose_pi_hardware.sh
-bin/run_companionlab_pi.sh
+bin/run_onboard_autonomy_pi.sh
 ```
 
 The diagnostic checks architecture, `dialout`, Camera Module 3, serial
@@ -127,13 +127,13 @@ candidates, ARM64 ELF format, and runtime libraries. The launcher:
 - accepts exactly one serial candidate and refuses to guess otherwise;
 - defaults to 115200 baud;
 - runs `--serial --json --camera` by default;
-- stores JSONL under `~/.local/state/companionlab`.
+- stores JSONL under `~/.local/state/onboard_autonomy`.
 
 Override an ambiguous serial device explicitly:
 
 ```bash
-COMPANIONLAB_SERIAL=/dev/serial/by-id/usb-... \
-    bin/run_companionlab_pi.sh
+ONBOARD_AUTONOMY_SERIAL=/dev/serial/by-id/usb-... \
+    bin/run_onboard_autonomy_pi.sh
 ```
 
 The cross-built binary is a deployment candidate, not an ABI promise.
@@ -143,14 +143,14 @@ below instead of copying random libraries.
 
 ### Native Raspberry Pi build
 
-From the CompanionLab source directory on the Pi:
+From the OnboardAutonomy source directory on the Pi:
 
 ```bash
 cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
 cmake --build build
 ctest --test-dir build --output-on-failure
-COMPANIONLAB_BINARY=./build/companionlab \
-    scripts/run_companionlab_pi.sh
+ONBOARD_AUTONOMY_BINARY=./build/onboard_autonomy \
+    scripts/run_onboard_autonomy_pi.sh
 ```
 
 Expected behavior:
@@ -178,8 +178,8 @@ overlays only confirmed targets. It is unauthenticated HTTP intended for
 the local trusted bench network. Disable it with:
 
 ```bash
-COMPANIONLAB_CAMERA_PREVIEW_ENABLED=0 \
-  bin/run_companionlab_pi.sh
+ONBOARD_AUTONOMY_CAMERA_PREVIEW_ENABLED=0 \
+  bin/run_onboard_autonomy_pi.sh
 ```
 
 ## UART milestone

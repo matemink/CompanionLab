@@ -62,16 +62,16 @@ jobs:
       - name: Describe ARM64 binary
         run: |
           mkdir -p artifacts/ci-arm64
-          file build-arm64/companionlab |
+          file build-arm64/onboard_autonomy |
             tee artifacts/ci-arm64/binary-info.txt
-          sha256sum build-arm64/companionlab |
+          sha256sum build-arm64/onboard_autonomy |
             tee artifacts/ci-arm64/sha256.txt
       - name: Upload ARM64 release candidate
         uses: actions/upload-artifact@v7
         with:
-          name: companionlab-linux-arm64
+          name: onboard_autonomy-linux-arm64
           path: |
-            build-arm64/companionlab
+            build-arm64/onboard_autonomy
             artifacts/ci-arm64/
           if-no-files-found: error
           retention-days: 14

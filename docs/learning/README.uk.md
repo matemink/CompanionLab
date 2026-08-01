@@ -1,4 +1,4 @@
-# CompanionLab як навчальний проєкт
+# OnboardAutonomy як навчальний проєкт
 
 ## Для кого цей маршрут
 
@@ -78,7 +78,7 @@ dependencies, exit codes, signals і stdout/stderr.
 ### 4. MAVLink command/ACK
 
 Перед failure injection додаємо першу двосторонню команду:
-CompanionLab сам налаштовує частоти телеметрії через
+OnboardAutonomy сам налаштовує частоти телеметрії через
 `MAV_CMD_SET_MESSAGE_INTERVAL` і перевіряє `COMMAND_ACK`.
 
 Матеріал: [03-command-ack.uk.md](03-command-ack.uk.md)
@@ -93,7 +93,7 @@ CompanionLab сам налаштовує частоти телеметрії ч�
 
 ### 6. Автоматичний SITL smoke test
 
-Python сам запускає ArduCopter, MAVProxy і CompanionLab, перевіряє
+Python сам запускає ArduCopter, MAVProxy і OnboardAutonomy, перевіряє
 телеметрію та ACK, зберігає логи й завершує всю process group.
 
 Матеріал: [05-sitl-smoke-harness.uk.md](05-sitl-smoke-harness.uk.md)

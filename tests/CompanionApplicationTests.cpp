@@ -1,7 +1,7 @@
 #include "TestCases.hpp"
 
-#include "companionlab/application/CompanionApplication.hpp"
-#include "companionlab/adapters/mavlink/MavlinkEncoder.hpp"
+#include "onboard_autonomy/application/CompanionApplication.hpp"
+#include "onboard_autonomy/adapters/mavlink/MavlinkEncoder.hpp"
 
 #include <ardupilotmega/mavlink.h>
 
@@ -33,7 +33,7 @@ std::vector<std::uint8_t> serialize(const mavlink_message_t& message) {
     return {buffer.begin(), buffer.begin() + length};
 }
 
-class FakeTransport final : public companionlab::application::ports::Transport {
+class FakeTransport final : public onboard_autonomy::application::ports::Transport {
 public:
     void enqueue(std::vector<std::uint8_t> frame) {
         incoming_.push_back(std::move(frame));
@@ -123,17 +123,17 @@ std::vector<std::uint8_t> accepted_interval_ack() {
         100,
         0,
         1,
-        companionlab::adapters::mavlink::kCompanionComponentId
+        onboard_autonomy::adapters::mavlink::kCompanionComponentId
     );
     return serialize(message);
 }
 
 void application_orchestrates_the_complete_telemetry_setup() {
     FakeTransport transport;
-    companionlab::application::CompanionApplication application{
+    onboard_autonomy::application::CompanionApplication application{
         transport
     };
-    const companionlab::domain::TimePoint start{};
+    const onboard_autonomy::domain::TimePoint start{};
 
     transport.enqueue(autopilot_heartbeat());
     application.poll(start);
@@ -146,7 +146,7 @@ void application_orchestrates_the_complete_telemetry_setup() {
     );
     require(
         snapshot.telemetry.state ==
-            companionlab::application::TelemetrySetupState::configuring,
+            onboard_autonomy::application::TelemetrySetupState::configuring,
         "application must start telemetry setup"
     );
     require(
@@ -160,11 +160,11 @@ void application_orchestrates_the_complete_telemetry_setup() {
     require(
         snapshot.link_events.size() == 2 &&
             snapshot.link_events[0].direction ==
-                companionlab::application::
+                onboard_autonomy::application::
                     LinkEventDirection::inbound &&
             snapshot.link_events[0].label == "HEARTBEAT" &&
             snapshot.link_events[1].direction ==
-                companionlab::application::
+                onboard_autonomy::application::
                     LinkEventDirection::outbound &&
             snapshot.link_events[1].label == "SET_INTERVAL",
         "application must expose real inbound and outbound link events"
@@ -192,7 +192,7 @@ void application_orchestrates_the_complete_telemetry_setup() {
     );
     require(
         snapshot.telemetry.state ==
-            companionlab::application::TelemetrySetupState::active,
+            onboard_autonomy::application::TelemetrySetupState::active,
         "six accepted commands must activate telemetry"
     );
     require(
@@ -211,12 +211,12 @@ void application_orchestrates_the_complete_telemetry_setup() {
         std::any_of(
             snapshot.link_events.begin(),
             snapshot.link_events.end(),
-            [](const companionlab::application::LinkEvent& event) {
+            [](const onboard_autonomy::application::LinkEvent& event) {
                 return event.direction ==
-                           companionlab::application::
+                           onboard_autonomy::application::
                                LinkEventDirection::inbound &&
                        event.status ==
-                           companionlab::application::
+                           onboard_autonomy::application::
                                LinkEventStatus::success &&
                        event.label == "ACK SET_INTERVAL";
             }
@@ -237,10 +237,10 @@ void application_orchestrates_the_complete_telemetry_setup() {
 }
 
 void interactive_motion_commands_are_guarded() {
-    const companionlab::domain::TimePoint start{};
+    const onboard_autonomy::domain::TimePoint start{};
 
     FakeTransport blocked_transport;
-    companionlab::application::CompanionApplication blocked_application{
+    onboard_autonomy::application::CompanionApplication blocked_application{
         blocked_transport
     };
     require(
@@ -254,7 +254,7 @@ void interactive_motion_commands_are_guarded() {
     );
 
     FakeTransport transport;
-    companionlab::application::CompanionApplication application{
+    onboard_autonomy::application::CompanionApplication application{
         transport,
         {
             .scenario_runner = {},
@@ -289,12 +289,12 @@ void interactive_motion_commands_are_guarded() {
     require(
         snapshot.link_events.back().label == "LAND" &&
             snapshot.link_events.back().status ==
-                companionlab::application::LinkEventStatus::pending,
+                onboard_autonomy::application::LinkEventStatus::pending,
         "manual LAND must appear as pending outbound traffic"
     );
     require(
         application.trigger_scenario(
-            companionlab::application::ScenarioId::hover_check,
+            onboard_autonomy::application::ScenarioId::hover_check,
             start + std::chrono::milliseconds(20)
         ),
         "interactive application must accept scenario trigger"
@@ -303,7 +303,7 @@ void interactive_motion_commands_are_guarded() {
         application.snapshot(
             start + std::chrono::milliseconds(20)
         ).scenario.phase ==
-            companionlab::application::
+            onboard_autonomy::application::
                 ScenarioRunnerPhase::waiting_for_vehicle,
         "scenario trigger must restart the flight state machine"
     );

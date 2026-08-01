@@ -15,7 +15,7 @@ warn() {
     warning_count=$((warning_count + 1))
 }
 
-printf 'CompanionLab Raspberry Pi 5 bench diagnostics\n'
+printf 'OnboardAutonomy Raspberry Pi 5 bench diagnostics\n'
 printf '==============================================\n\n'
 
 architecture="$(uname -m)"
@@ -92,9 +92,9 @@ else
 fi
 
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-binary="${COMPANIONLAB_BINARY:-${script_dir}/companionlab}"
+binary="${ONBOARD_AUTONOMY_BINARY:-${script_dir}/onboard_autonomy}"
 if [[ ! -x "${binary}" ]]; then
-    project_binary="${script_dir}/../build/companionlab"
+    project_binary="${script_dir}/../build/onboard_autonomy"
     if [[ -x "${project_binary}" ]]; then
         binary="${project_binary}"
     fi
@@ -103,9 +103,9 @@ fi
 if [[ -x "${binary}" ]]; then
     binary_description="$(file -b "${binary}" 2>/dev/null || true)"
     if grep -q 'ARM aarch64' <<<"${binary_description}"; then
-        pass 'CompanionLab binary is ARM64'
+        pass 'OnboardAutonomy binary is ARM64'
     else
-        warn "Unexpected CompanionLab binary: ${binary_description}"
+        warn "Unexpected OnboardAutonomy binary: ${binary_description}"
     fi
 
     if [[ "${architecture}" != "aarch64" ]]; then
@@ -116,13 +116,13 @@ if [[ -x "${binary}" ]]; then
                 awk '/not found/ { print $1 }'
         )"
         if [[ -z "${missing_libraries}" ]]; then
-            pass 'CompanionLab runtime libraries are available'
+            pass 'OnboardAutonomy runtime libraries are available'
         else
             warn "Missing runtime libraries: ${missing_libraries}"
         fi
     fi
 else
-    warn "CompanionLab binary not found at ${binary}"
+    warn "OnboardAutonomy binary not found at ${binary}"
 fi
 
 printf '\nSummary: %d passed, %d warning(s)\n' \

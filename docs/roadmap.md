@@ -55,8 +55,8 @@ Status: in progress and running locally against ArduCopter 4.6.3.
 
 - [x] Install Ubuntu with WSL2.
 - [x] Build and run ArduCopter SITL.
-- [x] Route MAVLink telemetry to CompanionLab.
-- [x] Let CompanionLab configure its required message rates and verify
+- [x] Route MAVLink telemetry to OnboardAutonomy.
+- [x] Let OnboardAutonomy configure its required message rates and verify
   `COMMAND_ACK` responses.
 - [x] Start and stop the complete SITL stack from Python.
 - [x] Assert healthy telemetry, command acknowledgements, and process
@@ -83,9 +83,9 @@ tests, observability, and developer tooling.
 - [x] Pin the official ArduPilot Gazebo plugin and add reproducible
   install and launch scripts.
 - [x] Install Gazebo Harmonic and verify WSLg/Ogre2 rendering.
-- [x] Run the official Iris world with ArduCopter and CompanionLab.
+- [x] Run the official Iris world with ArduCopter and OnboardAutonomy.
 - [x] Execute and verify an automated GUIDED takeoff, hold, and landing
-  from CompanionLab.
+  from OnboardAutonomy.
 - [x] Stream the simulated camera through GStreamer and verify decoded
   frames with a bounded smoke test.
 - [x] Receive Raspberry Pi Camera Module 3 Wide frames through

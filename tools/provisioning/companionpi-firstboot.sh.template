@@ -40,14 +40,14 @@ chown "$TARGET_USER:$TARGET_USER" "$user_home/.ssh/authorized_keys"
 chmod 600 "$user_home/.ssh/authorized_keys"
 
 install -d -m 755 /etc/ssh/sshd_config.d
-cat >/etc/ssh/sshd_config.d/99-companionlab.conf <<'EOF'
+cat >/etc/ssh/sshd_config.d/99-onboard_autonomy.conf <<'EOF'
 PubkeyAuthentication yes
 PasswordAuthentication no
 KbdInteractiveAuthentication no
 EOF
 
-printf '%s ALL=(ALL:ALL) NOPASSWD: ALL\n' "$TARGET_USER" >/etc/sudoers.d/90-companionlab
-chmod 440 /etc/sudoers.d/90-companionlab
+printf '%s ALL=(ALL:ALL) NOPASSWD: ALL\n' "$TARGET_USER" >/etc/sudoers.d/90-onboard_autonomy
+chmod 440 /etc/sudoers.d/90-onboard_autonomy
 
 if [ -x /usr/lib/raspberrypi-sys-mods/imager_custom ]; then
     /usr/lib/raspberrypi-sys-mods/imager_custom enable_ssh -k "$SSH_PUBLIC_KEY"
@@ -55,10 +55,10 @@ if [ -x /usr/lib/raspberrypi-sys-mods/imager_custom ]; then
 else
     systemctl enable ssh
     nmcli radio wifi on
-    nmcli connection delete companionlab-wifi >/dev/null 2>&1 || true
-    nmcli connection add type wifi ifname wlan0 con-name companionlab-wifi ssid "$WIFI_SSID"
-    nmcli connection modify companionlab-wifi wifi-sec.key-mgmt wpa-psk wifi-sec.psk "$WIFI_PASSWORD"
-    nmcli connection modify companionlab-wifi connection.autoconnect yes
+    nmcli connection delete onboard_autonomy-wifi >/dev/null 2>&1 || true
+    nmcli connection add type wifi ifname wlan0 con-name onboard_autonomy-wifi ssid "$WIFI_SSID"
+    nmcli connection modify onboard_autonomy-wifi wifi-sec.key-mgmt wpa-psk wifi-sec.psk "$WIFI_PASSWORD"
+    nmcli connection modify onboard_autonomy-wifi connection.autoconnect yes
 fi
 
 timedatectl set-timezone Europe/Kyiv

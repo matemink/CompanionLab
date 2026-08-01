@@ -1,4 +1,4 @@
-# C++ camera runtime: від сенсора до CompanionLab
+# C++ camera runtime: від сенсора до OnboardAutonomy
 
 ## Ціль ітерації
 
@@ -57,7 +57,7 @@ metadata pipe  -> FrameWallClock for each frame
 
 Фоновий `std::jthread` читає камеру. `std::stop_token` дає cooperative
 cancellation, а destructor надсилає дочірньому процесу `SIGINT`. Це
-перевірено апаратно: після завершення CompanionLab процес
+перевірено апаратно: після завершення OnboardAutonomy процес
 `rpicam-vid` не залишається.
 
 Queue навмисно має місткість один кадр. Computer vision потрібен

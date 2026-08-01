@@ -14,7 +14,7 @@ Tools/AP_Bootloader/board_types.txt
 ```
 
 The table snapshot is distributed under ArduPilot's GPL-3.0 license.
-CompanionLab's independently written parser remains under the
+OnboardAutonomy's independently written parser remains under the
 repository's MIT license.
 
 Table SHA-256:

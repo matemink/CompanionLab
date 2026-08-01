@@ -2,7 +2,7 @@
 
 ## Навіщо вона потрібна
 
-До цього CompanionLab лише читав телеметрію, яку вже надсилав
+До цього OnboardAutonomy лише читав телеметрію, яку вже надсилав
 ArduPilot. Тепер він сам просить рівно ті повідомлення та частоти, які
 потрібні його алгоритмам:
 
@@ -20,7 +20,7 @@ BATTERY_STATUS   1 Hz
 MAVLink-повідомлення `COMMAND_LONG`:
 
 ```text
-source:           system 1, component 191 (CompanionLab)
+source:           system 1, component 191 (OnboardAutonomy)
 target:           system 1, component 0 (autopilot default)
 command:          511 (MAV_CMD_SET_MESSAGE_INTERVAL)
 param1:           MAVLink message ID
@@ -101,5 +101,5 @@ ACTIVE
 блока: зникли MAVLink namespace, anonymous namespace,
 назва `struct StreamRequest` і декларація `kStreamRequests`. Решта
 state machine залишилася цілою, тому відновлено лише ці декларації.
-Після виправлення target `companionlab` успішно зібрався, а
-`companionlab_tests` пройшов повністю.
+Після виправлення target `onboard_autonomy` успішно зібрався, а
+`onboard_autonomy_tests` пройшов повністю.

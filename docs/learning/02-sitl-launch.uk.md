@@ -1,14 +1,14 @@
-# Як запускаються SITL і CompanionLab
+# Як запускаються SITL і OnboardAutonomy
 
 ## Що запускає Windows
 
-У корені проєкту є `StartCompanionLabDemo.cmd`. Він відкриває два окремі WSL
+У корені проєкту є `StartOnboardAutonomyDemo.cmd`. Він відкриває два окремі WSL
 процеси:
 
 ```text
-StartCompanionLabDemo.cmd
+StartOnboardAutonomyDemo.cmd
 ├── WSL → scripts/run_arducopter_sitl.sh
-└── WSL → scripts/run_companionlab_sitl.sh
+└── WSL → scripts/run_onboard_autonomy_sitl.sh
 ```
 
 Ключова частина Windows-команди:
@@ -27,7 +27,7 @@ wsl.exe -d Ubuntu-24.04 --cd "%~dp0" -- bash scripts/run_arducopter_sitl.sh
 `scripts/run_arducopter_sitl.sh` запускає два Linux-процеси:
 
 ```text
-arducopter ← TCP 5760 → MAVProxy ← UDP 14550 → CompanionLab
+arducopter ← TCP 5760 → MAVProxy ← UDP 14550 → OnboardAutonomy
 ```
 
 Першим стартує зібраний ArduCopter:
@@ -60,25 +60,25 @@ mavproxy.py \
 MAVProxy підключається до ArduCopter як MAVLink-клієнт і пересилає
 потік на UDP-порт `14550`. `--streamrate=-1` забороняє MAVProxy
 самостійно змінювати частоту телеметрії: потрібні потоки налаштовує
-CompanionLab через `MAV_CMD_SET_MESSAGE_INTERVAL`. Так ми уникаємо
+OnboardAutonomy через `MAV_CMD_SET_MESSAGE_INTERVAL`. Так ми уникаємо
 конфлікту двох клієнтів. Параметр `--non-interactive` вимикає
 командний prompt, але не перетворює MAVProxy на фоновий daemon.
 
 ArduCopter працює у background цього script, а MAVProxy у foreground.
 Shell `trap` завершує ArduCopter, коли MAVProxy зупиняється.
 
-## Що запускає CompanionLab script
+## Що запускає OnboardAutonomy script
 
-`scripts/run_companionlab_sitl.sh` виконує:
+`scripts/run_onboard_autonomy_sitl.sh` виконує:
 
 ```bash
-~/build/companionlab/companionlab \
+~/build/onboard_autonomy/onboard_autonomy \
     --udp-bind 127.0.0.1 \
     --udp-port 14550 \
     --snapshot-ms 1000
 ```
 
-`exec` замінює shell-процес самим C++-бінарником. CompanionLab слухає
+`exec` замінює shell-процес самим C++-бінарником. OnboardAutonomy слухає
 MAVLink UDP на `14550` і раз на секунду друкує JSON snapshot.
 
 ## Як дані проходять в обидва боки
@@ -98,7 +98,7 @@ MavlinkEncoder → HEARTBEAT або COMMAND_LONG → UdpTransport
 ```
 
 Після першого пакета `UdpTransport` запам'ятовує UDP peer MAVProxy.
-CompanionLab бере system ID з autopilot heartbeat і надсилає власний
+OnboardAutonomy бере system ID з autopilot heartbeat і надсилає власний
 heartbeat як component `191`, `MAV_TYPE_ONBOARD_CONTROLLER`. Після
 цього він послідовно налаштовує потоки health, GPS і battery та чекає
 `COMMAND_ACK` після кожного запиту.
@@ -108,15 +108,15 @@ heartbeat як component `191`, `MAV_TYPE_ONBOARD_CONTROLLER`. Після
 Перша Ubuntu-консоль:
 
 ```bash
-cd "/mnt/c/Users/<windows-user>/path/to/CompanionLab"
+cd "/mnt/c/Users/<windows-user>/path/to/OnboardAutonomy"
 bash scripts/run_arducopter_sitl.sh
 ```
 
 Друга Ubuntu-консоль:
 
 ```bash
-cd "/mnt/c/Users/<windows-user>/path/to/CompanionLab"
-bash scripts/run_companionlab_sitl.sh
+cd "/mnt/c/Users/<windows-user>/path/to/OnboardAutonomy"
+bash scripts/run_onboard_autonomy_sitl.sh
 ```
 
 Кожен процес зупиняється через `Ctrl+C` у відповідній консолі.

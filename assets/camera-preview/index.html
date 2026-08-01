@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>CompanionLab Camera</title>
+  <title>OnboardAutonomy Camera</title>
   <style>
     :root {
       color-scheme: dark;
@@ -185,7 +185,7 @@
     <header>
       <div>
         <p class="eyebrow">Raspberry Pi 5 / Camera Module 3</p>
-        <h1>CompanionLab Vision</h1>
+        <h1>OnboardAutonomy Vision</h1>
       </div>
       <div class="badge" id="status">
         <span class="dot"></span>
@@ -196,7 +196,7 @@
     <section class="viewer">
       <canvas id="camera" width="640" height="480"></canvas>
       <div class="waiting" id="waiting">
-        START COMPANIONLAB WITH CAMERA PREVIEW
+        START ONBOARD AUTONOMY WITH CAMERA PREVIEW
       </div>
       <div class="scanline"></div>
     </section>
@@ -284,7 +284,7 @@
         const height = Number(response.headers.get("X-Frame-Height"));
         const sequence = response.headers.get("X-Frame-Sequence");
         const targets = JSON.parse(
-          response.headers.get("X-CompanionLab-Targets") || "[]"
+          response.headers.get("X-OnboardAutonomy-Targets") || "[]"
         );
         const luma = new Uint8Array(await response.arrayBuffer());
         if (luma.length !== width * height) {

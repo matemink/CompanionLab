@@ -1,4 +1,4 @@
-#include "companionlab/adapters/preview/HttpCameraPreviewServer.hpp"
+#include "onboard_autonomy/adapters/preview/HttpCameraPreviewServer.hpp"
 
 #include <httplib.h>
 
@@ -19,7 +19,7 @@
 #include <utility>
 #include <vector>
 
-namespace companionlab::adapters::preview {
+namespace onboard_autonomy::adapters::preview {
 namespace {
 
 struct PreviewFrame {
@@ -158,7 +158,7 @@ public:
                     std::to_string(frame.sequence)
                 );
                 response.set_header(
-                    "X-CompanionLab-Targets",
+                    "X-OnboardAutonomy-Targets",
                     targets_json(frame.targets)
                 );
                 response.set_content(
@@ -253,4 +253,4 @@ make_http_camera_preview_server(HttpCameraPreviewConfig config) {
     );
 }
 
-}  // namespace companionlab::adapters::preview
+}  // namespace onboard_autonomy::adapters::preview

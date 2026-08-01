@@ -3,7 +3,7 @@
 set -euo pipefail
 
 config_file="/boot/firmware/config.txt"
-backup_file="${config_file}.companionlab.bak"
+backup_file="${config_file}.onboard_autonomy.bak"
 overlay="dtoverlay=uart0-pi5"
 
 model="$(tr -d '\0' </proc/device-tree/model)"
@@ -42,7 +42,7 @@ trap 'rm -f "${temporary_file}"' EXIT
 awk -v overlay="${overlay}" '
     /^\[pi5\]$/ {
         print
-        print "# CompanionLab flight-controller UART on GPIO14/GPIO15"
+        print "# OnboardAutonomy flight-controller UART on GPIO14/GPIO15"
         print overlay
         next
     }

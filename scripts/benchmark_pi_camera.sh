@@ -2,14 +2,14 @@
 
 set -euo pipefail
 
-readonly width="${COMPANIONLAB_CAMERA_WIDTH:-1280}"
-readonly height="${COMPANIONLAB_CAMERA_HEIGHT:-720}"
-readonly target_fps="${COMPANIONLAB_CAMERA_FPS:-30}"
-readonly frame_count="${COMPANIONLAB_CAMERA_FRAMES:-300}"
-readonly state_root="${COMPANIONLAB_CAMERA_STATE_DIR:-${HOME}/.local/state/companionlab/camera}"
+readonly width="${ONBOARD_AUTONOMY_CAMERA_WIDTH:-1280}"
+readonly height="${ONBOARD_AUTONOMY_CAMERA_HEIGHT:-720}"
+readonly target_fps="${ONBOARD_AUTONOMY_CAMERA_FPS:-30}"
+readonly frame_count="${ONBOARD_AUTONOMY_CAMERA_FRAMES:-300}"
+readonly state_root="${ONBOARD_AUTONOMY_CAMERA_STATE_DIR:-${HOME}/.local/state/onboard_autonomy/camera}"
 
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-analyzer="${COMPANIONLAB_CAMERA_ANALYZER:-${script_dir}/camera_benchmark.py}"
+analyzer="${ONBOARD_AUTONOMY_CAMERA_ANALYZER:-${script_dir}/camera_benchmark.py}"
 if [[ ! -f "${analyzer}" ]]; then
     analyzer="${script_dir}/../python/camera_benchmark.py"
 fi
@@ -24,10 +24,10 @@ require_positive_integer() {
     fi
 }
 
-require_positive_integer COMPANIONLAB_CAMERA_WIDTH "${width}"
-require_positive_integer COMPANIONLAB_CAMERA_HEIGHT "${height}"
-require_positive_integer COMPANIONLAB_CAMERA_FPS "${target_fps}"
-require_positive_integer COMPANIONLAB_CAMERA_FRAMES "${frame_count}"
+require_positive_integer ONBOARD_AUTONOMY_CAMERA_WIDTH "${width}"
+require_positive_integer ONBOARD_AUTONOMY_CAMERA_HEIGHT "${height}"
+require_positive_integer ONBOARD_AUTONOMY_CAMERA_FPS "${target_fps}"
+require_positive_integer ONBOARD_AUTONOMY_CAMERA_FRAMES "${frame_count}"
 
 if ! command -v rpicam-hello >/dev/null 2>&1 ||
    ! command -v rpicam-vid >/dev/null 2>&1; then
@@ -79,7 +79,7 @@ cleanup() {
 }
 trap cleanup EXIT INT TERM
 
-printf 'CompanionLab Camera Module 3 benchmark\n'
+printf 'OnboardAutonomy Camera Module 3 benchmark\n'
 printf '  Camera: %s\n' "${camera_model}"
 printf '  Stream: %sx%s YUV420 at %s FPS\n' \
     "${width}" "${height}" "${target_fps}"

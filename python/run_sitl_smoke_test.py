@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Launch and verify the complete CompanionLab ArduCopter SITL stack."""
+"""Launch and verify the complete OnboardAutonomy ArduCopter SITL stack."""
 
 from __future__ import annotations
 
@@ -34,7 +34,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--companion",
         type=Path,
-        default=home / "build/companionlab/companionlab",
+        default=home / "build/onboard_autonomy/onboard_autonomy",
     )
     parser.add_argument(
         "--artifacts-root",
@@ -66,7 +66,7 @@ def main() -> int:
         companion=args.companion.expanduser().resolve(),
     )
 
-    print("CompanionLab SITL smoke test")
+    print("OnboardAutonomy SITL smoke test")
     print(f"Scenario: {args.scenario}")
     print(f"Artifacts: {artifacts}")
 

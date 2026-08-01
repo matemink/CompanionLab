@@ -1,7 +1,7 @@
 #include "TestCases.hpp"
 
-#include "companionlab/adapters/mavlink/MavlinkEncoder.hpp"
-#include "companionlab/adapters/mavlink/TelemetryStreamConfigurator.hpp"
+#include "onboard_autonomy/adapters/mavlink/MavlinkEncoder.hpp"
+#include "onboard_autonomy/adapters/mavlink/TelemetryStreamConfigurator.hpp"
 
 #include <ardupilotmega/mavlink.h>
 
@@ -53,7 +53,7 @@ mavlink_command_long_t decode_command(
     throw std::runtime_error("configurator emitted an invalid frame");
 }
 
-companionlab::adapters::mavlink::CommandAck accepted_ack() {
+onboard_autonomy::adapters::mavlink::CommandAck accepted_ack() {
     return {
         .source_system = 1,
         .source_component = MAV_COMP_ID_AUTOPILOT1,
@@ -63,13 +63,13 @@ companionlab::adapters::mavlink::CommandAck accepted_ack() {
         .result_parameter = 0,
         .target_system = 1,
         .target_component =
-            companionlab::adapters::mavlink::kCompanionComponentId,
+            onboard_autonomy::adapters::mavlink::kCompanionComponentId,
     };
 }
 
 void requests_each_required_stream_sequentially() {
-    companionlab::adapters::mavlink::TelemetryStreamConfigurator configurator;
-    const companionlab::domain::TimePoint now{};
+    onboard_autonomy::adapters::mavlink::TelemetryStreamConfigurator configurator;
+    const onboard_autonomy::domain::TimePoint now{};
 
     require(
         !configurator.update(false, std::nullopt, now).has_value(),
@@ -143,7 +143,7 @@ void requests_each_required_stream_sequentially() {
     const auto snapshot = configurator.snapshot();
     require(
         snapshot.phase ==
-            companionlab::adapters::mavlink::TelemetrySetupPhase::active,
+            onboard_autonomy::adapters::mavlink::TelemetrySetupPhase::active,
         "all accepted requests must activate telemetry"
     );
     require(
@@ -153,8 +153,8 @@ void requests_each_required_stream_sequentially() {
 }
 
 void retries_then_fails_when_ack_is_missing() {
-    companionlab::adapters::mavlink::TelemetryStreamConfigurator configurator;
-    const companionlab::domain::TimePoint start{};
+    onboard_autonomy::adapters::mavlink::TelemetryStreamConfigurator configurator;
+    const onboard_autonomy::domain::TimePoint start{};
 
     for (int attempt = 0; attempt < 3; ++attempt) {
         const auto now = start + std::chrono::seconds(attempt * 3);
@@ -175,7 +175,7 @@ void retries_then_fails_when_ack_is_missing() {
     const auto snapshot = configurator.snapshot();
     require(
         snapshot.phase ==
-            companionlab::adapters::mavlink::TelemetrySetupPhase::failed,
+            onboard_autonomy::adapters::mavlink::TelemetrySetupPhase::failed,
         "missing ACK must fail setup"
     );
     require(
@@ -185,8 +185,8 @@ void retries_then_fails_when_ack_is_missing() {
 }
 
 void rejected_command_fails_immediately() {
-    companionlab::adapters::mavlink::TelemetryStreamConfigurator configurator;
-    const companionlab::domain::TimePoint now{};
+    onboard_autonomy::adapters::mavlink::TelemetryStreamConfigurator configurator;
+    const onboard_autonomy::domain::TimePoint now{};
     require(
         configurator.update(true, 1, now).has_value(),
         "request must be in flight before its ACK"
@@ -199,7 +199,7 @@ void rejected_command_fails_immediately() {
     const auto snapshot = configurator.snapshot();
     require(
         snapshot.phase ==
-            companionlab::adapters::mavlink::TelemetrySetupPhase::failed,
+            onboard_autonomy::adapters::mavlink::TelemetrySetupPhase::failed,
         "rejected request must fail setup"
     );
     require(

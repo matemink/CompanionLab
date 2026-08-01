@@ -1,4 +1,4 @@
-#include "companionlab/adapters/ardupilot/BoardTypeCatalog.hpp"
+#include "onboard_autonomy/adapters/ardupilot/BoardTypeCatalog.hpp"
 
 #include <algorithm>
 #include <charconv>
@@ -10,7 +10,7 @@
 #include <system_error>
 #include <utility>
 
-namespace companionlab::adapters::ardupilot {
+namespace onboard_autonomy::adapters::ardupilot {
 namespace {
 
 std::string_view trim(const std::string_view value) {
@@ -184,4 +184,4 @@ void BoardTypeCatalog::add(
     }
 }
 
-}  // namespace companionlab::adapters::ardupilot
+}  // namespace onboard_autonomy::adapters::ardupilot

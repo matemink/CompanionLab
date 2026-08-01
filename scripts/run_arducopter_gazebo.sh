@@ -13,7 +13,7 @@ readonly script_dir="$(
     cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd
 )"
 readonly project_dir="$(cd -- "${script_dir}/.." && pwd)"
-readonly companion_defaults="${project_dir}/config/companionlab-gazebo.parm"
+readonly companion_defaults="${project_dir}/config/onboard_autonomy-gazebo.parm"
 
 if [[ ! -x "${arducopter}" ]]; then
     printf 'ArduCopter SITL is not built: %s\n' "${ardupilot_dir}" >&2
@@ -26,7 +26,7 @@ if [[ ! -x "${mavproxy}" ]]; then
 fi
 
 if [[ ! -f "${companion_defaults}" ]]; then
-    printf 'CompanionLab SITL defaults not found: %s\n' \
+    printf 'OnboardAutonomy SITL defaults not found: %s\n' \
         "${companion_defaults}" >&2
     exit 1
 fi

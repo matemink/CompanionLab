@@ -1,4 +1,4 @@
-# Автоматичний політ CompanionLab у Gazebo
+# Автоматичний політ OnboardAutonomy у Gazebo
 
 ## Мета ітерації
 
@@ -94,7 +94,7 @@ MAVLink `COMMAND_ACK` підтверджує, що команда дійшла �
 acknowledgement_deadline_ = now + std::chrono::seconds(2);
 ```
 
-Тому CompanionLab продовжує читати heartbeat, position, battery і warnings,
+Тому OnboardAutonomy продовжує читати heartbeat, position, battery і warnings,
 поки очікує ACK або завершення маневру.
 
 ### Перевірка переходів
@@ -135,13 +135,13 @@ Force-arm magic value `21196` не використовується: ARM від�
 Автоматичний integration run передає demo flag через:
 
 ```text
-COMPANIONLAB_DEMO_FLIGHT=1
+ONBOARD_AUTONOMY_DEMO_FLIGHT=1
 ```
 
-Windows launcher `StartCompanionLabGazeboDemo.cmd` тепер запускає:
+Windows launcher `StartOnboardAutonomyGazeboDemo.cmd` тепер запускає:
 
 ```text
-COMPANIONLAB_INTERACTIVE=1
+ONBOARD_AUTONOMY_INTERACTIVE=1
 ```
 
 Тому політ не починається під час відкриття вікна: користувач явно запускає

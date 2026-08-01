@@ -1,11 +1,11 @@
-#include "companionlab/application/CameraMonitor.hpp"
+#include "onboard_autonomy/application/CameraMonitor.hpp"
 
 #include <algorithm>
 #include <chrono>
 #include <span>
 #include <utility>
 
-namespace companionlab::application {
+namespace onboard_autonomy::application {
 
 class CameraMonitor::Impl {
 public:
@@ -194,4 +194,4 @@ std::optional<VisionSnapshot> CameraMonitor::vision_snapshot(
     return impl_->vision_snapshot(now);
 }
 
-}  // namespace companionlab::application
+}  // namespace onboard_autonomy::application

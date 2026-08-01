@@ -166,14 +166,14 @@ NOT SENT | NO FLIGHT CONTROLLER
 
 ## Launcher
 
-`StartCompanionLabGazeboDemo.cmd` більше не запускає політ автоматично. Він
+`StartOnboardAutonomyGazeboDemo.cmd` більше не запускає політ автоматично. Він
 передає:
 
 ```text
-COMPANIONLAB_INTERACTIVE=1
+ONBOARD_AUTONOMY_INTERACTIVE=1
 ```
 
-У `scripts/run_companionlab_sitl.sh` це перетворюється на:
+У `scripts/run_onboard_autonomy_sitl.sh` це перетворюється на:
 
 ```text
 --interactive
