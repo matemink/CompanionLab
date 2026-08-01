@@ -334,6 +334,24 @@ void vision_pipeline_and_target_are_visible() {
                         },
                 },
             },
+        .target_track =
+            {
+                .phase =
+                    onboard_autonomy::application::
+                        TargetTrackPhase::tracking,
+                .target_id = 0,
+                .consecutive_observations = 3,
+                .required_observations = 3,
+                .accepted_observations = 3,
+                .observation_age_ms = 8.0,
+                .latest_decision_margin = 88.4,
+                .position =
+                    onboard_autonomy::domain::CameraFramePosition{
+                        .right_m = 0.12,
+                        .down_m = -0.05,
+                        .forward_m = 1.42,
+                    },
+            },
     };
 
     const auto output =
@@ -349,8 +367,9 @@ void vision_pipeline_and_target_are_visible() {
         "console must show the active vision detector"
     );
     require(
-        output.find("TARGET ID 0") != std::string::npos,
-        "console must show the current typed target observation"
+        output.find("TARGET ID 0   |   TRACKING") !=
+            std::string::npos,
+        "console must show the confirmed target track"
     );
     require(
         output.find(

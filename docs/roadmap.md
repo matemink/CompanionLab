@@ -117,11 +117,13 @@ user-visible result did not satisfy the acceptance criterion. See
   accepted 39/40 views with 0.6728 px RMS reprojection error; the full
   quality-gated result is stored in
   `config/camera-module-3-wide-640x480.json`.
-- [ ] Estimate the AprilTag 3D pose and expose position, orientation,
-  confidence, and observation freshness through the domain model.
+- [x] Estimate the AprilTag 3D pose and expose position, orientation,
+  confidence, and observation freshness through typed state models.
+- [ ] Validate metric pose scale against a physically measured printed
+  target and camera-to-target distance.
 - [ ] Transform camera coordinates into the MAVLink/body coordinate
   frame and validate axes, signs, units, and timestamps with tests.
-- [ ] Filter noisy measurements without hiding stale or lost targets.
+- [x] Filter noisy measurements without hiding stale or lost targets.
 - [ ] Replace the synthetic SITL target provider with real AprilTag
   `LANDING_TARGET` observations.
 - [ ] Validate the complete precision-landing sequence in Gazebo.

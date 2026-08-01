@@ -38,11 +38,18 @@ public:
         height_ = frame->height;
         last_frame_observed_at_ = now;
         std::span<const domain::TargetObservation> targets;
+        TargetTrackSnapshot target_track;
         if (vision_monitor_.has_value()) {
             targets = vision_monitor_->process(*frame, now);
+            target_track =
+                vision_monitor_->snapshot(now).target_track;
         }
         if (preview_sink_ != nullptr) {
-            preview_sink_->publish(*frame, targets);
+            preview_sink_->publish(
+                *frame,
+                targets,
+                target_track
+            );
         }
 
         if (frame->captured_at.has_value()) {

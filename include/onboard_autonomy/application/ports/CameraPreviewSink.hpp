@@ -1,5 +1,6 @@
 #pragma once
 
+#include "onboard_autonomy/application/TargetTracker.hpp"
 #include "onboard_autonomy/application/ports/CameraSource.hpp"
 #include "onboard_autonomy/domain/TargetObservation.hpp"
 
@@ -14,7 +15,8 @@ public:
 
     virtual void publish(
         const CameraFrame& frame,
-        std::span<const domain::TargetObservation> targets
+        std::span<const domain::TargetObservation> targets,
+        const TargetTrackSnapshot& target_track
     ) = 0;
 
     [[nodiscard]] virtual std::string description() const = 0;

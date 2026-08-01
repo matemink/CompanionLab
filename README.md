@@ -146,11 +146,10 @@ and pixel-space AprilTag stages are implemented. The current precision
 scenario proves a synthetic MAVLink `LANDING_TARGET` integration seam.
 It does not present synthetic observations as real camera guidance.
 
-Calibration tooling, a printable target, fixed-focus capture, and OpenCV
-quality gates are implemented. Physical image capture remains before a
-trusted intrinsics artifact can be stored. The next vertical slice then
-adds AprilTag 3D pose, coordinate-frame validation, and replacement of
-the synthetic target provider. See [docs/roadmap.md](docs/roadmap.md).
+Camera Module 3 Wide calibration, distortion-aware AprilTag 3D pose,
+and freshness-aware target tracking are implemented. Physical distance
+validation remains before the metric track can replace the synthetic
+SITL landing target. See [docs/roadmap.md](docs/roadmap.md).
 
 ## Safety
 
@@ -167,4 +166,5 @@ validated in simulation before hardware-in-the-loop testing.
 - [Gazebo simulation runbook](docs/simulation.md)
 - [Raspberry Pi 5 and Pixhawk 6C bench](docs/raspberry-pi-5-bench.md)
 - [Camera calibration workflow](docs/learning/29-camera-calibration.uk.md)
+- [AprilTag target tracking](docs/learning/30-apriltag-target-tracking.uk.md)
 - [Roadmap](docs/roadmap.md)

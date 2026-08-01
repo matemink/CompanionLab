@@ -10,6 +10,7 @@ int main() {
         run_mavlink_decoder_tests();
         run_mavlink_encoder_tests();
         run_telemetry_stream_configurator_tests();
+        run_target_tracker_tests();
         run_console_view_tests();
         run_scenario_runner_tests();
         run_board_type_catalog_tests();

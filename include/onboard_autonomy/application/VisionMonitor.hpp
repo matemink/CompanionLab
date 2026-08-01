@@ -1,5 +1,6 @@
 #pragma once
 
+#include "onboard_autonomy/application/TargetTracker.hpp"
 #include "onboard_autonomy/application/ports/TargetDetector.hpp"
 #include "onboard_autonomy/domain/VehicleState.hpp"
 
@@ -21,11 +22,15 @@ struct VisionSnapshot {
     std::optional<double> maximum_processing_ms;
     std::optional<double> last_detection_age_ms;
     std::vector<domain::TargetObservation> latest_targets;
+    TargetTrackSnapshot target_track;
 };
 
 class VisionMonitor {
 public:
-    explicit VisionMonitor(ports::TargetDetector& detector);
+    explicit VisionMonitor(
+        ports::TargetDetector& detector,
+        TargetTrackerConfig tracker_config = {}
+    );
     ~VisionMonitor();
 
     VisionMonitor(const VisionMonitor&) = delete;

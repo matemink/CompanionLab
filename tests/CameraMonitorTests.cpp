@@ -95,12 +95,15 @@ public:
         const onboard_autonomy::application::ports::CameraFrame& input,
         const std::span<
             const onboard_autonomy::domain::TargetObservation
-        > input_targets
+        > input_targets,
+        const onboard_autonomy::application::TargetTrackSnapshot&
+            input_target_track
     ) override {
         sequence = input.sequence;
         luma_size =
             static_cast<std::size_t>(input.width) * input.height;
         targets.assign(input_targets.begin(), input_targets.end());
+        target_track = input_target_track;
     }
 
     [[nodiscard]] std::string description() const override {
@@ -110,6 +113,7 @@ public:
     std::uint64_t sequence{0};
     std::size_t luma_size{0};
     std::vector<onboard_autonomy::domain::TargetObservation> targets;
+    onboard_autonomy::application::TargetTrackSnapshot target_track;
 };
 
 onboard_autonomy::application::ports::CameraFrame frame(
@@ -225,7 +229,10 @@ void monitor_forwards_the_processed_frame_to_preview() {
         preview.sequence == 21U &&
             preview.luma_size == 640U * 480U &&
             preview.targets.size() == 1U &&
-            preview.targets.front().id == 12,
+            preview.targets.front().id == 12 &&
+            preview.target_track.phase ==
+                onboard_autonomy::application::
+                    TargetTrackPhase::searching,
         "camera preview must receive the frame and its detections"
     );
 }

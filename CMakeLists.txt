@@ -247,6 +247,7 @@ add_library(
     onboard_autonomy_application
     src/application/AppSnapshot.cpp
     src/application/CameraMonitor.cpp
+    src/application/TargetTracker.cpp
     src/application/VisionMonitor.cpp
     src/application/Scenario.cpp
     src/application/ScenarioRunner.cpp
@@ -359,6 +360,7 @@ if(BUILD_TESTING)
         tests/MavlinkDecoderTests.cpp
         tests/MavlinkEncoderTests.cpp
         tests/TelemetryStreamConfiguratorTests.cpp
+        tests/TargetTrackerTests.cpp
         tests/VehicleStateTests.cpp
         tests/TestMain.cpp
     )

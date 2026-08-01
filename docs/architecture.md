@@ -28,11 +28,14 @@ flowchart LR
     CameraPort --> Vision["AprilTag 3 adapter"]
     Vision --> VisionMonitor["VisionMonitor"]
     VisionMonitor --> AppSnapshot
+    VisionMonitor --> Tracker["TargetTracker"]
+    Tracker --> AppSnapshot
     CameraMonitor --> PreviewPort["CameraPreviewSink port"]
     VisionMonitor --> PreviewPort
+    Tracker --> PreviewPort
     PreviewPort --> HTTP["HTTP preview adapter"]
     HTTP --> Browser["Windows browser canvas"]
-    VisionMonitor --> Guidance["Future landing target estimator"]
+    Tracker --> Guidance["Future landing guidance"]
     Guidance --> Encoder
 ```
 
@@ -91,13 +94,25 @@ the source is `rpicam`, a future GStreamer source, or a test fake.
 The application-owned `TargetDetector` port maps a `CameraFrame` into
 typed `TargetObservation` values. The current adapter uses the official
 AprilTag 3 implementation with the `tagStandard41h12` family and reads
-the Y plane directly, without OpenCV or a color conversion.
+the Y plane directly, without OpenCV or a color conversion. With a
+quality-gated camera calibration and measured tag span, it undistorts
+the corners and estimates metric camera-optical pose.
+
+The application-owned `TargetTracker` accepts only finite, forward-facing,
+uncorrected poses above the decision-margin threshold. It requires three
+consecutive observations before declaring a lock, applies exponential
+smoothing to translation, exposes observation age, and expires the track
+after 500 ms. A confirmed track keeps one tag identity until expiry
+instead of jumping between visible markers. Rotation remains raw because
+averaging rotation matrices component by component would be mathematically
+invalid.
 
 The separate application-owned `CameraPreviewSink` receives the same
-frame plus its current detections. Its HTTP adapter rate-limits copies
-to 10 FPS and serves raw luminance bytes to a browser canvas. The browser
-draws target corners, center, ID, and decision margin. Neither the
-application nor the camera adapter depends on HTTP or HTML.
+frame plus its current detections and track snapshot. Its HTTP adapter
+rate-limits copies to 10 FPS and serves raw luminance bytes to a browser
+canvas. The browser draws target corners and shows acquisition, lock,
+filtered position, and freshness. Neither the application nor the camera
+adapter depends on HTTP or HTML.
 
 ### MAVLink decoder
 
@@ -158,7 +173,8 @@ asserts behavior from JSON output.
 
 ### Guidance
 
-Vision currently ends at pixel-space target observations. Pose
-estimation and `LANDING_TARGET` guidance remain intentionally absent
-until camera intrinsics and physical tag size are calibrated. ArduPilot
-remains responsible for the flight-control loop.
+Vision now ends at a confirmed, freshness-aware metric track in the
+camera-optical frame. Physical scale validation and the explicit
+camera-to-body-FRD transform remain required before this track can feed
+MAVLink `LANDING_TARGET`. ArduPilot remains responsible for the
+flight-control loop.

@@ -64,6 +64,51 @@ public:
     }
 };
 
+class PoseTargetDetector final
+    : public onboard_autonomy::application::ports::TargetDetector {
+public:
+    [[nodiscard]] onboard_autonomy::domain::TargetDetectionBatch detect(
+        const onboard_autonomy::application::ports::CameraFrame& frame
+    ) override {
+        const double right_m = frame.sequence == 1U ? 0.0 : 1.0;
+        const double forward_m = frame.sequence == 1U
+            ? 1.0
+            : (frame.sequence == 2U ? 1.2 : 0.8);
+        return {
+            .frame_sequence = frame.sequence,
+            .captured_at = frame.captured_at,
+            .detected_at = frame.received_at,
+            .processing_time = std::chrono::microseconds{1000},
+            .targets =
+                {
+                    {
+                        .id = 0,
+                        .family = "tagStandard41h12",
+                        .center = {},
+                        .corners = {},
+                        .corrected_bits = 0,
+                        .decision_margin = 70.0,
+                        .pose =
+                            onboard_autonomy::domain::TargetPose{
+                                .position =
+                                    {
+                                        .right_m = right_m,
+                                        .down_m = 0.0,
+                                        .forward_m = forward_m,
+                                    },
+                                .rotation_tag_to_camera = {},
+                                .object_space_error = 0.001,
+                            },
+                    },
+                },
+        };
+    }
+
+    [[nodiscard]] std::string description() const override {
+        return "fake pose detector";
+    }
+};
+
 onboard_autonomy::application::ports::CameraFrame empty_frame(
     const std::uint64_t sequence
 ) {
@@ -118,6 +163,47 @@ void vision_monitor_tracks_processing_and_detections() {
         snapshot.last_detection_age_ms.has_value() &&
             *snapshot.last_detection_age_ms > 24.9,
         "vision monitor must retain the age of the last detection"
+    );
+}
+
+void vision_monitor_exposes_the_smoothed_confirmed_track() {
+    using namespace std::chrono_literals;
+    PoseTargetDetector detector;
+    onboard_autonomy::application::VisionMonitor monitor{
+        detector,
+        {
+            .required_consecutive_observations = 3,
+            .loss_timeout = 500ms,
+            .position_smoothing_factor = 0.5,
+            .minimum_decision_margin = 20.0,
+        },
+    };
+    const onboard_autonomy::domain::TimePoint start{};
+
+    monitor.process(empty_frame(1), start);
+    monitor.process(empty_frame(2), start + 20ms);
+    const auto& current_targets =
+        monitor.process(empty_frame(3), start + 40ms);
+    const auto snapshot = monitor.snapshot(start + 40ms);
+
+    require(
+        snapshot.target_track.phase ==
+                onboard_autonomy::application::
+                    TargetTrackPhase::tracking &&
+            snapshot.target_track.position.has_value() &&
+            std::abs(snapshot.target_track.position->right_m - 0.75) <
+                1.0e-9 &&
+            std::abs(snapshot.target_track.position->forward_m - 0.95) <
+                1.0e-9,
+        "vision monitor must expose the confirmed filtered track"
+    );
+    require(
+        current_targets.size() == 1U &&
+            current_targets.front().pose.has_value() &&
+            std::abs(
+                current_targets.front().pose->position.right_m - 0.75
+            ) < 1.0e-9,
+        "preview observations must use the filtered track position"
     );
 }
 
@@ -401,6 +487,24 @@ void vision_snapshot_is_added_to_json() {
                         },
                 },
             },
+        .target_track =
+            {
+                .phase =
+                    onboard_autonomy::application::
+                        TargetTrackPhase::tracking,
+                .target_id = 0,
+                .consecutive_observations = 4,
+                .required_observations = 3,
+                .accepted_observations = 4,
+                .observation_age_ms = 12.0,
+                .latest_decision_margin = 80.0,
+                .position =
+                    onboard_autonomy::domain::CameraFramePosition{
+                        .right_m = 0.09,
+                        .down_m = -0.18,
+                        .forward_m = 1.20,
+                    },
+            },
     };
 
     const auto json = snapshot.to_json();
@@ -415,6 +519,11 @@ void vision_snapshot_is_added_to_json() {
                 std::string::npos &&
             json.find("\"forward_m\":1.2500") !=
                 std::string::npos &&
+            json.find("\"target_track\":{"
+                      "\"phase\":\"tracking\"") !=
+                std::string::npos &&
+            json.find("\"observation_age_ms\":12.000") !=
+                std::string::npos &&
             json.find("\"rotation_tag_to_camera\":[1.0000") !=
                 std::string::npos,
         "application JSON must expose typed metric vision results"
@@ -425,6 +534,7 @@ void vision_snapshot_is_added_to_json() {
 
 void run_vision_monitor_tests() {
     vision_monitor_tracks_processing_and_detections();
+    vision_monitor_exposes_the_smoothed_confirmed_track();
     real_apriltag_adapter_detects_generated_id_zero();
     distortion_round_trip_recovers_undistorted_point();
     generated_tag_produces_metric_pose();
