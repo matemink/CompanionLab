@@ -152,6 +152,7 @@ onboard_autonomy_enable_warnings(onboard_autonomy_camera_adapter)
 add_library(
     onboard_autonomy_apriltag_adapter
     src/adapters/vision/AprilTagTargetDetector.cpp
+    src/adapters/vision/CameraGeometry.cpp
 )
 target_link_libraries(
     onboard_autonomy_apriltag_adapter
@@ -330,6 +331,10 @@ install(
 )
 install(
     FILES assets/calibration/checkerboard-9x6-25mm-a4.svg
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/onboard_autonomy
+)
+install(
+    FILES assets/apriltag/tagStandard41h12-id0-90mm-a4.svg
     DESTINATION ${CMAKE_INSTALL_DATADIR}/onboard_autonomy
 )
 install(

@@ -145,6 +145,33 @@ std::string AppSnapshot::to_json() const {
                << target.corrected_bits;
         output << ",\"decision_margin\":"
                << target.decision_margin;
+        output << ",\"pose\":";
+        if (!target.pose.has_value()) {
+            output << "null";
+        } else {
+            output << std::setprecision(4);
+            output << "{\"frame\":\"camera_optical\"";
+            output << ",\"right_m\":"
+                   << target.pose->position.right_m;
+            output << ",\"down_m\":"
+                   << target.pose->position.down_m;
+            output << ",\"forward_m\":"
+                   << target.pose->position.forward_m;
+            output << ",\"object_space_error\":"
+                   << target.pose->object_space_error;
+            output << ",\"rotation_tag_to_camera\":[";
+            for (std::size_t rotation_index = 0;
+                 rotation_index <
+                     target.pose->rotation_tag_to_camera.size();
+                 ++rotation_index) {
+                if (rotation_index > 0U) {
+                    output << ',';
+                }
+                output << target.pose
+                              ->rotation_tag_to_camera[rotation_index];
+            }
+            output << "]}";
+        }
         output << '}';
     }
     output << "]}}";

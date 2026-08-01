@@ -489,15 +489,25 @@ std::string vision_target_detail(
 
     const auto& target = vision.latest_targets.front();
     std::ostringstream detail;
-    detail << "TARGET ID " << target.id
-           << "   |   CENTER " << std::fixed
-           << std::setprecision(1)
-           << target.center.x_px << "/"
-           << target.center.y_px << " PX"
-           << "   |   MARGIN "
-           << target.decision_margin
-           << "   |   CORRECTED "
-           << target.corrected_bits;
+    detail << "TARGET ID " << target.id;
+    if (target.pose.has_value()) {
+        detail << std::fixed << std::setprecision(2)
+               << "   |   X RIGHT "
+               << target.pose->position.right_m << " M"
+               << "   |   Y DOWN "
+               << target.pose->position.down_m << " M"
+               << "   |   Z FORWARD "
+               << target.pose->position.forward_m << " M";
+    } else {
+        detail << "   |   CENTER " << std::fixed
+               << std::setprecision(1)
+               << target.center.x_px << "/"
+               << target.center.y_px << " PX"
+               << "   |   MARGIN "
+               << target.decision_margin
+               << "   |   CORRECTED "
+               << target.corrected_bits;
+    }
     if (vision.latest_targets.size() > 1U) {
         detail << "   |   " << vision.latest_targets.size()
                << " TAGS";

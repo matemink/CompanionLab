@@ -3,6 +3,7 @@
 #include "onboard_autonomy/adapters/preview/HttpCameraPreviewServer.hpp"
 #include "onboard_autonomy/adapters/transport/TransportFactory.hpp"
 #include "onboard_autonomy/adapters/vision/AprilTagTargetDetector.hpp"
+#include "onboard_autonomy/adapters/vision/CameraCalibrationLoader.hpp"
 #include "onboard_autonomy/application/CompanionApplication.hpp"
 #include "onboard_autonomy/presentation/console/ConsoleInput.hpp"
 #include "onboard_autonomy/presentation/console/ConsoleView.hpp"
@@ -40,6 +41,8 @@ struct Options {
     std::uint32_t snapshot_interval_ms{1000};
     bool camera_enabled{false};
     bool apriltag_enabled{false};
+    std::string camera_calibration_file;
+    std::optional<double> apriltag_tag_size_m;
     bool camera_preview_enabled{false};
     std::uint16_t camera_preview_port{8080};
     std::uint32_t camera_width{640};
@@ -130,6 +133,12 @@ Options parse_options(const int argc, char** argv) {
             options.camera_enabled = true;
         } else if (argument == "--apriltag") {
             options.apriltag_enabled = true;
+        } else if (argument == "--camera-calibration") {
+            options.camera_calibration_file = require_value();
+        } else if (argument == "--apriltag-size-mm") {
+            options.apriltag_tag_size_m =
+                parse_number<double>(require_value(), argument) /
+                1000.0;
         } else if (argument == "--camera-preview") {
             options.camera_preview_enabled = true;
         } else if (argument == "--camera-preview-port") {
@@ -284,6 +293,10 @@ void print_help() {
         << "  --camera-height N YUV420 height, default 480\n"
         << "  --camera-fps N    Capture rate, default 30\n"
         << "  --apriltag        Detect tagStandard41h12 targets\n"
+        << "  --camera-calibration FILE"
+        << "  Verified camera calibration JSON\n"
+        << "  --apriltag-size-mm N"
+        << "  Physical span between detection corners\n"
         << "  --camera-preview  Serve live grayscale preview over HTTP\n"
         << "  --camera-preview-port N"
         << " HTTP preview port, default 8080\n"
@@ -328,6 +341,21 @@ int main(const int argc, char** argv) {
             throw std::invalid_argument(
                 "AprilTag detection and camera preview require "
                 "--camera"
+            );
+        }
+        const bool has_camera_calibration =
+            !options.camera_calibration_file.empty();
+        if (has_camera_calibration !=
+            options.apriltag_tag_size_m.has_value()) {
+            throw std::invalid_argument(
+                "camera calibration and AprilTag size must be "
+                "provided together"
+            );
+        }
+        if (has_camera_calibration &&
+            !options.apriltag_enabled) {
+            throw std::invalid_argument(
+                "AprilTag pose requires --apriltag"
             );
         }
 
@@ -385,9 +413,36 @@ int main(const int argc, char** argv) {
             onboard_autonomy::application::ports::TargetDetector
         > target_detector;
         if (options.apriltag_enabled) {
+            onboard_autonomy::adapters::vision::
+                AprilTagDetectorConfig detector_config;
+            if (has_camera_calibration) {
+                auto calibration =
+                    onboard_autonomy::adapters::vision::
+                        CameraCalibrationLoader::from_file(
+                            options.camera_calibration_file
+                        );
+                if (calibration.image_width !=
+                        options.camera_width ||
+                    calibration.image_height !=
+                        options.camera_height) {
+                    throw std::invalid_argument(
+                        "camera runtime resolution does not match "
+                        "calibration"
+                    );
+                }
+                detector_config.pose =
+                    onboard_autonomy::adapters::vision::
+                        AprilTagPoseConfig{
+                            .calibration = std::move(calibration),
+                            .tag_size_m =
+                                *options.apriltag_tag_size_m,
+                        };
+            }
             target_detector =
                 onboard_autonomy::adapters::vision::
-                    make_apriltag_target_detector();
+                    make_apriltag_target_detector(
+                        std::move(detector_config)
+                    );
         }
         std::unique_ptr<
             onboard_autonomy::application::ports::CameraPreviewSink

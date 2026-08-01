@@ -21,3 +21,9 @@ ad5bc161c157634f05afcfd3cfba34334b9303609dd3afc9c000b86e031da02a
 
 Open `show-tagStandard41h12-id0.html` to display the tiny source PNG
 with nearest-neighbor scaling and a white quiet zone.
+
+`tagStandard41h12-id0-90mm-a4.svg` embeds the same pinned PNG in an A4
+print target. Its 162 mm rendered image preserves the family's 9 cells;
+the 5-cell span between the detector corners is therefore 90 mm. Measure
+the marked span after printing and pass the measured value to
+`--apriltag-size-mm`.

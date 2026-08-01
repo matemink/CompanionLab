@@ -323,6 +323,15 @@ void vision_pipeline_and_target_are_visible() {
                     .corners = {},
                     .corrected_bits = 0,
                     .decision_margin = 88.4,
+                    .pose =
+                        onboard_autonomy::domain::TargetPose{
+                            .position =
+                                {
+                                    .right_m = 0.12,
+                                    .down_m = -0.05,
+                                    .forward_m = 1.42,
+                                },
+                        },
                 },
             },
     };
@@ -340,11 +349,15 @@ void vision_pipeline_and_target_are_visible() {
         "console must show the active vision detector"
     );
     require(
-        output.find("TARGET ID 0") != std::string::npos &&
-            output.find("CENTER 319.5/239.5 PX") !=
-                std::string::npos &&
-            output.find("MARGIN 88.4") != std::string::npos,
+        output.find("TARGET ID 0") != std::string::npos,
         "console must show the current typed target observation"
+    );
+    require(
+        output.find(
+            "X RIGHT 0.12 M   |   Y DOWN -0.05 M   |   "
+            "Z FORWARD 1.42 M"
+        ) != std::string::npos,
+        "metric target pose must be explicit in camera coordinates"
     );
 }
 

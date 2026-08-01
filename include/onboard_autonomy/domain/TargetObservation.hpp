@@ -14,6 +14,18 @@ struct ImagePoint {
     double y_px{0.0};
 };
 
+struct CameraFramePosition {
+    double right_m{0.0};
+    double down_m{0.0};
+    double forward_m{0.0};
+};
+
+struct TargetPose {
+    CameraFramePosition position;
+    std::array<double, 9> rotation_tag_to_camera{};
+    double object_space_error{0.0};
+};
+
 struct TargetObservation {
     std::int32_t id{0};
     std::string family;
@@ -21,6 +33,7 @@ struct TargetObservation {
     std::array<ImagePoint, 4> corners;
     std::int32_t corrected_bits{0};
     double decision_margin{0.0};
+    std::optional<TargetPose> pose;
 };
 
 struct TargetDetectionBatch {

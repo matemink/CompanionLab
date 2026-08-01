@@ -251,7 +251,9 @@
         context.arc(centerX, centerY, 5, 0, Math.PI * 2);
         context.fill();
 
-        const label = `TAG ${target.id}`;
+        const label = target.pose === null
+          ? `TAG ${target.id}`
+          : `TAG ${target.id} / Z ${target.pose.forward_m.toFixed(2)} M`;
         const labelWidth = context.measureText(label).width + 14;
         const labelY = Math.max(22, corners[0][1] - 10);
         context.fillStyle = "rgb(5 12 12 / 82%)";
@@ -323,10 +325,18 @@
         targetText.textContent = targets.length === 0
           ? "APRILTAG NOT VISIBLE"
           : targets
-              .map((target) =>
-                `TAG ${target.id} / MARGIN ` +
-                target.decision_margin.toFixed(1)
-              )
+              .map((target) => {
+                const quality =
+                  `TAG ${target.id} / MARGIN ` +
+                  target.decision_margin.toFixed(1);
+                if (target.pose === null) {
+                  return `${quality} / POSE DISABLED`;
+                }
+                return `${quality} / RIGHT ` +
+                  `${target.pose.right_m.toFixed(2)} M / DOWN ` +
+                  `${target.pose.down_m.toFixed(2)} M / FORWARD ` +
+                  `${target.pose.forward_m.toFixed(2)} M`;
+              })
               .join("   ");
         nextPollDelay = 100;
       } catch (error) {

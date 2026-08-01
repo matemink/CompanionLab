@@ -85,7 +85,21 @@ std::string targets_json(
         output << "],\"decision_margin\":"
                << target.decision_margin
                << ",\"corrected_bits\":"
-               << target.corrected_bits << '}';
+               << target.corrected_bits
+               << ",\"pose\":";
+        if (!target.pose.has_value()) {
+            output << "null";
+        } else {
+            output << "{\"right_m\":"
+                   << target.pose->position.right_m
+                   << ",\"down_m\":"
+                   << target.pose->position.down_m
+                   << ",\"forward_m\":"
+                   << target.pose->position.forward_m
+                   << ",\"object_space_error\":"
+                   << target.pose->object_space_error << '}';
+        }
+        output << '}';
     }
     output << ']';
     return output.str();

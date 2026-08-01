@@ -1,12 +1,18 @@
 #include "onboard_autonomy/adapters/vision/AprilTagTargetDetector.hpp"
+#include "onboard_autonomy/adapters/vision/CameraGeometry.hpp"
 
 #include <apriltag.h>
+#include <apriltag_pose.h>
+#include <common/homography.h>
 #include <common/image_types.h>
+#include <common/matd.h>
 #include <common/zarray.h>
 #include <tagStandard41h12.h>
 
+#include <algorithm>
 #include <array>
 #include <chrono>
+#include <cmath>
 #include <cstdint>
 #include <limits>
 #include <memory>
@@ -40,12 +46,179 @@ private:
     zarray_t* detections_;
 };
 
+class Matrix {
+public:
+    explicit Matrix(matd_t* matrix)
+        : matrix_(matrix) {}
+
+    ~Matrix() {
+        matd_destroy(matrix_);
+    }
+
+    Matrix(const Matrix&) = delete;
+    Matrix& operator=(const Matrix&) = delete;
+
+    [[nodiscard]] matd_t* get() const {
+        return matrix_;
+    }
+
+private:
+    matd_t* matrix_;
+};
+
+class Correspondences {
+public:
+    Correspondences()
+        : values_(zarray_create(sizeof(float[4]))) {
+        if (values_ == nullptr) {
+            throw std::runtime_error(
+                "unable to allocate AprilTag correspondences"
+            );
+        }
+    }
+
+    ~Correspondences() {
+        zarray_destroy(values_);
+    }
+
+    Correspondences(const Correspondences&) = delete;
+    Correspondences& operator=(const Correspondences&) = delete;
+
+    void add(
+        const float tag_x,
+        const float tag_y,
+        const domain::ImagePoint& image
+    ) {
+        const float correspondence[4]{
+            tag_x,
+            tag_y,
+            static_cast<float>(image.x_px),
+            static_cast<float>(image.y_px),
+        };
+        zarray_add(values_, correspondence);
+    }
+
+    [[nodiscard]] zarray_t* get() const {
+        return values_;
+    }
+
+private:
+    zarray_t* values_;
+};
+
+std::optional<domain::TargetPose> estimate_pose(
+    const apriltag_detection_t& detection,
+    const AprilTagPoseConfig& config
+) {
+    constexpr std::array<std::array<float, 2>, 4> tag_corners{{
+        {{-1.0F, 1.0F}},
+        {{1.0F, 1.0F}},
+        {{1.0F, -1.0F}},
+        {{-1.0F, -1.0F}},
+    }};
+
+    apriltag_detection_t corrected = detection;
+    Correspondences correspondences;
+    for (std::size_t index = 0; index < tag_corners.size();
+         ++index) {
+        const auto point = undistort_image_point(
+            {
+                .x_px = detection.p[index][0],
+                .y_px = detection.p[index][1],
+            },
+            config.calibration
+        );
+        corrected.p[index][0] = point.x_px;
+        corrected.p[index][1] = point.y_px;
+        correspondences.add(
+            tag_corners[index][0],
+            tag_corners[index][1],
+            point
+        );
+    }
+    const auto center = undistort_image_point(
+        {
+            .x_px = detection.c[0],
+            .y_px = detection.c[1],
+        },
+        config.calibration
+    );
+    corrected.c[0] = center.x_px;
+    corrected.c[1] = center.y_px;
+
+    Matrix homography{
+        homography_compute(
+            correspondences.get(),
+            HOMOGRAPHY_COMPUTE_FLAG_SVD
+        )
+    };
+    if (homography.get() == nullptr) {
+        return std::nullopt;
+    }
+    corrected.H = homography.get();
+
+    apriltag_detection_info_t info{
+        .det = &corrected,
+        .tagsize = config.tag_size_m,
+        .fx = config.calibration.fx_px,
+        .fy = config.calibration.fy_px,
+        .cx = config.calibration.cx_px,
+        .cy = config.calibration.cy_px,
+    };
+    apriltag_pose_t raw_pose{};
+    const double error = estimate_tag_pose(&info, &raw_pose);
+    Matrix rotation{raw_pose.R};
+    Matrix translation{raw_pose.t};
+    if (rotation.get() == nullptr || translation.get() == nullptr ||
+        !std::isfinite(error)) {
+        return std::nullopt;
+    }
+
+    domain::TargetPose pose{
+        .position =
+            {
+                .right_m = MATD_EL(translation.get(), 0, 0),
+                .down_m = MATD_EL(translation.get(), 1, 0),
+                .forward_m = MATD_EL(translation.get(), 2, 0),
+            },
+        .rotation_tag_to_camera = {},
+        .object_space_error = error,
+    };
+    for (std::size_t row = 0; row < 3U; ++row) {
+        for (std::size_t column = 0; column < 3U; ++column) {
+            pose.rotation_tag_to_camera[row * 3U + column] =
+                MATD_EL(
+                    rotation.get(),
+                    static_cast<unsigned int>(row),
+                    static_cast<unsigned int>(column)
+                );
+        }
+    }
+
+    const bool finite_position =
+        std::isfinite(pose.position.right_m) &&
+        std::isfinite(pose.position.down_m) &&
+        std::isfinite(pose.position.forward_m);
+    const bool finite_rotation = std::ranges::all_of(
+        pose.rotation_tag_to_camera,
+        [](const double value) {
+            return std::isfinite(value);
+        }
+    );
+    if (!finite_position || !finite_rotation ||
+        pose.position.forward_m <= 0.0) {
+        return std::nullopt;
+    }
+    return pose;
+}
+
 class AprilTagTargetDetector final
     : public application::ports::TargetDetector {
 public:
     explicit AprilTagTargetDetector(
         const AprilTagDetectorConfig& config
-    ) {
+    )
+        : pose_config_(config.pose) {
         if (config.worker_threads == 0U ||
             config.worker_threads >
                 static_cast<std::uint32_t>(
@@ -57,6 +230,17 @@ public:
             throw std::invalid_argument(
                 "invalid AprilTag detector configuration"
             );
+        }
+        if (pose_config_.has_value()) {
+            domain::validate_camera_calibration(
+                pose_config_->calibration
+            );
+            if (!std::isfinite(pose_config_->tag_size_m) ||
+                pose_config_->tag_size_m <= 0.0) {
+                throw std::invalid_argument(
+                    "AprilTag size must be positive and finite"
+                );
+            }
         }
 
         family_ = tagStandard41h12_create();
@@ -114,6 +298,15 @@ public:
                 )) {
             throw std::invalid_argument(
                 "AprilTag detector requires a complete Y plane"
+            );
+        }
+        if (pose_config_.has_value() &&
+            (frame.width !=
+                 pose_config_->calibration.image_width ||
+             frame.height !=
+                 pose_config_->calibration.image_height)) {
+            throw std::invalid_argument(
+                "camera frame does not match calibration resolution"
             );
         }
 
@@ -181,6 +374,9 @@ public:
                         static_cast<double>(
                             detection->decision_margin
                         ),
+                    .pose = pose_config_.has_value()
+                        ? estimate_pose(*detection, *pose_config_)
+                        : std::nullopt,
                 }
             );
         }
@@ -204,6 +400,7 @@ public:
 private:
     apriltag_family_t* family_{nullptr};
     apriltag_detector_t* detector_{nullptr};
+    std::optional<AprilTagPoseConfig> pose_config_;
 };
 
 }  // namespace

@@ -77,6 +77,7 @@ public:
                         .corners = {},
                         .corrected_bits = 0,
                         .decision_margin = 50.0,
+                        .pose = std::nullopt,
                     },
                 },
         };
