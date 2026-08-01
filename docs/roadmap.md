@@ -4,10 +4,10 @@ The roadmap is ordered to keep each milestone demonstrable and testable.
 
 ## Project direction
 
-The goal is a production-shaped companion-computer prototype that is
-directly relevant to the target Software Engineer vacancy: C++ and
-Python, MAVLink, Embedded Linux, ARM deployment, video processing,
-hardware interfaces, automated tests, and measurable performance.
+The goal is a production-shaped companion-computer prototype combining
+C++ and Python, MAVLink, Embedded Linux, ARM deployment, video
+processing, hardware interfaces, automated tests, and measurable
+performance.
 
 The terminal dashboard, scenario selector, one-command launchers,
 camera preview, activity animation, readable reports, and other
@@ -20,7 +20,7 @@ The next feature priority is the complete vision-to-guidance vertical
 slice. Further interface work should solve a concrete usability or
 diagnostic problem rather than delay that slice.
 
-## Immediate portfolio hygiene
+## Repository hygiene
 
 This work can proceed alongside the technical milestones.
 
@@ -30,8 +30,7 @@ This work can proceed alongside the technical milestones.
   history.
 - [x] Establish a focused-commit workflow for subsequent features and
   tests.
-- [x] Publish the repository privately after a clean-build and secret
-  scan; change visibility separately before portfolio review.
+- [x] Publish the repository after a clean build and secret scan.
 - [x] Store C++ and Python test reports as CI artifacts and keep
   hardware benchmark evidence in versioned documentation.
 
@@ -47,7 +46,7 @@ Status: implemented and verified on Ubuntu 24.04 under WSL2.
 - End-to-end Python-to-C++ UDP integration check.
 - ARM64 cross-build workflow.
 
-Portfolio evidence: C++, MAVLink integration, architecture, testing, Git.
+Engineering focus: C++, MAVLink integration, architecture, testing, Git.
 
 ## Milestone 2: ArduPilot SITL integration
 
@@ -75,7 +74,7 @@ Status: in progress and running locally against ArduCopter 4.6.3.
 - [x] Verify local-NED route steps, RTL, and a synthetic MAVLink
   `LANDING_TARGET` integration path.
 
-Portfolio evidence: Python, Embedded Linux, ArduPilot, integration
+Engineering focus: Python, Embedded Linux, ArduPilot, integration
 tests, observability, and developer tooling.
 
 ## Milestone 3: Video pipeline
@@ -98,7 +97,7 @@ tests, observability, and developer tooling.
   without blocking the application loop.
 - [ ] Reconnect after camera or stream loss.
 
-Portfolio evidence: GStreamer, video streaming, profiling, ARM.
+Engineering focus: GStreamer, video streaming, profiling, ARM.
 
 Experiment note: a project-owned decorative airfield was implemented,
 tested, and rolled back because the Gazebo GUI displayed only its
@@ -126,7 +125,7 @@ user-visible result did not satisfy the acceptance criterion. See
 - [ ] Test lost-target, reacquisition, outlier, and noisy-observation
   behavior.
 
-Portfolio evidence: computer vision, guidance integration, algorithms.
+Engineering focus: computer vision, guidance integration, algorithms.
 
 ## Milestone 5: Raspberry Pi deployment
 
@@ -155,7 +154,7 @@ Portfolio evidence: computer vision, guidance integration, algorithms.
 - [ ] Profile and optimize the ARM release build.
 - [ ] Validate graceful restart and device reconnection.
 
-Portfolio evidence: Embedded Linux, ARM Cortex, target deployment.
+Engineering focus: Embedded Linux, ARM Cortex, target deployment.
 
 ## Milestone 6: Hardware interfaces and delivery
 
@@ -166,4 +165,4 @@ Portfolio evidence: Embedded Linux, ARM Cortex, target deployment.
 - [ ] Publish diagrams, test evidence, performance numbers, and
   limitations.
 
-Portfolio evidence: UART, I2C/GPIO, deployment, technical communication.
+Engineering focus: UART, I2C/GPIO, deployment, technical communication.
