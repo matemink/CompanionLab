@@ -1,8 +1,8 @@
 #include "TestCases.hpp"
 
-#include "companionlab/domain/VehicleState.hpp"
-#include "companionlab/adapters/mavlink/MavlinkDecoder.hpp"
-#include "companionlab/adapters/mavlink/MavlinkEncoder.hpp"
+#include "onboard_autonomy/domain/VehicleState.hpp"
+#include "onboard_autonomy/adapters/mavlink/MavlinkDecoder.hpp"
+#include "onboard_autonomy/adapters/mavlink/MavlinkEncoder.hpp"
 
 #include <ardupilotmega/mavlink.h>
 
@@ -34,22 +34,22 @@ std::vector<std::uint8_t> serialize(const mavlink_message_t& message) {
 }
 
 void partial_heartbeat_is_reassembled() {
-    companionlab::domain::VehicleState state;
+    onboard_autonomy::domain::VehicleState state;
     std::optional<
-        companionlab::adapters::mavlink::MessageObservation
+        onboard_autonomy::adapters::mavlink::MessageObservation
     > observed;
-    companionlab::adapters::mavlink::MavlinkDecoder decoder{
+    onboard_autonomy::adapters::mavlink::MavlinkDecoder decoder{
         state,
         {},
         [&observed](
-            const companionlab::adapters::mavlink::MessageObservation&
+            const onboard_autonomy::adapters::mavlink::MessageObservation&
                 message,
-            const companionlab::domain::TimePoint
+            const onboard_autonomy::domain::TimePoint
         ) {
             observed = message;
         },
     };
-    const companionlab::domain::TimePoint now{};
+    const onboard_autonomy::domain::TimePoint now{};
 
     mavlink_message_t heartbeat{};
     mavlink_msg_heartbeat_pack(
@@ -100,9 +100,9 @@ void partial_heartbeat_is_reassembled() {
 }
 
 void minimum_message_set_updates_vehicle_state() {
-    companionlab::domain::VehicleState state;
-    companionlab::adapters::mavlink::MavlinkDecoder decoder{state};
-    const companionlab::domain::TimePoint now{};
+    onboard_autonomy::domain::VehicleState state;
+    onboard_autonomy::adapters::mavlink::MavlinkDecoder decoder{state};
+    const onboard_autonomy::domain::TimePoint now{};
 
     mavlink_message_t heartbeat{};
     mavlink_msg_heartbeat_pack(
@@ -230,9 +230,9 @@ void minimum_message_set_updates_vehicle_state() {
 }
 
 void statustext_prearm_is_extracted() {
-    companionlab::domain::VehicleState state;
-    companionlab::adapters::mavlink::MavlinkDecoder decoder{state};
-    const companionlab::domain::TimePoint now{};
+    onboard_autonomy::domain::VehicleState state;
+    onboard_autonomy::adapters::mavlink::MavlinkDecoder decoder{state};
+    const onboard_autonomy::domain::TimePoint now{};
 
     mavlink_statustext_t status_text{};
     status_text.severity = MAV_SEVERITY_INFO;
@@ -252,9 +252,9 @@ void statustext_prearm_is_extracted() {
 }
 
 void autopilot_version_is_unpacked_into_domain_metadata() {
-    companionlab::domain::VehicleState state;
-    companionlab::adapters::mavlink::MavlinkDecoder decoder{state};
-    const companionlab::domain::TimePoint now{};
+    onboard_autonomy::domain::VehicleState state;
+    onboard_autonomy::adapters::mavlink::MavlinkDecoder decoder{state};
+    const onboard_autonomy::domain::TimePoint now{};
 
     mavlink_autopilot_version_t version{};
     version.flight_sw_version =
@@ -302,9 +302,9 @@ void autopilot_version_is_unpacked_into_domain_metadata() {
 }
 
 void companion_heartbeat_does_not_replace_autopilot() {
-    companionlab::domain::VehicleState state;
-    companionlab::adapters::mavlink::MavlinkDecoder decoder{state};
-    const companionlab::domain::TimePoint now{};
+    onboard_autonomy::domain::VehicleState state;
+    onboard_autonomy::adapters::mavlink::MavlinkDecoder decoder{state};
+    const onboard_autonomy::domain::TimePoint now{};
 
     mavlink_message_t autopilot{};
     mavlink_msg_heartbeat_pack(
@@ -344,20 +344,20 @@ void companion_heartbeat_does_not_replace_autopilot() {
 }
 
 void command_ack_is_forwarded_to_its_handler() {
-    companionlab::domain::VehicleState state;
-    std::optional<companionlab::adapters::mavlink::CommandAck> observed;
-    companionlab::domain::TimePoint observed_at{};
-    companionlab::adapters::mavlink::MavlinkDecoder decoder{
+    onboard_autonomy::domain::VehicleState state;
+    std::optional<onboard_autonomy::adapters::mavlink::CommandAck> observed;
+    onboard_autonomy::domain::TimePoint observed_at{};
+    onboard_autonomy::adapters::mavlink::MavlinkDecoder decoder{
         state,
         [&observed, &observed_at](
-            const companionlab::adapters::mavlink::CommandAck& acknowledgement,
-            const companionlab::domain::TimePoint now
+            const onboard_autonomy::adapters::mavlink::CommandAck& acknowledgement,
+            const onboard_autonomy::domain::TimePoint now
         ) {
             observed = acknowledgement;
             observed_at = now;
         },
     };
-    const companionlab::domain::TimePoint now{
+    const onboard_autonomy::domain::TimePoint now{
         std::chrono::seconds(5)
     };
 
@@ -371,7 +371,7 @@ void command_ack_is_forwarded_to_its_handler() {
         100,
         0,
         1,
-        companionlab::adapters::mavlink::kCompanionComponentId
+        onboard_autonomy::adapters::mavlink::kCompanionComponentId
     );
     decoder.ingest(serialize(message), now);
 
@@ -388,7 +388,7 @@ void command_ack_is_forwarded_to_its_handler() {
     );
     require(
         observed->target_component ==
-            companionlab::adapters::mavlink::kCompanionComponentId,
+            onboard_autonomy::adapters::mavlink::kCompanionComponentId,
         "ACK target component must be preserved"
     );
     require(observed_at == now, "ACK receive time must be preserved");

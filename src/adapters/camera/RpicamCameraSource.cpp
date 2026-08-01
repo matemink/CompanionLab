@@ -1,4 +1,4 @@
-#include "companionlab/adapters/camera/RpicamCameraSource.hpp"
+#include "onboard_autonomy/adapters/camera/RpicamCameraSource.hpp"
 
 #include <atomic>
 #include <charconv>
@@ -27,7 +27,7 @@
 #include <unistd.h>
 #endif
 
-namespace companionlab::adapters::camera {
+namespace onboard_autonomy::adapters::camera {
 namespace {
 
 constexpr std::string_view kFrameWallClockKey{
@@ -527,4 +527,4 @@ make_rpicam_camera_source(RpicamCameraConfig config) {
 #endif
 }
 
-}  // namespace companionlab::adapters::camera
+}  // namespace onboard_autonomy::adapters::camera

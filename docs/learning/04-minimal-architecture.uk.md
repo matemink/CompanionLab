@@ -1,9 +1,9 @@
-# Мінімальна архітектура CompanionLab
+# Мінімальна архітектура OnboardAutonomy
 
 ## Проблема до рефакторингу
 
 Папки `core`, `mavlink`, `transport` і `ui` вже існували, але CMake
-збирав їх в одну бібліотеку `companionlab_core`. Папка не створює
+збирав їх в одну бібліотеку `onboard_autonomy_core`. Папка не створює
 архітектурної межі: будь-який код міг залежати від будь-якого іншого.
 
 `main.cpp` одночасно:
@@ -35,13 +35,13 @@ executable composition root
 Фактичні CMake targets:
 
 ```text
-companionlab_domain
-companionlab_transport_port
-companionlab_transport_adapter
-companionlab_mavlink_adapter
-companionlab_application
-companionlab_console_presentation
-companionlab
+onboard_autonomy_domain
+onboard_autonomy_transport_port
+onboard_autonomy_transport_adapter
+onboard_autonomy_mavlink_adapter
+onboard_autonomy_application
+onboard_autonomy_console_presentation
+onboard_autonomy
 ```
 
 `target_link_libraries()` тепер не лише додає бібліотеки linker-у, а
@@ -154,7 +154,7 @@ transport, application orchestration та presentation model.
 ## Вирівнювання назви domain
 
 Після першого рефакторингу CMake target уже називався
-`companionlab_domain`, але папка та namespace історично залишалися
+`onboard_autonomy_domain`, але папка та namespace історично залишалися
 `core`. Це створювало три назви для однієї ролі.
 
 Виконано повний rename:
@@ -163,11 +163,11 @@ transport, application orchestration та presentation model.
 src/core
 → src/domain
 
-include/companionlab/core
-→ include/companionlab/domain
+include/onboard_autonomy/core
+→ include/onboard_autonomy/domain
 
-companionlab::core
-→ companionlab::domain
+onboard_autonomy::core
+→ onboard_autonomy::domain
 ```
 
 Compatibility alias не залишався: кодова база ще невелика, зовнішнього
@@ -178,8 +178,8 @@ public API немає, тому підтримувати дві назви оз�
 
 ```text
 folder:       domain
-namespace:    companionlab::domain
-CMake target: companionlab_domain
+namespace:    onboard_autonomy::domain
+CMake target: onboard_autonomy_domain
 ```
 
 Після rename пройшли C++ tests, Python tests, UDP integration check і
@@ -204,7 +204,7 @@ src/
 │   └── console/
 └── main.cpp
 
-include/companionlab/
+include/onboard_autonomy/
 ├── domain/
 ├── application/
 │   └── ports/
@@ -370,14 +370,14 @@ CompanionApplication::snapshot()
 ## Перевірка
 
 - CMake створив п'ять окремих production libraries і незалежний
-  `companionlab_transport_port`.
-- `companionlab` успішно linked із нових targets.
-- `companionlab_tests` включає application test із fake transport.
+  `onboard_autonomy_transport_port`.
+- `onboard_autonomy` успішно linked із нових targets.
+- `onboard_autonomy_tests` включає application test із fake transport.
 - усі C++ tests пройшли.
 - усі Python unit tests пройшли.
 - Python UDP integration check пройшов без зміни JSON contract.
 - У живому ArduCopter SITL зафіксовано три
   `MAV_CMD_SET_MESSAGE_INTERVAL`, три `COMMAND_ACK: ACCEPTED`, companion
   heartbeat і коректне виявлення втрати зв'язку.
-- SITL harness завершив ArduCopter, MAVProxy і CompanionLab без
+- SITL harness завершив ArduCopter, MAVProxy і OnboardAutonomy без
   залишених фонових процесів.

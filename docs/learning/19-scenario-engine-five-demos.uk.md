@@ -190,7 +190,7 @@ PrecLand: Failsafe Measures
 ```
 
 Причиною був `PLND_STRICT=1` із Gazebo defaults. Після припинення
-синтетичного target біля землі прошивка запускала retry. У CompanionLab
+синтетичного target біля землі прошивка запускала retry. У OnboardAutonomy
 SITL profile зафіксовано `PLND_STRICT=0`; після цього той самий сценарій
 завершився штатним auto-disarm і `exit code 0`.
 

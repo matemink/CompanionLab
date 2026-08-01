@@ -1,8 +1,8 @@
 #include "TestCases.hpp"
 
-#include "companionlab/adapters/ardupilot/BoardTypeCatalog.hpp"
-#include "companionlab/application/AppSnapshot.hpp"
-#include "companionlab/presentation/console/ConsoleView.hpp"
+#include "onboard_autonomy/adapters/ardupilot/BoardTypeCatalog.hpp"
+#include "onboard_autonomy/application/AppSnapshot.hpp"
+#include "onboard_autonomy/presentation/console/ConsoleView.hpp"
 
 #include <filesystem>
 #include <sstream>
@@ -26,7 +26,7 @@ void parser_preserves_aliases_and_prefers_reserved_names() {
     };
 
     const auto catalog =
-        companionlab::adapters::ardupilot::
+        onboard_autonomy::adapters::ardupilot::
             BoardTypeCatalog::from_stream(input);
 
     const auto ambiguous = catalog.resolve(9);
@@ -52,12 +52,12 @@ void parser_preserves_aliases_and_prefers_reserved_names() {
 
 void pinned_ardupilot_table_is_complete() {
     const auto path =
-        std::filesystem::path{COMPANIONLAB_SOURCE_DIR} /
+        std::filesystem::path{ONBOARD_AUTONOMY_SOURCE_DIR} /
         "third_party" /
         "ardupilot" /
         "board_types.txt";
     const auto catalog =
-        companionlab::adapters::ardupilot::
+        onboard_autonomy::adapters::ardupilot::
             BoardTypeCatalog::from_file(path);
 
     require(
@@ -86,10 +86,10 @@ void pinned_ardupilot_table_is_complete() {
 }
 
 void ambiguous_board_is_honest_in_the_console() {
-    companionlab::application::AppSnapshot snapshot;
+    onboard_autonomy::application::AppSnapshot snapshot;
     snapshot.vehicle.connected = true;
     snapshot.vehicle.autopilot_metadata =
-        companionlab::domain::AutopilotMetadata{
+        onboard_autonomy::domain::AutopilotMetadata{
             .board_version = 9U << 16U,
         };
 
@@ -99,10 +99,10 @@ void ambiguous_board_is_honest_in_the_console() {
         "TARGET_HW_CUBE_F4 9\n"
     };
     const auto catalog =
-        companionlab::adapters::ardupilot::
+        onboard_autonomy::adapters::ardupilot::
             BoardTypeCatalog::from_stream(table);
     const auto output =
-        companionlab::presentation::console::render_console(
+        onboard_autonomy::presentation::console::render_console(
             snapshot,
             "fake://transport",
             false,

@@ -12,7 +12,7 @@ AprilTag є **fiducial marker**, тобто штучною візуальною 
 - після калібрування камери та задання фізичного розміру мітки за
   кутами можна оцінити її 3D pose відносно камери.
 
-У CompanionLab використовується рекомендована upstream family
+У OnboardAutonomy використовується рекомендована upstream family
 `tagStandard41h12`. На цьому етапі ми визначаємо `ID` та геометрію у
 пікселях. 3D pose ще не обчислюється, бо для коректного результату
 потрібні camera intrinsics і реальний розмір надрукованої мітки.
@@ -61,7 +61,7 @@ Preview навмисно grayscale. Перша площина YUV420, `Y`, уж�
 Файл:
 
 ```text
-include/companionlab/application/ports/CameraPreviewSink.hpp
+include/onboard_autonomy/application/ports/CameraPreviewSink.hpp
 ```
 
 Це application-owned port. Core знає лише контракт:
@@ -85,7 +85,7 @@ Application layer не включає `httplib.h`, socket API або HTML.
 Файли:
 
 ```text
-include/companionlab/adapters/preview/HttpCameraPreviewServer.hpp
+include/onboard_autonomy/adapters/preview/HttpCameraPreviewServer.hpp
 src/adapters/preview/HttpCameraPreviewServer.cpp
 ```
 
@@ -125,10 +125,10 @@ overlay не потребує додаткового mapper.
 На Windows:
 
 ```text
-StartCompanionLabPixhawk.cmd
+StartOnboardAutonomyPixhawk.cmd
 ```
 
-Launcher відкриває SSH console з CompanionLab, а через три секунди:
+Launcher відкриває SSH console з OnboardAutonomy, а через три секунди:
 
 ```text
 http://companionpi.local:8080/
@@ -137,21 +137,21 @@ http://companionpi.local:8080/
 Окремо повторно відкрити preview можна через:
 
 ```text
-OpenCompanionLabCamera.cmd
+OpenOnboardAutonomyCamera.cmd
 ```
 
 Pi launcher вмикає preview за замовчуванням. Override:
 
 ```bash
-COMPANIONLAB_CAMERA_PREVIEW_ENABLED=0 \
-  bin/run_companionlab_pi.sh
+ONBOARD_AUTONOMY_CAMERA_PREVIEW_ENABLED=0 \
+  bin/run_onboard_autonomy_pi.sh
 ```
 
 або:
 
 ```bash
-COMPANIONLAB_CAMERA_PREVIEW_PORT=8090 \
-  bin/run_companionlab_pi.sh
+ONBOARD_AUTONOMY_CAMERA_PREVIEW_PORT=8090 \
+  bin/run_onboard_autonomy_pi.sh
 ```
 
 ## Виміряний результат
@@ -179,7 +179,7 @@ Final ARM64 package SHA-256:
 
 Фізичний тест використовував офіційну мітку
 `tagStandard41h12 / ID 0`, показану на моніторі. Camera Module 3 Wide
-дивилась на екран, а CompanionLab аналізував live YUV420 потік на
+дивилась на екран, а OnboardAutonomy аналізував live YUV420 потік на
 Raspberry Pi 5.
 
 Після стабілізації камери різниця двох runtime snapshots за 10 секунд

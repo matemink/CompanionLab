@@ -1,4 +1,4 @@
-#include "companionlab/adapters/transport/TransportFactory.hpp"
+#include "onboard_autonomy/adapters/transport/TransportFactory.hpp"
 
 #include <cerrno>
 #include <cstring>
@@ -11,7 +11,7 @@
 #include <unistd.h>
 #endif
 
-namespace companionlab::adapters::transport {
+namespace onboard_autonomy::adapters::transport {
 namespace {
 
 #ifndef _WIN32
@@ -152,4 +152,4 @@ std::unique_ptr<application::ports::Transport> make_serial_transport(
 #endif
 }
 
-}  // namespace companionlab::adapters::transport
+}  // namespace onboard_autonomy::adapters::transport

@@ -1,6 +1,6 @@
 #include "TestCases.hpp"
 
-#include "companionlab/adapters/mavlink/MavlinkEncoder.hpp"
+#include "onboard_autonomy/adapters/mavlink/MavlinkEncoder.hpp"
 
 #include <ardupilotmega/mavlink.h>
 
@@ -74,7 +74,7 @@ mavlink_message_t decode_message(
 void companion_heartbeat_uses_standard_identity() {
     constexpr std::uint8_t system_id{42};
     const auto bytes =
-        companionlab::adapters::mavlink::encode_companion_heartbeat(system_id);
+        onboard_autonomy::adapters::mavlink::encode_companion_heartbeat(system_id);
 
     mavlink_message_t receive_buffer{};
     mavlink_status_t receive_status{};
@@ -98,7 +98,7 @@ void companion_heartbeat_uses_standard_identity() {
     require(parsed_message.sysid == system_id, "wrong system id");
     require(
         parsed_message.compid ==
-            companionlab::adapters::mavlink::kCompanionComponentId,
+            onboard_autonomy::adapters::mavlink::kCompanionComponentId,
         "wrong component id"
     );
 
@@ -122,7 +122,7 @@ void message_interval_request_uses_command_long() {
     constexpr std::uint8_t system_id{7};
     constexpr std::uint32_t interval_microseconds{500'000};
     const auto bytes =
-        companionlab::adapters::mavlink::encode_set_message_interval(
+        onboard_autonomy::adapters::mavlink::encode_set_message_interval(
             system_id,
             MAVLINK_MSG_ID_GPS_RAW_INT,
             interval_microseconds
@@ -153,7 +153,7 @@ void message_interval_request_uses_command_long() {
     require(parsed_message.sysid == system_id, "wrong source system");
     require(
         parsed_message.compid ==
-            companionlab::adapters::mavlink::kCompanionComponentId,
+            onboard_autonomy::adapters::mavlink::kCompanionComponentId,
         "wrong source component"
     );
 
@@ -185,7 +185,7 @@ void message_interval_request_uses_command_long() {
 void battery_threshold_request_uses_parameter_protocol() {
     constexpr std::uint8_t system_id{7};
     const auto message = decode_message(
-        companionlab::adapters::mavlink::
+        onboard_autonomy::adapters::mavlink::
             encode_battery_arming_voltage_request(system_id)
     );
 
@@ -196,7 +196,7 @@ void battery_threshold_request_uses_parameter_protocol() {
     require(message.sysid == system_id, "wrong source system");
     require(
         message.compid ==
-            companionlab::adapters::mavlink::kCompanionComponentId,
+            onboard_autonomy::adapters::mavlink::kCompanionComponentId,
         "wrong source component"
     );
 
@@ -223,7 +223,7 @@ void battery_threshold_request_uses_parameter_protocol() {
 void autopilot_version_uses_one_shot_message_request() {
     constexpr std::uint8_t system_id{7};
     const auto command = decode_command_long(
-        companionlab::adapters::mavlink::
+        onboard_autonomy::adapters::mavlink::
             encode_autopilot_version_request(system_id)
     );
 
@@ -251,7 +251,7 @@ void flight_commands_use_documented_arducopter_parameters() {
     constexpr std::uint8_t system_id{1};
 
     const auto guided = decode_command_long(
-        companionlab::adapters::mavlink::encode_set_guided_mode(
+        onboard_autonomy::adapters::mavlink::encode_set_guided_mode(
             system_id
         )
     );
@@ -266,7 +266,7 @@ void flight_commands_use_documented_arducopter_parameters() {
     );
 
     const auto arm = decode_command_long(
-        companionlab::adapters::mavlink::encode_arm(system_id)
+        onboard_autonomy::adapters::mavlink::encode_arm(system_id)
     );
     require(
         arm.command == MAV_CMD_COMPONENT_ARM_DISARM &&
@@ -276,7 +276,7 @@ void flight_commands_use_documented_arducopter_parameters() {
     );
 
     const auto takeoff = decode_command_long(
-        companionlab::adapters::mavlink::encode_takeoff(
+        onboard_autonomy::adapters::mavlink::encode_takeoff(
             system_id,
             5.0
         )
@@ -288,7 +288,7 @@ void flight_commands_use_documented_arducopter_parameters() {
     );
 
     const auto land = decode_command_long(
-        companionlab::adapters::mavlink::encode_land(system_id)
+        onboard_autonomy::adapters::mavlink::encode_land(system_id)
     );
     require(
         land.command == MAV_CMD_NAV_LAND,
@@ -296,7 +296,7 @@ void flight_commands_use_documented_arducopter_parameters() {
     );
 
     const auto rtl = decode_command_long(
-        companionlab::adapters::mavlink::encode_return_to_launch(
+        onboard_autonomy::adapters::mavlink::encode_return_to_launch(
             system_id
         )
     );
@@ -309,7 +309,7 @@ void flight_commands_use_documented_arducopter_parameters() {
 void movement_and_precision_messages_use_documented_frames() {
     constexpr std::uint8_t system_id{1};
     const auto move_message = decode_message(
-        companionlab::adapters::mavlink::
+        onboard_autonomy::adapters::mavlink::
             encode_local_position_target(
                 system_id,
                 10.0,
@@ -337,7 +337,7 @@ void movement_and_precision_messages_use_documented_frames() {
     );
 
     const auto target_message = decode_message(
-        companionlab::adapters::mavlink::encode_landing_target(
+        onboard_autonomy::adapters::mavlink::encode_landing_target(
             system_id,
             123'000,
             -8.0,

@@ -1,4 +1,4 @@
-#include "companionlab/presentation/console/ConsoleInput.hpp"
+#include "onboard_autonomy/presentation/console/ConsoleInput.hpp"
 
 #include <cerrno>
 #include <fcntl.h>
@@ -8,7 +8,7 @@
 #include <memory>
 #include <optional>
 
-namespace companionlab::presentation::console {
+namespace onboard_autonomy::presentation::console {
 
 class ConsoleInput::Impl {
 public:
@@ -105,4 +105,4 @@ std::optional<char> ConsoleInput::poll() {
     return impl_->poll();
 }
 
-}  // namespace companionlab::presentation::console
+}  // namespace onboard_autonomy::presentation::console

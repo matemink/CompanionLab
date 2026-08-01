@@ -1,8 +1,8 @@
 #include "TestCases.hpp"
 
-#include "companionlab/adapters/vision/AprilTagTargetDetector.hpp"
-#include "companionlab/application/AppSnapshot.hpp"
-#include "companionlab/application/VisionMonitor.hpp"
+#include "onboard_autonomy/adapters/vision/AprilTagTargetDetector.hpp"
+#include "onboard_autonomy/application/AppSnapshot.hpp"
+#include "onboard_autonomy/application/VisionMonitor.hpp"
 
 #include <apriltag.h>
 #include <common/image_u8.h>
@@ -27,12 +27,12 @@ void require(const bool condition, const std::string& message) {
 }
 
 class FakeTargetDetector final
-    : public companionlab::application::ports::TargetDetector {
+    : public onboard_autonomy::application::ports::TargetDetector {
 public:
-    [[nodiscard]] companionlab::domain::TargetDetectionBatch detect(
-        const companionlab::application::ports::CameraFrame& frame
+    [[nodiscard]] onboard_autonomy::domain::TargetDetectionBatch detect(
+        const onboard_autonomy::application::ports::CameraFrame& frame
     ) override {
-        std::vector<companionlab::domain::TargetObservation> targets;
+        std::vector<onboard_autonomy::domain::TargetObservation> targets;
         if (frame.sequence == 1U) {
             targets.push_back(
                 {
@@ -62,7 +62,7 @@ public:
     }
 };
 
-companionlab::application::ports::CameraFrame empty_frame(
+onboard_autonomy::application::ports::CameraFrame empty_frame(
     const std::uint64_t sequence
 ) {
     return {
@@ -80,8 +80,8 @@ void vision_monitor_tracks_processing_and_detections() {
     using namespace std::chrono_literals;
 
     FakeTargetDetector detector;
-    companionlab::application::VisionMonitor monitor{detector};
-    const companionlab::domain::TimePoint start{};
+    onboard_autonomy::application::VisionMonitor monitor{detector};
+    const onboard_autonomy::domain::TimePoint start{};
 
     monitor.process(empty_frame(1), start);
     auto snapshot = monitor.snapshot(start);
@@ -180,7 +180,7 @@ void real_apriltag_adapter_detects_generated_id_zero() {
     tagStandard41h12_destroy(family);
 
     auto detector =
-        companionlab::adapters::vision::
+        onboard_autonomy::adapters::vision::
             make_apriltag_target_detector();
     const auto result = detector->detect(frame);
     require(
@@ -203,9 +203,9 @@ void real_apriltag_adapter_detects_generated_id_zero() {
 }
 
 void vision_snapshot_is_added_to_json() {
-    companionlab::application::AppSnapshot snapshot;
-    snapshot.camera = companionlab::application::CameraSnapshot{};
-    snapshot.vision = companionlab::application::VisionSnapshot{
+    onboard_autonomy::application::AppSnapshot snapshot;
+    snapshot.camera = onboard_autonomy::application::CameraSnapshot{};
+    snapshot.vision = onboard_autonomy::application::VisionSnapshot{
         .detector = "AprilTag 3 / tagStandard41h12",
         .processed_frames = 10,
         .frames_with_targets = 1,

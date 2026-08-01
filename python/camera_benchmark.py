@@ -226,7 +226,7 @@ def render_markdown(summary: dict[str, Any]) -> str:
     temperature = sensor["temperature_c"]
 
     lines = [
-        "# CompanionLab Camera Module 3 Benchmark",
+        "# OnboardAutonomy Camera Module 3 Benchmark",
         "",
         f"Result: **{summary['result']}**",
         "",

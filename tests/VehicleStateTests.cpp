@@ -1,6 +1,6 @@
 #include "TestCases.hpp"
 
-#include "companionlab/domain/VehicleState.hpp"
+#include "onboard_autonomy/domain/VehicleState.hpp"
 
 #include <chrono>
 #include <stdexcept>
@@ -20,16 +20,16 @@ void require(const bool condition, const std::string& message) {
 }
 
 void configure_battery_threshold(
-    companionlab::domain::VehicleState& state,
-    const companionlab::domain::TimePoint now,
+    onboard_autonomy::domain::VehicleState& state,
+    const onboard_autonomy::domain::TimePoint now,
     const double voltage_v = 10.5
 ) {
     state.on_battery_arming_voltage(voltage_v, now);
 }
 
 void healthy_vehicle_is_armable() {
-    companionlab::domain::VehicleState state;
-    const companionlab::domain::TimePoint now{};
+    onboard_autonomy::domain::VehicleState state;
+    const onboard_autonomy::domain::TimePoint now{};
 
     state.on_heartbeat(1, 1, 2, 3, 0, 0, 3, now);
     state.on_gps(3, 12, now);
@@ -52,8 +52,8 @@ void healthy_vehicle_is_armable() {
 }
 
 void prearm_warning_blocks_readiness() {
-    companionlab::domain::VehicleState state;
-    const companionlab::domain::TimePoint now{};
+    onboard_autonomy::domain::VehicleState state;
+    const onboard_autonomy::domain::TimePoint now{};
 
     state.on_heartbeat(1, 1, 2, 3, 0, 0, 3, now);
     state.on_gps(3, 12, now);
@@ -77,8 +77,8 @@ void prearm_warning_blocks_readiness() {
 }
 
 void quiet_prearm_warning_stops_blocking_but_remains_visible() {
-    companionlab::domain::VehicleState state;
-    const companionlab::domain::TimePoint now{};
+    onboard_autonomy::domain::VehicleState state;
+    const onboard_autonomy::domain::TimePoint now{};
 
     state.on_heartbeat(1, 1, 2, 3, 0, 0, 3, now);
     state.on_gps(3, 12, now);
@@ -117,8 +117,8 @@ void quiet_prearm_warning_stops_blocking_but_remains_visible() {
 }
 
 void stale_heartbeat_disconnects_vehicle() {
-    companionlab::domain::VehicleState state;
-    const companionlab::domain::TimePoint now{};
+    onboard_autonomy::domain::VehicleState state;
+    const onboard_autonomy::domain::TimePoint now{};
     state.on_heartbeat(1, 1, 2, 3, 0, 0, 3, now);
 
     const auto later = now + std::chrono::seconds(4);
@@ -128,8 +128,8 @@ void stale_heartbeat_disconnects_vehicle() {
 }
 
 void missing_data_remains_unknown() {
-    companionlab::domain::VehicleState state;
-    const companionlab::domain::TimePoint now{};
+    onboard_autonomy::domain::VehicleState state;
+    const onboard_autonomy::domain::TimePoint now{};
     state.on_heartbeat(1, 1, 2, 3, 0, 0, 3, now);
 
     const auto snapshot = state.snapshot(now);
@@ -139,8 +139,8 @@ void missing_data_remains_unknown() {
 }
 
 void low_battery_blocks_readiness() {
-    companionlab::domain::VehicleState state;
-    const companionlab::domain::TimePoint now{};
+    onboard_autonomy::domain::VehicleState state;
+    const onboard_autonomy::domain::TimePoint now{};
 
     state.on_heartbeat(1, 1, 2, 3, 0, 0, 3, now);
     state.on_gps(3, 12, now);
@@ -160,8 +160,8 @@ void low_battery_blocks_readiness() {
 }
 
 void unhealthy_battery_sensor_blocks_readiness() {
-    companionlab::domain::VehicleState state;
-    const companionlab::domain::TimePoint now{};
+    onboard_autonomy::domain::VehicleState state;
+    const onboard_autonomy::domain::TimePoint now{};
 
     state.on_heartbeat(1, 1, 2, 3, 0, 0, 3, now);
     state.on_gps(3, 12, now);
@@ -183,8 +183,8 @@ void unhealthy_battery_sensor_blocks_readiness() {
 }
 
 void battery_prearm_warning_marks_battery_not_ready() {
-    companionlab::domain::VehicleState state;
-    const companionlab::domain::TimePoint now{};
+    onboard_autonomy::domain::VehicleState state;
+    const onboard_autonomy::domain::TimePoint now{};
 
     state.on_heartbeat(1, 1, 2, 3, 0, 0, 3, now);
     state.on_gps(3, 12, now);
@@ -211,8 +211,8 @@ void battery_prearm_warning_marks_battery_not_ready() {
 }
 
 void voltage_below_ardupilot_threshold_blocks_readiness() {
-    companionlab::domain::VehicleState state;
-    const companionlab::domain::TimePoint now{};
+    onboard_autonomy::domain::VehicleState state;
+    const onboard_autonomy::domain::TimePoint now{};
 
     state.on_heartbeat(1, 1, 2, 3, 0, 0, 3, now);
     state.on_gps(3, 12, now);

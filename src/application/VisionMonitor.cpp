@@ -1,10 +1,10 @@
-#include "companionlab/application/VisionMonitor.hpp"
+#include "onboard_autonomy/application/VisionMonitor.hpp"
 
 #include <algorithm>
 #include <chrono>
 #include <utility>
 
-namespace companionlab::application {
+namespace onboard_autonomy::application {
 
 class VisionMonitor::Impl {
 public:
@@ -102,4 +102,4 @@ VisionSnapshot VisionMonitor::snapshot(
     return impl_->snapshot(now);
 }
 
-}  // namespace companionlab::application
+}  // namespace onboard_autonomy::application

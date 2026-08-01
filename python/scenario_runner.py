@@ -1,4 +1,4 @@
-"""Generate deterministic MAVLink health scenarios for CompanionLab."""
+"""Generate deterministic MAVLink health scenarios for OnboardAutonomy."""
 
 from __future__ import annotations
 

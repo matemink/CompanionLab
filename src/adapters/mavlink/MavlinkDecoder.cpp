@@ -1,5 +1,5 @@
 #define MAVLINK_USE_MESSAGE_INFO
-#include "companionlab/adapters/mavlink/MavlinkDecoder.hpp"
+#include "onboard_autonomy/adapters/mavlink/MavlinkDecoder.hpp"
 
 #include <ardupilotmega/mavlink.h>
 
@@ -11,7 +11,7 @@
 #include <string_view>
 #include <utility>
 
-namespace companionlab::adapters::mavlink {
+namespace onboard_autonomy::adapters::mavlink {
 namespace {
 
 std::optional<double> battery_voltage(
@@ -301,4 +301,4 @@ void MavlinkDecoder::handle_message(
     }
 }
 
-}  // namespace companionlab::adapters::mavlink
+}  // namespace onboard_autonomy::adapters::mavlink

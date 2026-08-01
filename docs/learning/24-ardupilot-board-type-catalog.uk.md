@@ -15,7 +15,7 @@ if (board_type == 56) {
 
 ## Джерело даних
 
-CompanionLab містить незмінений snapshot:
+OnboardAutonomy містить незмінений snapshot:
 
 ```text
 ArduPilot/Tools/AP_Bootloader/board_types.txt
@@ -33,11 +33,11 @@ commit 92b0cd788ec29406f26c6f9c31d5ceedbd1cc538
 Файл встановлюється разом із ARM64 package:
 
 ```text
-share/companionlab/ardupilot-board-types.txt
+share/onboard_autonomy/ardupilot-board-types.txt
 ```
 
 Таблиця та її GPL-3.0 notice зберігаються як окремі third-party data.
-Parser CompanionLab написаний окремо і залишається MIT-кодом.
+Parser OnboardAutonomy написаний окремо і залишається MIT-кодом.
 
 ## Архітектура
 
@@ -105,7 +105,7 @@ struct BoardTypeMatch {
 Packaged ARM64 binary на Raspberry Pi 5 прочитав таблицю з:
 
 ```text
-$HOME/companionlab-pi5/share/companionlab/
+$HOME/onboard_autonomy-pi5/share/onboard_autonomy/
     ardupilot-board-types.txt
 ```
 

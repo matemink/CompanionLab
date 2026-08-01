@@ -1,4 +1,4 @@
-#include "companionlab/adapters/transport/TransportFactory.hpp"
+#include "onboard_autonomy/adapters/transport/TransportFactory.hpp"
 
 #include <array>
 #include <cerrno>
@@ -18,7 +18,7 @@
 #include <unistd.h>
 #endif
 
-namespace companionlab::adapters::transport {
+namespace onboard_autonomy::adapters::transport {
 namespace {
 
 #ifdef _WIN32
@@ -232,4 +232,4 @@ std::unique_ptr<application::ports::Transport> make_udp_transport(
     return std::make_unique<UdpTransport>(bind_address, port);
 }
 
-}  // namespace companionlab::adapters::transport
+}  // namespace onboard_autonomy::adapters::transport

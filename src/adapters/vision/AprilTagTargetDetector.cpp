@@ -1,4 +1,4 @@
-#include "companionlab/adapters/vision/AprilTagTargetDetector.hpp"
+#include "onboard_autonomy/adapters/vision/AprilTagTargetDetector.hpp"
 
 #include <apriltag.h>
 #include <common/image_types.h>
@@ -15,7 +15,7 @@
 #include <utility>
 #include <vector>
 
-namespace companionlab::adapters::vision {
+namespace onboard_autonomy::adapters::vision {
 namespace {
 
 class DetectionArray {
@@ -213,4 +213,4 @@ make_apriltag_target_detector(AprilTagDetectorConfig config) {
     return std::make_unique<AprilTagTargetDetector>(config);
 }
 
-}  // namespace companionlab::adapters::vision
+}  // namespace onboard_autonomy::adapters::vision

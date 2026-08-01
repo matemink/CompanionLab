@@ -1,4 +1,4 @@
-#include "companionlab/application/ScenarioRunner.hpp"
+#include "onboard_autonomy/application/ScenarioRunner.hpp"
 
 #include <algorithm>
 #include <chrono>
@@ -13,7 +13,7 @@
 #include <variant>
 #include <vector>
 
-namespace companionlab::application {
+namespace onboard_autonomy::application {
 namespace {
 
 constexpr std::uint8_t kArduPilotAutopilotType = 3;
@@ -895,4 +895,4 @@ ScenarioRunner::update_precision_land(
     return actions;
 }
 
-}  // namespace companionlab::application
+}  // namespace onboard_autonomy::application

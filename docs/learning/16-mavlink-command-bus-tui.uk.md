@@ -12,7 +12,7 @@
 Gazebo:
   фізичне положення і рух моделі
 
-CompanionLab:
+OnboardAutonomy:
   команда -> ACK -> телеметричне підтвердження
 ```
 
@@ -185,7 +185,7 @@ git diff --check: PASS
 
 ## Жива перевірка
 
-Після перезапуску лише CompanionLab, без зупинки Gazebo та ArduCopter:
+Після перезапуску лише OnboardAutonomy, без зупинки Gazebo та ArduCopter:
 
 ```text
 commands:

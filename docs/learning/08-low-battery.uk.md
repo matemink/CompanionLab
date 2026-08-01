@@ -2,7 +2,7 @@
 
 ## Мета
 
-Перевірити production threshold CompanionLab на реальній послідовності
+Перевірити production threshold OnboardAutonomy на реальній послідовності
 MAVLink battery telemetry:
 
 ```bash
@@ -28,7 +28,7 @@ Production C++ знову не змінювався. Новий тест дов�
 `SIM_BATT_VOLTAGE=10.5` не є достатнім доказом low battery. Однакова
 pack voltage має різний зміст для 3S, 4S або 6S LiPo.
 
-CompanionLab поки не знає chemistry та cell count, тому його
+OnboardAutonomy поки не знає chemistry та cell count, тому його
 підтверджене правило використовує переданий ArduPilot відсоток:
 
 ```cpp

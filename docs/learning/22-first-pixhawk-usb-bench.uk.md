@@ -6,7 +6,7 @@
 батарею і не надсилаючи команди руху:
 
 ```text
-CompanionLab on Raspberry Pi 5
+OnboardAutonomy on Raspberry Pi 5
     -> USB CDC serial
     -> Holybro Pixhawk 6C
     -> ArduPilot
@@ -49,16 +49,16 @@ if00 -> /dev/ttyACM0 -> MAVLink
 if02 -> /dev/ttyACM1 -> SLCAN
 ```
 
-CompanionLab використовував стабільний `/dev/serial/by-id/...-if00`,
+OnboardAutonomy використовував стабільний `/dev/serial/by-id/...-if00`,
 а не нестабільне ім'я `/dev/ttyACM0`.
 
 Launcher навмисно не вгадує, якщо бачить кілька serial candidates.
 Для bench потрібний endpoint передано явно:
 
 ```bash
-COMPANIONLAB_SERIAL=/dev/serial/by-id/...-if00 \
-COMPANIONLAB_BAUD=115200 \
-    bin/run_companionlab_pi.sh
+ONBOARD_AUTONOMY_SERIAL=/dev/serial/by-id/...-if00 \
+ONBOARD_AUTONOMY_BAUD=115200 \
+    bin/run_onboard_autonomy_pi.sh
 ```
 
 ## Перший реальний MAVLink

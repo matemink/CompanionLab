@@ -2,10 +2,10 @@
 
 set -euo pipefail
 
-readonly udp_port="${COMPANIONLAB_CAMERA_UDP_PORT:-5600}"
-readonly frame_count="${COMPANIONLAB_CAMERA_CHECK_FRAMES:-60}"
-readonly timeout_seconds="${COMPANIONLAB_CAMERA_CHECK_TIMEOUT_SECONDS:-15}"
-readonly enable_topic="${COMPANIONLAB_CAMERA_ENABLE_TOPIC:-/world/iris_runway/model/iris_with_gimbal/model/gimbal/link/pitch_link/sensor/camera/image/enable_streaming}"
+readonly udp_port="${ONBOARD_AUTONOMY_CAMERA_UDP_PORT:-5600}"
+readonly frame_count="${ONBOARD_AUTONOMY_CAMERA_CHECK_FRAMES:-60}"
+readonly timeout_seconds="${ONBOARD_AUTONOMY_CAMERA_CHECK_TIMEOUT_SECONDS:-15}"
+readonly enable_topic="${ONBOARD_AUTONOMY_CAMERA_ENABLE_TOPIC:-/world/iris_runway/model/iris_with_gimbal/model/gimbal/link/pitch_link/sensor/camera/image/enable_streaming}"
 
 export GZ_VERSION="${GZ_VERSION:-harmonic}"
 

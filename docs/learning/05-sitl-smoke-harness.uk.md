@@ -17,7 +17,7 @@ python python/run_sitl_smoke_test.py
 ```text
 ArduCopter
 → MAVProxy
-→ CompanionLab
+→ OnboardAutonomy
 → telemetry snapshot
 → tlog assertions
 → process cleanup
@@ -69,7 +69,7 @@ os.killpg(process.pid, signal.SIGTERM)
 
 ## Очікування без sleep-driven логіки
 
-CompanionLab запускається з `--json`. Harness використовує
+OnboardAutonomy запускається з `--json`. Harness використовує
 `selectors`, читає stdout у міру появи рядків і чекає snapshot, де:
 
 ```text
@@ -85,7 +85,7 @@ system_health_known = true
 ## Protocol evidence
 
 Самого JSON недостатньо: він доводить наявність телеметрії, але не
-доводить, що CompanionLab налаштував її сам.
+доводить, що OnboardAutonomy налаштував її сам.
 
 Після завершення MAVProxy harness читає окремий `mav.tlog` і вимагає:
 

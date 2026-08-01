@@ -1,4 +1,4 @@
-#include "companionlab/application/Scenario.hpp"
+#include "onboard_autonomy/application/Scenario.hpp"
 
 #include <array>
 #include <stdexcept>
@@ -6,7 +6,7 @@
 #include <type_traits>
 #include <utility>
 
-namespace companionlab::application {
+namespace onboard_autonomy::application {
 namespace {
 
 using namespace std::chrono_literals;
@@ -137,4 +137,4 @@ std::string scenario_step_name(const ScenarioStep& step) {
     );
 }
 
-}  // namespace companionlab::application
+}  // namespace onboard_autonomy::application

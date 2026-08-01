@@ -1,4 +1,4 @@
-#include "companionlab/domain/VehicleState.hpp"
+#include "onboard_autonomy/domain/VehicleState.hpp"
 
 #include <algorithm>
 #include <cctype>
@@ -7,7 +7,7 @@
 #include <sstream>
 #include <string_view>
 
-namespace companionlab::domain {
+namespace onboard_autonomy::domain {
 namespace {
 
 constexpr auto kHeartbeatTimeout = std::chrono::seconds(3);
@@ -512,4 +512,4 @@ VehicleSnapshot VehicleState::snapshot(const TimePoint now) {
     return result;
 }
 
-}  // namespace companionlab::domain
+}  // namespace onboard_autonomy::domain
