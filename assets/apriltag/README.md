@@ -27,3 +27,9 @@ print target. Its 162 mm rendered image preserves the family's 9 cells;
 the 5-cell span between the detector corners is therefore 90 mm. Measure
 the marked span after printing and pass the measured value to
 `--apriltag-size-mm`.
+
+For normal desktop printing, use
+`tagStandard41h12-id0-90mm-a4-300dpi.png`. It is the same A4 target
+rasterized at 2480 x 3508 pixels and 300 DPI. Print it at actual size
+(100%), never fit-to-page, and verify that the 100 mm reference line is
+100 mm on paper.

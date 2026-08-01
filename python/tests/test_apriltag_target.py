@@ -1,3 +1,4 @@
+import struct
 import unittest
 import xml.etree.ElementTree as element_tree
 from pathlib import Path
@@ -9,6 +10,12 @@ TARGET_PATH = (
     / "assets"
     / "apriltag"
     / "tagStandard41h12-id0-90mm-a4.svg"
+)
+PNG_TARGET_PATH = (
+    PROJECT_ROOT
+    / "assets"
+    / "apriltag"
+    / "tagStandard41h12-id0-90mm-a4-300dpi.png"
 )
 
 
@@ -30,6 +37,23 @@ class AprilTagTargetTests(unittest.TestCase):
         rendered_width_mm = float(marker.attrib["width"])
         pose_span_mm = rendered_width_mm * 5.0 / 9.0
         self.assertAlmostEqual(pose_span_mm, 90.0)
+
+    def test_png_target_is_a4_at_300_dpi(self) -> None:
+        png = PNG_TARGET_PATH.read_bytes()
+        self.assertEqual(png[:8], b"\x89PNG\r\n\x1a\n")
+
+        width, height = struct.unpack(">II", png[16:24])
+        self.assertEqual((width, height), (2480, 3508))
+
+        phys_offset = png.index(b"pHYs") + 4
+        pixels_per_metre_x, pixels_per_metre_y, unit = struct.unpack(
+            ">IIB", png[phys_offset : phys_offset + 9]
+        )
+        self.assertEqual(unit, 1)
+        self.assertEqual(
+            (pixels_per_metre_x, pixels_per_metre_y),
+            (11811, 11811),
+        )
 
 
 if __name__ == "__main__":

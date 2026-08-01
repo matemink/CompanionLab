@@ -334,7 +334,9 @@ install(
     DESTINATION ${CMAKE_INSTALL_DATADIR}/onboard_autonomy
 )
 install(
-    FILES assets/apriltag/tagStandard41h12-id0-90mm-a4.svg
+    FILES
+        assets/apriltag/tagStandard41h12-id0-90mm-a4.svg
+        assets/apriltag/tagStandard41h12-id0-90mm-a4-300dpi.png
     DESTINATION ${CMAKE_INSTALL_DATADIR}/onboard_autonomy
 )
 install(
