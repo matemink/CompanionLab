@@ -179,7 +179,7 @@ Safe launcher зберігає machine-readable snapshots:
 ```
 
 Один рядок — один JSON snapshot. Це зручно для подальшого аналізу,
-регресійних тестів і прикладання як portfolio evidence.
+регресійних тестів і документування результатів.
 
 ## Acceptance criteria першого bench
 
