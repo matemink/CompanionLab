@@ -340,7 +340,7 @@ Prepare a Camera Module 3 calibration dataset with the printable
 ```bash
 python3 -m venv .venv
 .venv/bin/python -m pip install -r python/requirements.txt
-COMPANIONLAB_PYTHON=.venv/bin/python \
+ONBOARD_AUTONOMY_PYTHON=.venv/bin/python \
     bash scripts/capture_camera_calibration.sh
 ```
 

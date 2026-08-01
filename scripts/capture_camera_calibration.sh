@@ -2,18 +2,18 @@
 
 set -euo pipefail
 
-readonly width="${COMPANIONLAB_CAMERA_WIDTH:-640}"
-readonly height="${COMPANIONLAB_CAMERA_HEIGHT:-480}"
-readonly view_count="${COMPANIONLAB_CALIBRATION_VIEWS:-24}"
-readonly capture_fps="${COMPANIONLAB_CALIBRATION_FPS:-1}"
-readonly pattern="${COMPANIONLAB_CALIBRATION_PATTERN:-9x6}"
-readonly square_size_mm="${COMPANIONLAB_CALIBRATION_SQUARE_MM:-25}"
-readonly lens_position="${COMPANIONLAB_CAMERA_LENS_POSITION:-default}"
-readonly state_root="${COMPANIONLAB_CALIBRATION_STATE_DIR:-${HOME}/.local/state/companionlab/calibration}"
+readonly width="${ONBOARD_AUTONOMY_CAMERA_WIDTH:-640}"
+readonly height="${ONBOARD_AUTONOMY_CAMERA_HEIGHT:-480}"
+readonly view_count="${ONBOARD_AUTONOMY_CALIBRATION_VIEWS:-24}"
+readonly capture_fps="${ONBOARD_AUTONOMY_CALIBRATION_FPS:-1}"
+readonly pattern="${ONBOARD_AUTONOMY_CALIBRATION_PATTERN:-9x6}"
+readonly square_size_mm="${ONBOARD_AUTONOMY_CALIBRATION_SQUARE_MM:-25}"
+readonly lens_position="${ONBOARD_AUTONOMY_CAMERA_LENS_POSITION:-default}"
+readonly state_root="${ONBOARD_AUTONOMY_CALIBRATION_STATE_DIR:-${HOME}/.local/state/onboard_autonomy/calibration}"
 
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-calibrator="${COMPANIONLAB_CAMERA_CALIBRATOR:-${script_dir}/calibrate_camera.py}"
-python_executable="${COMPANIONLAB_PYTHON:-python3}"
+calibrator="${ONBOARD_AUTONOMY_CAMERA_CALIBRATOR:-${script_dir}/calibrate_camera.py}"
+python_executable="${ONBOARD_AUTONOMY_PYTHON:-python3}"
 requirements="${script_dir}/../requirements.txt"
 if [[ ! -f "${calibrator}" ]]; then
     calibrator="${script_dir}/../python/calibrate_camera.py"
@@ -32,13 +32,13 @@ require_positive_integer() {
     fi
 }
 
-require_positive_integer COMPANIONLAB_CAMERA_WIDTH "${width}"
-require_positive_integer COMPANIONLAB_CAMERA_HEIGHT "${height}"
-require_positive_integer COMPANIONLAB_CALIBRATION_VIEWS "${view_count}"
-require_positive_integer COMPANIONLAB_CALIBRATION_FPS "${capture_fps}"
+require_positive_integer ONBOARD_AUTONOMY_CAMERA_WIDTH "${width}"
+require_positive_integer ONBOARD_AUTONOMY_CAMERA_HEIGHT "${height}"
+require_positive_integer ONBOARD_AUTONOMY_CALIBRATION_VIEWS "${view_count}"
+require_positive_integer ONBOARD_AUTONOMY_CALIBRATION_FPS "${capture_fps}"
 
 if [[ ! "${lens_position}" =~ ^(default|[0-9]+([.][0-9]+)?)$ ]]; then
-    printf 'COMPANIONLAB_CAMERA_LENS_POSITION must be default or a non-negative number.\n' >&2
+    printf 'ONBOARD_AUTONOMY_CAMERA_LENS_POSITION must be default or a non-negative number.\n' >&2
     exit 2
 fi
 
@@ -67,7 +67,7 @@ run_dir="${state_root}/${run_id}"
 image_dir="${run_dir}/images"
 mkdir -p "${image_dir}"
 
-printf 'CompanionLab Camera Module 3 calibration capture\n'
+printf 'OnboardAutonomy Camera Module 3 calibration capture\n'
 printf '  Camera: %s\n' "${camera_model}"
 printf '  Resolution: %sx%s\n' "${width}" "${height}"
 printf '  Focus: manual, lens position %s\n' "${lens_position}"
@@ -100,7 +100,7 @@ if ! "${python_executable}" -c 'import cv2, numpy' >/dev/null 2>&1; then
         printf 'Install the packaged requirements in a virtual environment:\n'
         printf '  python3 -m venv .venv\n'
         printf '  .venv/bin/python -m pip install -r %s\n' "${requirements}"
-        printf 'Then rerun with COMPANIONLAB_PYTHON=.venv/bin/python.\n'
+        printf 'Then rerun with ONBOARD_AUTONOMY_PYTHON=.venv/bin/python.\n'
     fi
     exit 5
 fi

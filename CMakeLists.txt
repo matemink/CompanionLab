@@ -299,7 +299,7 @@ install(
 )
 install(
     FILES assets/calibration/checkerboard-9x6-25mm-a4.svg
-    DESTINATION ${CMAKE_INSTALL_DATADIR}/companionlab
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/onboard_autonomy
 )
 
 include(CTest)

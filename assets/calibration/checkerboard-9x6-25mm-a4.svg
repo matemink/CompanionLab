@@ -3,7 +3,7 @@
      width="297mm"
      height="210mm"
      viewBox="0 0 297 210">
-  <title>CompanionLab 9x6 inner-corner calibration checkerboard</title>
+  <title>OnboardAutonomy 9x6 inner-corner calibration checkerboard</title>
   <rect width="297" height="210" fill="#fff"/>
   <g transform="translate(23.5 8)" fill="#000"
      shape-rendering="crispEdges">
@@ -44,7 +44,7 @@
     <rect x="200" y="150" width="25" height="25"/>
   </g>
   <text x="23.5" y="194" font-family="sans-serif" font-size="4">
-    CompanionLab | 9x6 inner corners | 25 mm squares | print at 100%
+    OnboardAutonomy | 9x6 inner corners | 25 mm squares | print at 100%
   </text>
   <line x1="173.5" y1="199" x2="273.5" y2="199"
         stroke="#000" stroke-width="0.5"/>

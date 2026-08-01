@@ -285,7 +285,7 @@ def build_document(
             "rejected": views.rejected,
         },
         "tool": {
-            "name": "CompanionLab camera calibration",
+            "name": "OnboardAutonomy camera calibration",
             "opencv_version": cv.__version__,
         },
     }
@@ -349,7 +349,7 @@ def main() -> int:
         json.dumps(document, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
     )
-    print("CompanionLab camera calibration")
+    print("OnboardAutonomy camera calibration")
     print(f"  Result: {document['result']}")
     print(
         "  Views: "
