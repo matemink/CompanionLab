@@ -112,10 +112,11 @@ user-visible result did not satisfy the acceptance criterion. See
   observations, processing metrics, and a generated-marker unit test.
 - [x] Validate a physical `tagStandard41h12` marker through the Camera
   Module 3 pipeline at 301/301 detected frames over a 10-second window.
-- [ ] Calibrate Camera Module 3 Wide and store reproducible camera
-  intrinsics and distortion coefficients.
-  Calibration tooling, fixed-focus capture policy, quality gates, and
-  ARM64 packaging are complete; physical image capture remains.
+- [x] Calibrate Camera Module 3 Wide and store reproducible camera
+  intrinsics and distortion coefficients. The physical 640x480 capture
+  accepted 39/40 views with 0.6728 px RMS reprojection error; the full
+  quality-gated result is stored in
+  `config/camera-module-3-wide-640x480.json`.
 - [ ] Estimate the AprilTag 3D pose and expose position, orientation,
   confidence, and observation freshness through the domain model.
 - [ ] Transform camera coordinates into the MAVLink/body coordinate
