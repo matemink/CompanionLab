@@ -1,0 +1,38 @@
+{
+  "camera": {
+    "focus_mode": "synthetic",
+    "height": 480,
+    "lens_position": "not_applicable",
+    "model": "gazebo_pinhole_hfov_2_0",
+    "width": 640
+  },
+  "distortion": {
+    "coefficient_order": ["k1", "k2", "p1", "p2", "k3"],
+    "coefficients": [0.0, 0.0, 0.0, 0.0, 0.0]
+  },
+  "intrinsics": {
+    "camera_matrix": [
+      [205.46963709898583, 0.0, 320.0],
+      [0.0, 205.46963709898583, 240.0],
+      [0.0, 0.0, 1.0]
+    ],
+    "cx_px": 320.0,
+    "cy_px": 240.0,
+    "fx_px": 205.46963709898583,
+    "fy_px": 205.46963709898583
+  },
+  "model": "opencv_pinhole_brown_conrady_5",
+  "provenance": {
+    "horizontal_fov_rad": 2.0,
+    "method": "analytic_from_gazebo_sdf"
+  },
+  "quality": {
+    "checks": {
+      "every_view_error_within_limit": true,
+      "minimum_views_reached": true,
+      "rms_error_within_limit": true
+    }
+  },
+  "result": "PASS",
+  "schema_version": 1
+}

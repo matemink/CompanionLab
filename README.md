@@ -63,8 +63,9 @@ Pi.
 - ArduPilot firmware and board metadata without model-name guessing.
 - Five guarded SITL scenarios with command acknowledgements and telemetry
   confirmation: hover, out-and-RTL, square, search, and precision landing.
-- Raspberry Pi Camera Module 3 YUV420 ingestion, performance metrics,
-  AprilTag detection, and a read-only browser preview.
+- Raspberry Pi Camera Module 3 and Gazebo RTP/H.264 ingestion into the same
+  YUV420 pipeline, with performance metrics, AprilTag detection, and a
+  read-only browser preview.
 - Native Linux tests, Python integration tests, fault injection, and an
   ARM64 cross-build quality gate in GitHub Actions.
 
@@ -142,9 +143,11 @@ and build-time dependency diagrams.
 ## Project status
 
 The telemetry, command, simulation, ARM deployment, camera ingestion,
-and pixel-space AprilTag stages are implemented. The current precision
-scenario proves a synthetic MAVLink `LANDING_TARGET` integration seam.
-It does not present synthetic observations as real camera guidance.
+calibrated AprilTag pose, and target-tracking stages are implemented. The
+project-owned Gazebo world streams a downward camera over RTP/H.264 through
+the same application camera port. The current precision scenario still
+proves a synthetic MAVLink `LANDING_TARGET` integration seam and does not
+present synthetic observations as real camera guidance.
 
 Camera Module 3 Wide calibration, distortion-aware AprilTag 3D pose,
 and freshness-aware target tracking are implemented. Physical distance

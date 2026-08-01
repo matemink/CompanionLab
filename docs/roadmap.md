@@ -87,6 +87,8 @@ tests, observability, and developer tooling.
   from OnboardAutonomy.
 - [x] Stream the simulated camera through GStreamer and verify decoded
   frames with a bounded smoke test.
+- [x] Add a project-owned Gazebo landing camera and AprilTag pad, analytic
+  calibration, RTP/H.264 ingestion, and geometry/texture regression tests.
 - [x] Receive Raspberry Pi Camera Module 3 Wide frames through
   `rpicam`/libcamera on Raspberry Pi 5.
 - [x] Benchmark raw YUV420 frame cadence, estimated drops, process CPU,
@@ -126,6 +128,8 @@ user-visible result did not satisfy the acceptance criterion. See
 - [x] Filter noisy measurements without hiding stale or lost targets.
 - [ ] Replace the synthetic SITL target provider with real AprilTag
   `LANDING_TARGET` observations.
+- [ ] Verify simulated AprilTag acquisition and metric pose after takeoff
+  over the project landing pad.
 - [ ] Validate the complete precision-landing sequence in Gazebo.
 - [ ] Test lost-target, reacquisition, outlier, and noisy-observation
   behavior.

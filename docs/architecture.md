@@ -22,7 +22,9 @@ flowchart LR
     AppSnapshot --> Snapshot["JSON Health Snapshot"]
     Python["Python Scenario Runner"] --> SITL
     Camera["Camera Module 3"] --> Rpicam["rpicam adapter"]
+    GazeboCamera["Gazebo landing camera"] --> GStreamer["RTP/H.264 GStreamer adapter"]
     Rpicam --> CameraPort["CameraSource port"]
+    GStreamer --> CameraPort
     CameraPort --> CameraMonitor["CameraMonitor"]
     CameraMonitor --> AppSnapshot
     CameraPort --> Vision["AprilTag 3 adapter"]
@@ -83,11 +85,17 @@ without exposing Linux processes or `rpicam` arguments. The Linux
 `RpicamCameraSource` adapter starts `rpicam-vid` with a fixed manual
 hyperfocal lens position, receives fixed-size raw
 frames through one pipe, and receives per-frame metadata through another.
+The `GStreamerCameraSource` adapter starts an explicit `gst-launch-1.0`
+pipeline, receives Gazebo RTP/H.264 over UDP, decodes it, and publishes the
+same fixed-size I420 frame type through the same port. The application layer
+therefore does not branch between physical and simulated cameras.
 
 `FrameWallClock` is paired with each completed frame. `CameraMonitor`
 calculates consumed FPS, sequence gaps, latest/average/maximum
 sensor-to-application latency, and frame age. It does not know whether
-the source is `rpicam`, a future GStreamer source, or a test fake.
+the source is `rpicam`, GStreamer, or a test fake. Gazebo frames do not carry
+the Raspberry Pi `FrameWallClock`, so their capture latency remains unknown
+rather than being reported as a fabricated zero.
 
 ### Vision and camera preview
 
@@ -164,9 +172,10 @@ after the vehicle reports `DISARMED`.
 
 Five scenarios are available from the interactive terminal. The precision
 scenario sends a synthetic body-FRD `LANDING_TARGET` in SITL; it is an
-integration seam for the current camera/AprilTag observations. Pixel
-observations are not yet converted into pose or wired to MAVLink, so the
-scenario remains synthetic.
+integration seam for the current camera/AprilTag observations. Calibrated
+metric pose and freshness-aware tracking are implemented, but the explicit
+camera-to-body-FRD transform is not yet wired to MAVLink, so the scenario
+remains synthetic.
 
 Python remains test orchestration: it starts SITL, injects failures, and
 asserts behavior from JSON output.

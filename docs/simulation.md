@@ -22,10 +22,10 @@ building an arbitrary moving branch.
 Run the three processes in separate terminals:
 
 ```bash
-bash scripts/run_gazebo_iris.sh
+bash scripts/run_gazebo_apriltag.sh
 bash scripts/run_arducopter_gazebo.sh
 ONBOARD_AUTONOMY_INTERACTIVE=1 \
-    bash scripts/run_onboard_autonomy_sitl.sh
+    bash scripts/run_onboard_autonomy_gazebo_vision.sh
 ```
 
 On Windows, `StartOnboardAutonomyGazeboDemo.cmd` launches the same stack
@@ -59,9 +59,9 @@ only after the vehicle reports `DISARMED`; an accepted command alone is
 not treated as completed motion.
 
 The precision scenario currently uses a synthetic body-FRD
-`LANDING_TARGET`. Camera and AprilTag pixel observations are implemented,
-but they are not yet converted into 3D pose or connected to flight
-guidance.
+`LANDING_TARGET`. Calibrated AprilTag 3D pose and freshness-aware tracking
+are implemented, but the camera-to-body-FRD transform is not yet connected
+to flight guidance.
 
 ## Operator console
 
@@ -78,7 +78,24 @@ TX and RX wires pulse only while a fresh complete MAVLink frame is
 observed. The animation is presentation state and does not alter protocol
 or domain behavior.
 
-## Simulated camera stream
+## Simulated landing camera
+
+The project world mounts a fixed downward camera under the Iris and places a
+`tagStandard41h12` landing pad at home. Gazebo sends `640x480` H.264 over RTP
+to UDP port `5601`; `GStreamerCameraSource` decodes it to I420 and publishes
+the same `CameraFrame` type used by Camera Module 3.
+
+The simulator calibration is derived from the SDF field of view and stored
+in `config/gazebo-landing-camera-640x480.json`. The pad texture, two-metre
+detection span, camera geometry, and calibration agreement are guarded by
+`python/tests/test_gazebo_apriltag_world.py`.
+
+Open the OnboardAutonomy preview at `http://localhost:8080/`. A complete tag
+is not expected while the vehicle rests directly on top of the pad because
+the camera is too close to see all four corners. Validate acquisition after
+takeoff.
+
+## Reference gimbal stream
 
 The official Iris world exposes an RTP/H.264 gimbal-camera stream on UDP
 port `5600`. Verify a bounded 60-frame decode:
