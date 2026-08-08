@@ -37,13 +37,13 @@ This work can proceed alongside the technical milestones.
 
 Status: implemented and verified on Ubuntu 24.04 under WSL2.
 
-- C++20 project and CMake build.
-- MAVLink UDP and Linux serial transports.
-- Minimum health-message decoder.
-- Freshness-aware vehicle state.
-- Native tests and Python scenario generator.
-- End-to-end Python-to-C++ UDP integration check.
-- ARM64 cross-build workflow.
+- [x] C++20 project and CMake build.
+- [x] MAVLink UDP and Linux serial transports.
+- [x] Minimum health-message decoder.
+- [x] Freshness-aware vehicle state.
+- [x] Native tests and Python scenario generator.
+- [x] End-to-end Python-to-C++ UDP integration check.
+- [x] ARM64 cross-build workflow.
 
 Engineering focus: C++, MAVLink integration, architecture, testing, Git.
 
