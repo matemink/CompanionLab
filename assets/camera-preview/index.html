@@ -226,7 +226,7 @@
       nextPollDelay = 600;
     }
 
-    function drawTargets(targets) {
+    function drawTargets(targets, targetTrack) {
       context.lineWidth = Math.max(2, canvas.width / 240);
       context.font = `${Math.max(14, canvas.width / 36)}px Lucida Console`;
 
@@ -251,7 +251,15 @@
         context.arc(centerX, centerY, 5, 0, Math.PI * 2);
         context.fill();
 
-        const label = `TAG ${target.id}`;
+        const tracked = targetTrack.target_id === target.id &&
+          targetTrack.phase !== "searching";
+        const trackLabel = tracked
+          ? ` / ${targetTrack.phase.toUpperCase()}`
+          : "";
+        const label = target.pose === null
+          ? `TAG ${target.id}${trackLabel}`
+          : `TAG ${target.id}${trackLabel} / ` +
+            `Z ${target.pose.forward_m.toFixed(2)} M`;
         const labelWidth = context.measureText(label).width + 14;
         const labelY = Math.max(22, corners[0][1] - 10);
         context.fillStyle = "rgb(5 12 12 / 82%)";
@@ -286,6 +294,10 @@
         const targets = JSON.parse(
           response.headers.get("X-OnboardAutonomy-Targets") || "[]"
         );
+        const targetTrack = JSON.parse(
+          response.headers.get("X-OnboardAutonomy-Target-Track") ||
+            '{"phase":"searching","target_id":null}'
+        );
         const luma = new Uint8Array(await response.arrayBuffer());
         if (luma.length !== width * height) {
           throw new Error("Incomplete camera frame");
@@ -313,21 +325,47 @@
           rgba[destination + 3] = 255;
         }
         context.putImageData(imageData, 0, 0);
-        drawTargets(targets);
+        drawTargets(targets, targetTrack);
 
         status.classList.add("live");
         statusText.textContent = "LIVE";
         waiting.classList.add("hidden");
         frameText.textContent =
           `${width}x${height} Y PLANE / FRAME ${sequence}`;
-        targetText.textContent = targets.length === 0
-          ? "APRILTAG NOT VISIBLE"
-          : targets
-              .map((target) =>
-                `TAG ${target.id} / MARGIN ` +
-                target.decision_margin.toFixed(1)
-              )
+        if (targetTrack.phase !== "searching" &&
+            targetTrack.target_id !== null) {
+          const phase = targetTrack.phase === "acquiring"
+            ? `ACQUIRING ${targetTrack.consecutive_observations}/` +
+              `${targetTrack.required_observations}`
+            : "TRACKING";
+          const age = targetTrack.observation_age_ms === null
+            ? ""
+            : ` / AGE ${targetTrack.observation_age_ms.toFixed(0)} MS`;
+          const position = targetTrack.position === null
+            ? ""
+            : ` / RIGHT ${targetTrack.position.right_m.toFixed(2)} M` +
+              ` / DOWN ${targetTrack.position.down_m.toFixed(2)} M` +
+              ` / FORWARD ${targetTrack.position.forward_m.toFixed(2)} M`;
+          targetText.textContent =
+            `TAG ${targetTrack.target_id} / ${phase}${position}${age}`;
+        } else {
+          targetText.textContent = targets.length === 0
+            ? "APRILTAG NOT VISIBLE"
+            : targets
+              .map((target) => {
+                const quality =
+                  `TAG ${target.id} / MARGIN ` +
+                  target.decision_margin.toFixed(1);
+                if (target.pose === null) {
+                  return `${quality} / POSE DISABLED`;
+                }
+                return `${quality} / RIGHT ` +
+                  `${target.pose.right_m.toFixed(2)} M / DOWN ` +
+                  `${target.pose.down_m.toFixed(2)} M / FORWARD ` +
+                  `${target.pose.forward_m.toFixed(2)} M`;
+              })
               .join("   ");
+        }
         nextPollDelay = 100;
       } catch (error) {
         setOffline("PREVIEW OFFLINE");

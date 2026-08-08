@@ -50,7 +50,7 @@ Engineering focus: C++, MAVLink integration, architecture, testing, Git.
 
 ## Milestone 2: ArduPilot SITL integration
 
-Status: in progress and running locally against ArduCopter 4.6.3.
+Status: implemented and verified locally against ArduCopter 4.6.3.
 
 - [x] Install Ubuntu with WSL2.
 - [x] Build and run ArduCopter SITL.
@@ -71,8 +71,8 @@ Status: in progress and running locally against ArduCopter 4.6.3.
   the live terminal while keeping serial hardware blocked.
 - [x] Replace the fixed demo with a typed C++ Scenario Runner and five
   selectable SITL scenarios.
-- [x] Verify local-NED route steps, RTL, and a synthetic MAVLink
-  `LANDING_TARGET` integration path.
+- [x] Verify local-NED route steps, RTL, and MAVLink `LANDING_TARGET`
+  encoding before connecting the vision source.
 
 Engineering focus: Python, Embedded Linux, ArduPilot, integration
 tests, observability, and developer tooling.
@@ -87,6 +87,8 @@ tests, observability, and developer tooling.
   from OnboardAutonomy.
 - [x] Stream the simulated camera through GStreamer and verify decoded
   frames with a bounded smoke test.
+- [x] Add a project-owned Gazebo landing camera and AprilTag pad, analytic
+  calibration, RTP/H.264 ingestion, and geometry/texture regression tests.
 - [x] Receive Raspberry Pi Camera Module 3 Wide frames through
   `rpicam`/libcamera on Raspberry Pi 5.
 - [x] Benchmark raw YUV420 frame cadence, estimated drops, process CPU,
@@ -117,16 +119,24 @@ user-visible result did not satisfy the acceptance criterion. See
   accepted 39/40 views with 0.6728 px RMS reprojection error; the full
   quality-gated result is stored in
   `config/camera-module-3-wide-640x480.json`.
-- [ ] Estimate the AprilTag 3D pose and expose position, orientation,
-  confidence, and observation freshness through the domain model.
-- [ ] Transform camera coordinates into the MAVLink/body coordinate
+- [x] Estimate the AprilTag 3D pose and expose position, orientation,
+  confidence, and observation freshness through typed state models.
+- [ ] Validate metric pose scale against a physically measured printed
+  target and camera-to-target distance.
+- [x] Transform camera coordinates into the MAVLink/body coordinate
   frame and validate axes, signs, units, and timestamps with tests.
-- [ ] Filter noisy measurements without hiding stale or lost targets.
-- [ ] Replace the synthetic SITL target provider with real AprilTag
+- [x] Filter noisy measurements without hiding stale or lost targets.
+- [x] Replace the synthetic SITL target provider with real AprilTag
   `LANDING_TARGET` observations.
-- [ ] Validate the complete precision-landing sequence in Gazebo.
-- [ ] Test lost-target, reacquisition, outlier, and noisy-observation
+- [x] Verify simulated AprilTag acquisition and metric pose after takeoff
+  over the project landing pad.
+- [x] Validate the complete precision-landing sequence in Gazebo.
+- [x] Test lost-target, reacquisition, outlier, and noisy-observation
   behavior.
+
+Simulation acceptance evidence: 72 valid body-FRD `LANDING_TARGET`
+messages, accepted LAND, automatic DISARMED, and 0.456 m final horizontal
+error. See `docs/evidence/precision-landing-sitl.md`.
 
 Engineering focus: computer vision, guidance integration, algorithms.
 

@@ -63,8 +63,9 @@ Pi.
 - ArduPilot firmware and board metadata without model-name guessing.
 - Five guarded SITL scenarios with command acknowledgements and telemetry
   confirmation: hover, out-and-RTL, square, search, and precision landing.
-- Raspberry Pi Camera Module 3 YUV420 ingestion, performance metrics,
-  AprilTag detection, and a read-only browser preview.
+- Raspberry Pi Camera Module 3 and Gazebo RTP/H.264 ingestion into the same
+  YUV420 pipeline, with performance metrics, AprilTag detection, and a
+  read-only browser preview.
 - Native Linux tests, Python integration tests, fault injection, and an
   ARM64 cross-build quality gate in GitHub Actions.
 
@@ -142,15 +143,16 @@ and build-time dependency diagrams.
 ## Project status
 
 The telemetry, command, simulation, ARM deployment, camera ingestion,
-and pixel-space AprilTag stages are implemented. The current precision
-scenario proves a synthetic MAVLink `LANDING_TARGET` integration seam.
-It does not present synthetic observations as real camera guidance.
+calibrated AprilTag pose, and target-tracking stages are implemented. The
+project-owned Gazebo world streams a downward camera over RTP/H.264 through
+the same application camera port used by the rest of the vision pipeline.
 
-Calibration tooling, a printable target, fixed-focus capture, and OpenCV
-quality gates are implemented. Physical image capture remains before a
-trusted intrinsics artifact can be stored. The next vertical slice then
-adds AprilTag 3D pose, coordinate-frame validation, and replacement of
-the synthetic target provider. See [docs/roadmap.md](docs/roadmap.md).
+The simulated precision scenario now completes the full vertical slice:
+AprilTag pose, confirmed fresh track, camera-optical to body-FRD transform,
+5 Hz MAVLink `LANDING_TARGET`, ArduPilot LAND, touchdown, and DISARMED. The
+verified run finished 0.456 m from the marker center. Physical printed-target
+scale validation remains required before enabling this guidance path on a
+real aircraft. See [docs/roadmap.md](docs/roadmap.md).
 
 ## Safety
 
@@ -167,4 +169,5 @@ validated in simulation before hardware-in-the-loop testing.
 - [Gazebo simulation runbook](docs/simulation.md)
 - [Raspberry Pi 5 and Pixhawk 6C bench](docs/raspberry-pi-5-bench.md)
 - [Camera calibration workflow](docs/learning/29-camera-calibration.uk.md)
+- [AprilTag target tracking](docs/learning/30-apriltag-target-tracking.uk.md)
 - [Roadmap](docs/roadmap.md)

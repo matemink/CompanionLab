@@ -66,26 +66,10 @@ bool scenario_needs_local_position(
     );
 }
 
-bool scenario_needs_attitude(const ScenarioDefinition& scenario) {
-    return std::any_of(
-        scenario.steps.begin(),
-        scenario.steps.end(),
-        [](const ScenarioStep& step) {
-            return std::holds_alternative<PrecisionLandStep>(step);
-        }
-    );
-}
-
 bool has_local_position(const domain::VehicleSnapshot& vehicle) {
     return vehicle.local_north_m.has_value() &&
            vehicle.local_east_m.has_value() &&
            vehicle.local_down_m.has_value();
-}
-
-bool has_attitude(const domain::VehicleSnapshot& vehicle) {
-    return vehicle.roll_rad.has_value() &&
-           vehicle.pitch_rad.has_value() &&
-           vehicle.yaw_rad.has_value();
 }
 
 double target_altitude(const ScenarioDefinition& scenario) {
@@ -203,7 +187,8 @@ void ScenarioRunner::cancel(std::string detail) {
 std::vector<FlightActionRequest> ScenarioRunner::update(
     const domain::VehicleSnapshot& vehicle,
     const bool telemetry_ready,
-    const domain::TimePoint now
+    const domain::TimePoint now,
+    std::optional<domain::BodyFramePosition> landing_target
 ) {
     std::vector<FlightActionRequest> actions;
     if (phase_ == ScenarioRunnerPhase::disabled ||
@@ -249,22 +234,10 @@ std::vector<FlightActionRequest> ScenarioRunner::update(
                 scenario_ == nullptr ||
                 !scenario_needs_local_position(*scenario_) ||
                 has_local_position(vehicle);
-            const bool attitude_ready =
-                scenario_ == nullptr ||
-                !scenario_needs_attitude(*scenario_) ||
-                has_attitude(vehicle);
-
             if (telemetry_ready && vehicle.armable &&
                 !vehicle.armed &&
                 vehicle.relative_altitude_m.has_value() &&
-                local_position_ready && attitude_ready) {
-                if (has_local_position(vehicle)) {
-                    home_position_ = LocalPosition{
-                        .north_m = *vehicle.local_north_m,
-                        .east_m = *vehicle.local_east_m,
-                        .down_m = *vehicle.local_down_m,
-                    };
-                }
+                local_position_ready) {
                 phase_ = ScenarioRunnerPhase::executing;
                 step_index_ = 0;
                 enter_current_step(vehicle, now);
@@ -463,7 +436,11 @@ std::vector<FlightActionRequest> ScenarioRunner::update(
                 advance_step(vehicle, now);
                 continue;
             }
-            return update_precision_land(vehicle, now);
+            return update_precision_land(
+                vehicle,
+                now,
+                landing_target
+            );
         }
     }
 
@@ -477,10 +454,9 @@ void ScenarioRunner::on_action_sent(
     const domain::TimePoint
 ) {
     if (request.action == FlightAction::landing_target) {
-        synthetic_landing_target_active_ =
-            synthetic_landing_target_active_ || sent;
+        vision_landing_target_active_ = sent;
         if (!sent) {
-            detail_ = "Failed to send synthetic LANDING_TARGET";
+            detail_ = "Failed to send vision LANDING_TARGET";
         }
         return;
     }
@@ -568,8 +544,8 @@ ScenarioSnapshot ScenarioRunner::snapshot() const {
             scenario_ == nullptr ? 0.0 : target_altitude(*scenario_),
         .attempt = attempt_,
         .failure_result = failure_result_,
-        .synthetic_landing_target_active =
-            synthetic_landing_target_active_,
+        .vision_landing_target_active =
+            vision_landing_target_active_,
     };
 
     if (scenario_ != nullptr &&
@@ -593,18 +569,17 @@ ScenarioSnapshot ScenarioRunner::snapshot() const {
 void ScenarioRunner::reset_execution_state() {
     step_index_ = 0;
     vehicle_system_id_.reset();
-    home_position_.reset();
     move_target_.reset();
     attempt_ = 0;
     action_sent_ = false;
     awaiting_ack_ = false;
     command_accepted_ = false;
-    synthetic_landing_target_active_ = false;
+    vision_landing_target_active_ = false;
     acknowledgement_deadline_ = {};
     phase_deadline_ = {};
     hold_deadline_ = {};
     next_landing_target_ = {};
-    precision_land_command_after_ = {};
+    precision_land_command_after_.reset();
     failure_result_.reset();
 }
 
@@ -674,8 +649,7 @@ void ScenarioRunner::enter_current_step(
     if (std::holds_alternative<PrecisionLandStep>(step)) {
         phase_deadline_ = now + kLandingTimeout;
         next_landing_target_ = now;
-        precision_land_command_after_ =
-            now + kLandingTargetWarmup;
+        precision_land_command_after_.reset();
     }
 }
 
@@ -702,6 +676,7 @@ void ScenarioRunner::fail(std::string detail) {
     detail_ = std::move(detail);
     action_sent_ = false;
     awaiting_ack_ = false;
+    vision_landing_target_active_ = false;
 }
 
 void ScenarioRunner::update_readiness_detail(
@@ -726,10 +701,6 @@ void ScenarioRunner::update_readiness_detail(
                scenario_needs_local_position(*scenario_) &&
                !has_local_position(vehicle)) {
         detail_ = "Waiting for LOCAL_POSITION_NED";
-    } else if (scenario_ != nullptr &&
-               scenario_needs_attitude(*scenario_) &&
-               !has_attitude(vehicle)) {
-        detail_ = "Waiting for ATTITUDE";
     } else {
         detail_ = "Checking readiness";
     }
@@ -809,58 +780,39 @@ std::optional<FlightActionRequest> ScenarioRunner::update_move(
 std::vector<FlightActionRequest>
 ScenarioRunner::update_precision_land(
     const domain::VehicleSnapshot& vehicle,
-    const domain::TimePoint now
+    const domain::TimePoint now,
+    const std::optional<domain::BodyFramePosition>& landing_target
 ) {
     std::vector<FlightActionRequest> actions;
     if (now >= phase_deadline_) {
         fail("Vehicle did not complete precision landing");
         return actions;
     }
-    if (!home_position_.has_value() ||
-        !has_local_position(vehicle) ||
-        !has_attitude(vehicle)) {
-        detail_ = "Waiting for precision target pose";
-        return actions;
-    }
-
     if (command_accepted_ &&
         vehicle.relative_altitude_m.has_value() &&
         *vehicle.relative_altitude_m <=
             kPrecisionTargetStopAltitudeM) {
-        synthetic_landing_target_active_ = false;
+        vision_landing_target_active_ = false;
         detail_ =
             "Touchdown detected; waiting for ArduPilot auto-disarm";
         return actions;
     }
 
-    const double north =
-        home_position_->north_m - *vehicle.local_north_m;
-    const double east =
-        home_position_->east_m - *vehicle.local_east_m;
-    const double down =
-        home_position_->down_m - *vehicle.local_down_m;
+    if (!landing_target.has_value()) {
+        vision_landing_target_active_ = false;
+        precision_land_command_after_.reset();
+        next_landing_target_ = now;
+        detail_ = command_accepted_
+            ? "Landing; waiting to reacquire the vision target"
+            : "Waiting for a fresh confirmed vision target";
+        return actions;
+    }
 
-    const double roll = *vehicle.roll_rad;
-    const double pitch = *vehicle.pitch_rad;
-    const double yaw = *vehicle.yaw_rad;
-    const double cr = std::cos(roll);
-    const double sr = std::sin(roll);
-    const double cp = std::cos(pitch);
-    const double sp = std::sin(pitch);
-    const double cy = std::cos(yaw);
-    const double sy = std::sin(yaw);
-
-    // Transpose of the body-to-NED attitude matrix.
-    const double forward =
-        cp * cy * north + cp * sy * east - sp * down;
-    const double right =
-        (sr * sp * cy - cr * sy) * north +
-        (sr * sp * sy + cr * cy) * east +
-        sr * cp * down;
-    const double body_down =
-        (cr * sp * cy + sr * sy) * north +
-        (cr * sp * sy - sr * cy) * east +
-        cr * cp * down;
+    if (!precision_land_command_after_.has_value()) {
+        precision_land_command_after_ =
+            now + kLandingTargetWarmup;
+        next_landing_target_ = now;
+    }
 
     if (now >= next_landing_target_) {
         const auto elapsed = std::chrono::duration_cast<
@@ -870,9 +822,9 @@ ScenarioRunner::update_precision_land(
             FlightActionRequest{
                 .action = FlightAction::landing_target,
                 .vehicle_system_id = *vehicle_system_id_,
-                .x_m = forward,
-                .y_m = right,
-                .z_m = body_down,
+                .x_m = landing_target->forward_m,
+                .y_m = landing_target->right_m,
+                .z_m = landing_target->down_m,
                 .time_usec =
                     static_cast<std::uint64_t>(elapsed.count()),
             }
@@ -881,16 +833,18 @@ ScenarioRunner::update_precision_land(
     }
 
     if (!command_accepted_ &&
-        now >= precision_land_command_after_) {
+        now >= *precision_land_command_after_) {
         if (auto land = update_command(FlightAction::land, now)) {
             actions.push_back(*land);
         }
     }
 
     std::ostringstream target;
-    target << "Synthetic target F/R/D "
+    target << "Vision target F/R/D "
            << std::fixed << std::setprecision(1)
-           << forward << "/" << right << "/" << body_down << " m";
+           << landing_target->forward_m << "/"
+           << landing_target->right_m << "/"
+           << landing_target->down_m << " m";
     detail_ = target.str();
     return actions;
 }

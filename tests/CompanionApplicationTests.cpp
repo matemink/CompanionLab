@@ -259,8 +259,19 @@ void interactive_motion_commands_are_guarded() {
         {
             .scenario_runner = {},
             .motion_commands_allowed = true,
+            .camera_source = nullptr,
+            .target_detector = nullptr,
+            .camera_preview_sink = nullptr,
+            .camera_extrinsics = std::nullopt,
         }
     };
+    require(
+        !application.trigger_scenario(
+            onboard_autonomy::application::ScenarioId::precision_landing,
+            start
+        ),
+        "precision landing must be blocked without vision guidance"
+    );
     require(
         !application.request_land(start),
         "manual LAND must be blocked before heartbeat"
@@ -309,9 +320,39 @@ void interactive_motion_commands_are_guarded() {
     );
 }
 
+void startup_precision_landing_requires_vision_guidance() {
+    FakeTransport transport;
+    bool rejected = false;
+    try {
+        onboard_autonomy::application::CompanionApplication application{
+            transport,
+            {
+                .scenario_runner = {
+                    .enabled = true,
+                    .initial_scenario = onboard_autonomy::application::
+                        ScenarioId::precision_landing,
+                },
+                .motion_commands_allowed = true,
+                .camera_source = nullptr,
+                .target_detector = nullptr,
+                .camera_preview_sink = nullptr,
+                .camera_extrinsics = std::nullopt,
+            }
+        };
+        static_cast<void>(application);
+    } catch (const std::invalid_argument&) {
+        rejected = true;
+    }
+    require(
+        rejected,
+        "startup precision landing must require vision guidance"
+    );
+}
+
 }  // namespace
 
 void run_companion_application_tests() {
     application_orchestrates_the_complete_telemetry_setup();
     interactive_motion_commands_are_guarded();
+    startup_precision_landing_requires_vision_guidance();
 }

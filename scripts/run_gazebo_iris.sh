@@ -5,6 +5,8 @@ set -euo pipefail
 readonly gazebo_source_dir="${ARDUPILOT_GAZEBO_SOURCE_DIR:-${HOME}/src/ardupilot_gazebo}"
 readonly gazebo_build_dir="${ARDUPILOT_GAZEBO_BUILD_DIR:-${HOME}/build/ardupilot_gazebo}"
 readonly world_file="${ONBOARD_AUTONOMY_GAZEBO_WORLD:-${gazebo_source_dir}/worlds/iris_runway.sdf}"
+readonly script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+readonly project_dir="$(cd -- "${script_dir}/.." && pwd)"
 
 if ! command -v gz >/dev/null 2>&1; then
     printf 'Gazebo is not installed. Run scripts/install_gazebo_harmonic.sh first.\n' >&2
@@ -24,7 +26,7 @@ fi
 
 export GZ_VERSION=harmonic
 export GZ_SIM_SYSTEM_PLUGIN_PATH="${gazebo_build_dir}:${GZ_SIM_SYSTEM_PLUGIN_PATH:-}"
-export GZ_SIM_RESOURCE_PATH="${gazebo_source_dir}/models:${gazebo_source_dir}/worlds:${GZ_SIM_RESOURCE_PATH:-}"
+export GZ_SIM_RESOURCE_PATH="${project_dir}/simulation/models:${project_dir}/simulation/worlds:${gazebo_source_dir}/models:${gazebo_source_dir}/worlds:${GZ_SIM_RESOURCE_PATH:-}"
 
 # WSLg may fall back to CPU rendering even when /dev/dxg is available.
 if [[ -e /dev/dxg ]]; then
@@ -33,4 +35,10 @@ if [[ -e /dev/dxg ]]; then
 fi
 
 printf 'OnboardAutonomy Gazebo world: %s\n' "${world_file}"
-exec gz sim -v4 -r "${world_file}"
+
+declare -a gazebo_args=(-v4 -r)
+if [[ "${ONBOARD_AUTONOMY_GAZEBO_HEADLESS:-0}" == "1" ]]; then
+    gazebo_args+=(-s)
+fi
+
+exec gz sim "${gazebo_args[@]}" "${world_file}"

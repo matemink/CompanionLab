@@ -15,6 +15,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <thread>
 #include <utility>
 #include <vector>
@@ -28,6 +29,7 @@ struct PreviewFrame {
     std::uint32_t height{0};
     std::vector<std::uint8_t> luma;
     std::vector<domain::TargetObservation> targets;
+    application::TargetTrackSnapshot target_track;
 };
 
 std::chrono::microseconds checked_frame_interval(
@@ -85,9 +87,75 @@ std::string targets_json(
         output << "],\"decision_margin\":"
                << target.decision_margin
                << ",\"corrected_bits\":"
-               << target.corrected_bits << '}';
+               << target.corrected_bits
+               << ",\"pose\":";
+        if (!target.pose.has_value()) {
+            output << "null";
+        } else {
+            output << "{\"right_m\":"
+                   << target.pose->position.right_m
+                   << ",\"down_m\":"
+                   << target.pose->position.down_m
+                   << ",\"forward_m\":"
+                   << target.pose->position.forward_m
+                   << ",\"object_space_error\":"
+                   << target.pose->object_space_error << '}';
+        }
+        output << '}';
     }
     output << ']';
+    return output.str();
+}
+
+std::string_view target_track_phase_name(
+    const application::TargetTrackPhase phase
+) {
+    switch (phase) {
+        case application::TargetTrackPhase::searching:
+            return "searching";
+        case application::TargetTrackPhase::acquiring:
+            return "acquiring";
+        case application::TargetTrackPhase::tracking:
+            return "tracking";
+    }
+    return "searching";
+}
+
+std::string target_track_json(
+    const application::TargetTrackSnapshot& track
+) {
+    std::ostringstream output;
+    output << std::fixed << std::setprecision(3);
+    output << "{\"phase\":\""
+           << target_track_phase_name(track.phase) << '"';
+    output << ",\"target_id\":";
+    if (track.target_id.has_value()) {
+        output << *track.target_id;
+    } else {
+        output << "null";
+    }
+    output << ",\"consecutive_observations\":"
+           << track.consecutive_observations;
+    output << ",\"required_observations\":"
+           << track.required_observations;
+    output << ",\"observation_age_ms\":";
+    if (track.observation_age_ms.has_value()) {
+        output << *track.observation_age_ms;
+    } else {
+        output << "null";
+    }
+    output << ",\"position\":";
+    if (track.position.has_value()) {
+        output << "{\"right_m\":"
+               << track.position->right_m
+               << ",\"down_m\":"
+               << track.position->down_m
+               << ",\"forward_m\":"
+               << track.position->forward_m << '}';
+    } else {
+        output << "null";
+    }
+    output << '}';
     return output.str();
 }
 
@@ -161,6 +229,10 @@ public:
                     "X-OnboardAutonomy-Targets",
                     targets_json(frame.targets)
                 );
+                response.set_header(
+                    "X-OnboardAutonomy-Target-Track",
+                    target_track_json(frame.target_track)
+                );
                 response.set_content(
                     std::string{
                         reinterpret_cast<const char*>(
@@ -191,7 +263,8 @@ public:
 
     void publish(
         const application::ports::CameraFrame& frame,
-        const std::span<const domain::TargetObservation> targets
+        const std::span<const domain::TargetObservation> targets,
+        const application::TargetTrackSnapshot& target_track
     ) override {
         const auto now = std::chrono::steady_clock::now();
         std::scoped_lock lock(frame_mutex_);
@@ -220,6 +293,7 @@ public:
             .height = frame.height,
             .luma = {frame.yuv420.begin(), end},
             .targets = {targets.begin(), targets.end()},
+            .target_track = target_track,
         };
         last_published_at_ = now;
     }

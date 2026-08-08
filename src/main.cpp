@@ -1,8 +1,11 @@
 #include "onboard_autonomy/adapters/ardupilot/BoardTypeCatalog.hpp"
+#include "onboard_autonomy/adapters/camera/GStreamerCameraSource.hpp"
 #include "onboard_autonomy/adapters/camera/RpicamCameraSource.hpp"
 #include "onboard_autonomy/adapters/preview/HttpCameraPreviewServer.hpp"
 #include "onboard_autonomy/adapters/transport/TransportFactory.hpp"
 #include "onboard_autonomy/adapters/vision/AprilTagTargetDetector.hpp"
+#include "onboard_autonomy/adapters/vision/CameraCalibrationLoader.hpp"
+#include "onboard_autonomy/adapters/vision/CameraExtrinsicsLoader.hpp"
 #include "onboard_autonomy/application/CompanionApplication.hpp"
 #include "onboard_autonomy/presentation/console/ConsoleInput.hpp"
 #include "onboard_autonomy/presentation/console/ConsoleView.hpp"
@@ -28,6 +31,11 @@ namespace {
 
 std::atomic_bool keep_running{true};
 
+enum class CameraBackend {
+    rpicam,
+    gstreamer,
+};
+
 void handle_signal(int) {
     keep_running = false;
 }
@@ -39,7 +47,12 @@ struct Options {
     std::uint32_t baud_rate{115200};
     std::uint32_t snapshot_interval_ms{1000};
     bool camera_enabled{false};
+    CameraBackend camera_backend{CameraBackend::rpicam};
+    std::uint16_t camera_udp_port{5601};
     bool apriltag_enabled{false};
+    std::string camera_calibration_file;
+    std::string camera_extrinsics_file;
+    std::optional<double> apriltag_tag_size_m;
     bool camera_preview_enabled{false};
     std::uint16_t camera_preview_port{8080};
     std::uint32_t camera_width{640};
@@ -128,8 +141,33 @@ Options parse_options(const int argc, char** argv) {
             );
         } else if (argument == "--camera") {
             options.camera_enabled = true;
+        } else if (argument == "--camera-source") {
+            const auto source = require_value();
+            if (source == "rpicam") {
+                options.camera_backend = CameraBackend::rpicam;
+            } else if (source == "gstreamer") {
+                options.camera_backend = CameraBackend::gstreamer;
+            } else {
+                throw std::invalid_argument(
+                    "--camera-source must be rpicam or gstreamer"
+                );
+            }
+        } else if (argument == "--camera-udp-port") {
+            options.camera_udp_port =
+                parse_number<std::uint16_t>(
+                    require_value(),
+                    argument
+                );
         } else if (argument == "--apriltag") {
             options.apriltag_enabled = true;
+        } else if (argument == "--camera-calibration") {
+            options.camera_calibration_file = require_value();
+        } else if (argument == "--camera-extrinsics") {
+            options.camera_extrinsics_file = require_value();
+        } else if (argument == "--apriltag-size-mm") {
+            options.apriltag_tag_size_m =
+                parse_number<double>(require_value(), argument) /
+                1000.0;
         } else if (argument == "--camera-preview") {
             options.camera_preview_enabled = true;
         } else if (argument == "--camera-preview-port") {
@@ -279,11 +317,20 @@ void print_help() {
         << " [--baud 115200]\n\n"
         << "Options:\n"
         << "  --snapshot-ms N   Refresh/output interval, default 1000\n"
-        << "  --camera          Receive Camera Module frames via rpicam\n"
+        << "  --camera          Enable the configured camera source\n"
+        << "  --camera-source S rpicam or gstreamer, default rpicam\n"
+        << "  --camera-udp-port N"
+        << " GStreamer RTP/H.264 port, default 5601\n"
         << "  --camera-width N  YUV420 width, default 640\n"
         << "  --camera-height N YUV420 height, default 480\n"
-        << "  --camera-fps N    Capture rate, default 30\n"
+        << "  --camera-fps N    rpicam capture rate, default 30\n"
         << "  --apriltag        Detect tagStandard41h12 targets\n"
+        << "  --camera-calibration FILE"
+        << "  Verified camera calibration JSON\n"
+        << "  --camera-extrinsics FILE"
+        << "  Camera-optical to body-FRD transform JSON\n"
+        << "  --apriltag-size-mm N"
+        << "  Physical span between detection corners\n"
         << "  --camera-preview  Serve live grayscale preview over HTTP\n"
         << "  --camera-preview-port N"
         << " HTTP preview port, default 8080\n"
@@ -330,6 +377,36 @@ int main(const int argc, char** argv) {
                 "--camera"
             );
         }
+        const bool has_camera_calibration =
+            !options.camera_calibration_file.empty();
+        if (has_camera_calibration !=
+            options.apriltag_tag_size_m.has_value()) {
+            throw std::invalid_argument(
+                "camera calibration and AprilTag size must be "
+                "provided together"
+            );
+        }
+        if (has_camera_calibration &&
+            !options.apriltag_enabled) {
+            throw std::invalid_argument(
+                "AprilTag pose requires --apriltag"
+            );
+        }
+        const bool has_camera_extrinsics =
+            !options.camera_extrinsics_file.empty();
+        if (has_camera_extrinsics && !has_camera_calibration) {
+            throw std::invalid_argument(
+                "camera extrinsics require calibrated AprilTag pose"
+            );
+        }
+        if (options.startup_scenario ==
+                onboard_autonomy::application::ScenarioId::
+                    precision_landing &&
+            !has_camera_extrinsics) {
+            throw std::invalid_argument(
+                "precision landing requires --camera-extrinsics"
+            );
+        }
 
         if ((options.startup_scenario.has_value() ||
              options.interactive) &&
@@ -370,24 +447,73 @@ int main(const int argc, char** argv) {
             onboard_autonomy::application::ports::CameraSource
         > camera_source;
         if (options.camera_enabled) {
-            camera_source =
-                onboard_autonomy::adapters::camera::
-                    make_rpicam_camera_source(
-                        {
-                            .width = options.camera_width,
-                            .height = options.camera_height,
-                            .frames_per_second =
-                                options.camera_fps,
-                        }
-                    );
+            if (options.camera_backend ==
+                CameraBackend::rpicam) {
+                camera_source =
+                    onboard_autonomy::adapters::camera::
+                        make_rpicam_camera_source(
+                            {
+                                .width = options.camera_width,
+                                .height = options.camera_height,
+                                .frames_per_second =
+                                    options.camera_fps,
+                            }
+                        );
+            } else {
+                camera_source =
+                    onboard_autonomy::adapters::camera::
+                        make_gstreamer_camera_source(
+                            {
+                                .width = options.camera_width,
+                                .height = options.camera_height,
+                                .udp_port = options.camera_udp_port,
+                            }
+                        );
+            }
         }
         std::unique_ptr<
             onboard_autonomy::application::ports::TargetDetector
         > target_detector;
         if (options.apriltag_enabled) {
+            onboard_autonomy::adapters::vision::
+                AprilTagDetectorConfig detector_config;
+            if (has_camera_calibration) {
+                auto calibration =
+                    onboard_autonomy::adapters::vision::
+                        CameraCalibrationLoader::from_file(
+                            options.camera_calibration_file
+                        );
+                if (calibration.image_width !=
+                        options.camera_width ||
+                    calibration.image_height !=
+                        options.camera_height) {
+                    throw std::invalid_argument(
+                        "camera runtime resolution does not match "
+                        "calibration"
+                    );
+                }
+                detector_config.pose =
+                    onboard_autonomy::adapters::vision::
+                        AprilTagPoseConfig{
+                            .calibration = std::move(calibration),
+                            .tag_size_m =
+                                *options.apriltag_tag_size_m,
+                        };
+            }
             target_detector =
                 onboard_autonomy::adapters::vision::
-                    make_apriltag_target_detector();
+                    make_apriltag_target_detector(
+                        std::move(detector_config)
+                    );
+        }
+        std::optional<onboard_autonomy::domain::CameraExtrinsics>
+            camera_extrinsics;
+        if (has_camera_extrinsics) {
+            camera_extrinsics =
+                onboard_autonomy::adapters::vision::
+                    CameraExtrinsicsLoader::from_file(
+                        options.camera_extrinsics_file
+                    );
         }
         std::unique_ptr<
             onboard_autonomy::application::ports::CameraPreviewSink
@@ -425,6 +551,7 @@ int main(const int argc, char** argv) {
                 .camera_source = camera_source.get(),
                 .target_detector = target_detector.get(),
                 .camera_preview_sink = camera_preview.get(),
+                .camera_extrinsics = camera_extrinsics,
             }
         };
         auto next_snapshot = std::chrono::steady_clock::now();

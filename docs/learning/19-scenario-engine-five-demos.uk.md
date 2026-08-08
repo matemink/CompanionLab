@@ -1,5 +1,9 @@
 # Scenario Engine і п'ять SITL-демо
 
+> Історична примітка: цей етап навмисно використовував synthetic target для
+> перевірки MAVLink seam. Його заміну на реальний AprilTag track описано в
+> `32-vision-guided-precision-landing.uk.md`.
+
 ## Навіщо був потрібен рефакторинг
 
 Старий `AutomatedFlightController` одночасно описував один конкретний маршрут

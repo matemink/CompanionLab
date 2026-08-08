@@ -25,6 +25,14 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(mavlink_headers)
 
 FetchContent_Declare(
+    nlohmann_json
+    GIT_REPOSITORY https://github.com/nlohmann/json.git
+    GIT_TAG 65ee68451d8eb2b5f3a30b410476ab83deb3289b
+    GIT_SHALLOW FALSE
+)
+FetchContent_MakeAvailable(nlohmann_json)
+
+FetchContent_Declare(
     apriltag_source
     GIT_REPOSITORY https://github.com/AprilRobotics/apriltag.git
     GIT_TAG 12cf56b93d8f1f95e528246c8000c36881fb43fb
@@ -89,6 +97,8 @@ endfunction()
 
 add_library(
     onboard_autonomy_domain
+    src/domain/CameraCalibration.cpp
+    src/domain/TargetTransform.cpp
     src/domain/VehicleState.cpp
 )
 target_link_libraries(
@@ -129,6 +139,7 @@ target_link_libraries(
 
 add_library(
     onboard_autonomy_camera_adapter
+    src/adapters/camera/GStreamerCameraSource.cpp
     src/adapters/camera/RpicamCameraSource.cpp
 )
 target_link_libraries(
@@ -143,6 +154,7 @@ onboard_autonomy_enable_warnings(onboard_autonomy_camera_adapter)
 add_library(
     onboard_autonomy_apriltag_adapter
     src/adapters/vision/AprilTagTargetDetector.cpp
+    src/adapters/vision/CameraGeometry.cpp
 )
 target_link_libraries(
     onboard_autonomy_apriltag_adapter
@@ -157,6 +169,23 @@ target_include_directories(
         ${apriltag_source_SOURCE_DIR}
 )
 onboard_autonomy_enable_warnings(onboard_autonomy_apriltag_adapter)
+
+add_library(
+    onboard_autonomy_camera_calibration_adapter
+    src/adapters/vision/CameraCalibrationLoader.cpp
+    src/adapters/vision/CameraExtrinsicsLoader.cpp
+)
+target_link_libraries(
+    onboard_autonomy_camera_calibration_adapter
+    PUBLIC
+        onboard_autonomy_domain
+        onboard_autonomy_public_headers
+    PRIVATE
+        nlohmann_json::nlohmann_json
+)
+onboard_autonomy_enable_warnings(
+    onboard_autonomy_camera_calibration_adapter
+)
 
 add_library(
     onboard_autonomy_camera_preview_adapter
@@ -221,6 +250,7 @@ add_library(
     onboard_autonomy_application
     src/application/AppSnapshot.cpp
     src/application/CameraMonitor.cpp
+    src/application/TargetTracker.cpp
     src/application/VisionMonitor.cpp
     src/application/Scenario.cpp
     src/application/ScenarioRunner.cpp
@@ -260,6 +290,7 @@ target_link_libraries(
         onboard_autonomy_application
         onboard_autonomy_ardupilot_catalog_adapter
         onboard_autonomy_camera_adapter
+        onboard_autonomy_camera_calibration_adapter
         onboard_autonomy_camera_preview_adapter
         onboard_autonomy_apriltag_adapter
         onboard_autonomy_console_presentation
@@ -293,12 +324,30 @@ install(
     RENAME cpp-httplib-LICENSE
 )
 install(
+    FILES ${nlohmann_json_SOURCE_DIR}/LICENSE.MIT
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/licenses/OnboardAutonomy
+    RENAME nlohmann-json-LICENSE.MIT
+)
+install(
     FILES assets/camera-preview/index.html
     DESTINATION ${CMAKE_INSTALL_DATADIR}/onboard_autonomy
     RENAME camera-preview.html
 )
 install(
     FILES assets/calibration/checkerboard-9x6-25mm-a4.svg
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/onboard_autonomy
+)
+install(
+    FILES
+        assets/apriltag/tagStandard41h12-id0-90mm-a4.svg
+        assets/apriltag/tagStandard41h12-id0-90mm-a4-300dpi.png
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/onboard_autonomy
+)
+install(
+    FILES
+        config/camera-module-3-wide-640x480.json
+        config/gazebo-landing-camera-640x480.json
+        config/gazebo-landing-camera-extrinsics.json
     DESTINATION ${CMAKE_INSTALL_DATADIR}/onboard_autonomy
 )
 
@@ -310,12 +359,16 @@ if(BUILD_TESTING)
         tests/CompanionApplicationTests.cpp
         tests/BoardTypeCatalogTests.cpp
         tests/CameraMonitorTests.cpp
+        tests/CameraCalibrationLoaderTests.cpp
+        tests/CameraExtrinsicsLoaderTests.cpp
         tests/VisionMonitorTests.cpp
         tests/ScenarioRunnerTests.cpp
         tests/ConsoleViewTests.cpp
         tests/MavlinkDecoderTests.cpp
         tests/MavlinkEncoderTests.cpp
         tests/TelemetryStreamConfiguratorTests.cpp
+        tests/TargetTrackerTests.cpp
+        tests/TargetTransformTests.cpp
         tests/VehicleStateTests.cpp
         tests/TestMain.cpp
     )
@@ -325,6 +378,7 @@ if(BUILD_TESTING)
             onboard_autonomy_application
             onboard_autonomy_ardupilot_catalog_adapter
             onboard_autonomy_camera_adapter
+            onboard_autonomy_camera_calibration_adapter
             onboard_autonomy_camera_port
             onboard_autonomy_camera_preview_port
             onboard_autonomy_apriltag_adapter

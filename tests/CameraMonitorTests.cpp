@@ -1,9 +1,11 @@
 #include "TestCases.hpp"
 
+#include "onboard_autonomy/adapters/camera/GStreamerCameraSource.hpp"
 #include "onboard_autonomy/adapters/camera/RpicamCameraSource.hpp"
 #include "onboard_autonomy/application/AppSnapshot.hpp"
 #include "onboard_autonomy/application/CameraMonitor.hpp"
 
+#include <algorithm>
 #include <chrono>
 #include <cstdint>
 #include <optional>
@@ -77,6 +79,7 @@ public:
                         .corners = {},
                         .corrected_bits = 0,
                         .decision_margin = 50.0,
+                        .pose = std::nullopt,
                     },
                 },
         };
@@ -94,12 +97,15 @@ public:
         const onboard_autonomy::application::ports::CameraFrame& input,
         const std::span<
             const onboard_autonomy::domain::TargetObservation
-        > input_targets
+        > input_targets,
+        const onboard_autonomy::application::TargetTrackSnapshot&
+            input_target_track
     ) override {
         sequence = input.sequence;
         luma_size =
             static_cast<std::size_t>(input.width) * input.height;
         targets.assign(input_targets.begin(), input_targets.end());
+        target_track = input_target_track;
     }
 
     [[nodiscard]] std::string description() const override {
@@ -109,6 +115,7 @@ public:
     std::uint64_t sequence{0};
     std::size_t luma_size{0};
     std::vector<onboard_autonomy::domain::TargetObservation> targets;
+    onboard_autonomy::application::TargetTrackSnapshot target_track;
 };
 
 onboard_autonomy::application::ports::CameraFrame frame(
@@ -201,6 +208,41 @@ void metadata_parser_accepts_only_frame_wall_clock() {
     );
 }
 
+void gstreamer_pipeline_is_explicit_and_machine_readable() {
+    const auto arguments =
+        onboard_autonomy::adapters::camera::
+            make_gstreamer_camera_arguments(
+                {
+                    .width = 640,
+                    .height = 480,
+                    .udp_port = 5601,
+                    .jitter_latency_ms = 75,
+                    .command = "gst-launch-test",
+                }
+            );
+    const auto contains = [&arguments](const std::string& value) {
+        return std::find(
+            arguments.begin(),
+            arguments.end(),
+            value
+        ) != arguments.end();
+    };
+    require(
+        arguments.front() == "gst-launch-test" &&
+            contains("port=5601") &&
+            contains("latency=75") &&
+            contains(
+                "caps=application/x-rtp,media=video,"
+                "clock-rate=90000,encoding-name=H264,payload=96"
+            ) &&
+            contains(
+                "video/x-raw,format=I420,width=640,height=480"
+            ) &&
+            contains("fdsink"),
+        "GStreamer camera pipeline must decode RTP/H.264 into I420"
+    );
+}
+
 void monitor_forwards_the_processed_frame_to_preview() {
     FakeCameraSource source;
     FakeTargetDetector detector;
@@ -224,7 +266,10 @@ void monitor_forwards_the_processed_frame_to_preview() {
         preview.sequence == 21U &&
             preview.luma_size == 640U * 480U &&
             preview.targets.size() == 1U &&
-            preview.targets.front().id == 12,
+            preview.targets.front().id == 12 &&
+            preview.target_track.phase ==
+                onboard_autonomy::application::
+                    TargetTrackPhase::searching,
         "camera preview must receive the frame and its detections"
     );
 }
@@ -268,6 +313,7 @@ void app_snapshot_json_preserves_vehicle_and_adds_camera() {
 void run_camera_monitor_tests() {
     monitor_calculates_frame_rate_latency_and_gaps();
     metadata_parser_accepts_only_frame_wall_clock();
+    gstreamer_pipeline_is_explicit_and_machine_readable();
     monitor_forwards_the_processed_frame_to_preview();
     app_snapshot_json_preserves_vehicle_and_adds_camera();
 }

@@ -24,6 +24,20 @@ std::string_view camera_phase_name(
     return "failed";
 }
 
+std::string_view target_track_phase_name(
+    const TargetTrackPhase phase
+) {
+    switch (phase) {
+        case TargetTrackPhase::searching:
+            return "searching";
+        case TargetTrackPhase::acquiring:
+            return "acquiring";
+        case TargetTrackPhase::tracking:
+            return "tracking";
+    }
+    return "searching";
+}
+
 std::string json_escape(const std::string_view value) {
     std::ostringstream output;
     for (const char character : value) {
@@ -145,9 +159,84 @@ std::string AppSnapshot::to_json() const {
                << target.corrected_bits;
         output << ",\"decision_margin\":"
                << target.decision_margin;
+        output << ",\"pose\":";
+        if (!target.pose.has_value()) {
+            output << "null";
+        } else {
+            output << std::setprecision(4);
+            output << "{\"frame\":\"camera_optical\"";
+            output << ",\"right_m\":"
+                   << target.pose->position.right_m;
+            output << ",\"down_m\":"
+                   << target.pose->position.down_m;
+            output << ",\"forward_m\":"
+                   << target.pose->position.forward_m;
+            output << ",\"object_space_error\":"
+                   << target.pose->object_space_error;
+            output << ",\"rotation_tag_to_camera\":[";
+            for (std::size_t rotation_index = 0;
+                 rotation_index <
+                     target.pose->rotation_tag_to_camera.size();
+                 ++rotation_index) {
+                if (rotation_index > 0U) {
+                    output << ',';
+                }
+                output << target.pose
+                              ->rotation_tag_to_camera[rotation_index];
+            }
+            output << "]}";
+        }
         output << '}';
     }
-    output << "]}}";
+    output << "],\"target_track\":{";
+    output << "\"phase\":\""
+           << target_track_phase_name(vision->target_track.phase)
+           << '"';
+    output << ",\"target_id\":";
+    if (vision->target_track.target_id.has_value()) {
+        output << *vision->target_track.target_id;
+    } else {
+        output << "null";
+    }
+    output << ",\"consecutive_observations\":"
+           << vision->target_track.consecutive_observations;
+    output << ",\"required_observations\":"
+           << vision->target_track.required_observations;
+    output << ",\"accepted_observations\":"
+           << vision->target_track.accepted_observations;
+    output << ",\"observation_age_ms\":";
+    write_optional_decimal(
+        output,
+        vision->target_track.observation_age_ms
+    );
+    output << ",\"latest_decision_margin\":";
+    write_optional_decimal(
+        output,
+        vision->target_track.latest_decision_margin
+    );
+    output << ",\"position\":";
+    if (!vision->target_track.position.has_value()) {
+        output << "null";
+    } else {
+        output << "{\"frame\":\"camera_optical\"";
+        output << ",\"right_m\":";
+        write_optional_decimal(
+            output,
+            vision->target_track.position->right_m
+        );
+        output << ",\"down_m\":";
+        write_optional_decimal(
+            output,
+            vision->target_track.position->down_m
+        );
+        output << ",\"forward_m\":";
+        write_optional_decimal(
+            output,
+            vision->target_track.position->forward_m
+        );
+        output << '}';
+    }
+    output << "}}}";
     return output.str();
 }
 

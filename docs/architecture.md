@@ -22,17 +22,22 @@ flowchart LR
     AppSnapshot --> Snapshot["JSON Health Snapshot"]
     Python["Python Scenario Runner"] --> SITL
     Camera["Camera Module 3"] --> Rpicam["rpicam adapter"]
+    GazeboCamera["Gazebo landing camera"] --> GStreamer["RTP/H.264 GStreamer adapter"]
     Rpicam --> CameraPort["CameraSource port"]
+    GStreamer --> CameraPort
     CameraPort --> CameraMonitor["CameraMonitor"]
     CameraMonitor --> AppSnapshot
     CameraPort --> Vision["AprilTag 3 adapter"]
     Vision --> VisionMonitor["VisionMonitor"]
     VisionMonitor --> AppSnapshot
+    VisionMonitor --> Tracker["TargetTracker"]
+    Tracker --> AppSnapshot
     CameraMonitor --> PreviewPort["CameraPreviewSink port"]
     VisionMonitor --> PreviewPort
+    Tracker --> PreviewPort
     PreviewPort --> HTTP["HTTP preview adapter"]
     HTTP --> Browser["Windows browser canvas"]
-    VisionMonitor --> Guidance["Future landing target estimator"]
+    Tracker --> Guidance["Future landing guidance"]
     Guidance --> Encoder
 ```
 
@@ -80,24 +85,42 @@ without exposing Linux processes or `rpicam` arguments. The Linux
 `RpicamCameraSource` adapter starts `rpicam-vid` with a fixed manual
 hyperfocal lens position, receives fixed-size raw
 frames through one pipe, and receives per-frame metadata through another.
+The `GStreamerCameraSource` adapter starts an explicit `gst-launch-1.0`
+pipeline, receives Gazebo RTP/H.264 over UDP, decodes it, and publishes the
+same fixed-size I420 frame type through the same port. The application layer
+therefore does not branch between physical and simulated cameras.
 
 `FrameWallClock` is paired with each completed frame. `CameraMonitor`
 calculates consumed FPS, sequence gaps, latest/average/maximum
 sensor-to-application latency, and frame age. It does not know whether
-the source is `rpicam`, a future GStreamer source, or a test fake.
+the source is `rpicam`, GStreamer, or a test fake. Gazebo frames do not carry
+the Raspberry Pi `FrameWallClock`, so their capture latency remains unknown
+rather than being reported as a fabricated zero.
 
 ### Vision and camera preview
 
 The application-owned `TargetDetector` port maps a `CameraFrame` into
 typed `TargetObservation` values. The current adapter uses the official
 AprilTag 3 implementation with the `tagStandard41h12` family and reads
-the Y plane directly, without OpenCV or a color conversion.
+the Y plane directly, without OpenCV or a color conversion. With a
+quality-gated camera calibration and measured tag span, it undistorts
+the corners and estimates metric camera-optical pose.
+
+The application-owned `TargetTracker` accepts only finite, forward-facing,
+uncorrected poses above the decision-margin threshold. It requires three
+consecutive observations before declaring a lock, applies exponential
+smoothing to translation, exposes observation age, and expires the track
+after 500 ms. A confirmed track keeps one tag identity until expiry
+instead of jumping between visible markers. Rotation remains raw because
+averaging rotation matrices component by component would be mathematically
+invalid.
 
 The separate application-owned `CameraPreviewSink` receives the same
-frame plus its current detections. Its HTTP adapter rate-limits copies
-to 10 FPS and serves raw luminance bytes to a browser canvas. The browser
-draws target corners, center, ID, and decision margin. Neither the
-application nor the camera adapter depends on HTTP or HTML.
+frame plus its current detections and track snapshot. Its HTTP adapter
+rate-limits copies to 10 FPS and serves raw luminance bytes to a browser
+canvas. The browser draws target corners and shows acquisition, lock,
+filtered position, and freshness. Neither the application nor the camera
+adapter depends on HTTP or HTML.
 
 ### MAVLink decoder
 
@@ -148,17 +171,21 @@ wait for `COMMAND_ACK` and telemetry confirmation. Route steps send
 after the vehicle reports `DISARMED`.
 
 Five scenarios are available from the interactive terminal. The precision
-scenario sends a synthetic body-FRD `LANDING_TARGET` in SITL; it is an
-integration seam for the current camera/AprilTag observations. Pixel
-observations are not yet converted into pose or wired to MAVLink, so the
-scenario remains synthetic.
+scenario accepts only a confirmed AprilTag track no older than 250 ms. The
+application transforms the camera-optical pose through configured camera
+extrinsics and the runner streams the resulting body-FRD position as MAVLink
+`LANDING_TARGET` at 5 Hz. LAND is requested only after one second of
+continuous target availability.
 
 Python remains test orchestration: it starts SITL, injects failures, and
 asserts behavior from JSON output.
 
 ### Guidance
 
-Vision currently ends at pixel-space target observations. Pose
-estimation and `LANDING_TARGET` guidance remain intentionally absent
-until camera intrinsics and physical tag size are calibrated. ArduPilot
-remains responsible for the flight-control loop.
+Vision produces a confirmed, freshness-aware metric track in the
+camera-optical frame. `CompanionApplication` applies the configured rigid
+camera-to-body transform; `ScenarioRunner` owns acquisition warmup, target
+stream cadence, and target-loss behavior; the MAVLink adapter only encodes
+the resulting `LANDING_TARGET`. ArduPilot remains responsible for the
+flight-control loop. Physical scale and mounting measurements are still a
+required safety gate before enabling this path on real hardware.

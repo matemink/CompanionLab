@@ -78,12 +78,12 @@ const std::array<ScenarioDefinition, 5> kScenarios{{
     {
         .id = ScenarioId::precision_landing,
         .name = "PRECISION LANDING",
-        .summary = "OFFSET > SYNTHETIC LANDING_TARGET > LAND",
+        .summary = "MARKER APPROACH > VISION LANDING_TARGET > LAND",
         .steps = {
             SetGuidedStep{},
             ArmStep{},
             TakeoffStep{8.0},
-            MoveLocalStep{8.0, 4.0, 0.0, "MARKER APPROACH"},
+            MoveLocalStep{3.0, 1.5, 0.0, "MARKER APPROACH"},
             HoldStep{2s},
             PrecisionLandStep{},
         },
