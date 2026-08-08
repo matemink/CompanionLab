@@ -198,9 +198,11 @@ Expected behavior:
 - GPS and battery remain not ready if the corresponding messages are
   absent.
 - Disconnecting USB changes `connected` to `false` after the freshness
-  timeout or terminates with a serial error. If the process terminates,
-  `systemd` restarts it; reopening an established serial link inside the
-  same process remains a later milestone.
+  timeout. The Linux transport detects device hangup and retries the same
+  stable path once per second without restarting the process. After heartbeat
+  recovery, all six telemetry-rate requests start again. Prefer a
+  `/dev/serial/by-id/...` path because `/dev/ttyACM0` can be renumbered after
+  reconnecting USB.
 - `camera.phase` changes from `starting` to `streaming`.
 - On the verified Pi 5 and IMX708 Wide setup, the runtime sustained
   `30.013 FPS` with zero processing drops and approximately `10 ms`

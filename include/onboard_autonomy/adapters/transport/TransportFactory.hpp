@@ -2,6 +2,7 @@
 
 #include "onboard_autonomy/application/ports/Transport.hpp"
 
+#include <chrono>
 #include <cstdint>
 #include <memory>
 #include <string>
@@ -15,7 +16,9 @@ std::unique_ptr<application::ports::Transport> make_udp_transport(
 
 std::unique_ptr<application::ports::Transport> make_serial_transport(
     const std::string& device,
-    std::uint32_t baud_rate
+    std::uint32_t baud_rate,
+    std::chrono::milliseconds reconnect_interval =
+        std::chrono::seconds(1)
 );
 
 }  // namespace onboard_autonomy::adapters::transport

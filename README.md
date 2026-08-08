@@ -70,6 +70,8 @@ Pi.
   YUV420 pipeline, with performance metrics, AprilTag detection, and a
   read-only browser preview. Both camera backends restart automatically after
   a process exit or bounded frame stall.
+- Non-blocking Linux serial I/O that detects device hangup, reopens a stable
+  device path, and restarts telemetry configuration after heartbeat recovery.
 - A packaged non-root `systemd` service with automatic startup recovery and
   size/count-bounded streaming JSONL logs mirrored to `journald`.
 - Native Linux tests, Python integration tests, fault injection, and an
