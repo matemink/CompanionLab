@@ -11,6 +11,7 @@ void run_target_transform_tests();
 void run_console_view_tests();
 void run_board_type_catalog_tests();
 void run_camera_monitor_tests();
+void run_command_line_tests();
 void run_vision_monitor_tests();
 void run_camera_calibration_loader_tests();
 void run_camera_extrinsics_loader_tests();

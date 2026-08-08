@@ -98,7 +98,7 @@ python3 -m unittest discover -s python/tests -v
 Run the service with generated healthy MAVLink telemetry:
 
 ```bash
-./build/onboard_autonomy --udp-port 14550
+./build/onboard_autonomy --transport udp --udp-port 14550
 ```
 
 In a second terminal:

@@ -8,15 +8,14 @@
 #include "onboard_autonomy/adapters/vision/CameraExtrinsicsLoader.hpp"
 #include "onboard_autonomy/application/CompanionApplication.hpp"
 #include "onboard_autonomy/application/MotionSafetyPolicy.hpp"
+#include "onboard_autonomy/presentation/cli/CommandLine.hpp"
 #include "onboard_autonomy/presentation/console/ConsoleInput.hpp"
 #include "onboard_autonomy/presentation/console/ConsoleView.hpp"
 
 #include <algorithm>
 #include <atomic>
-#include <charconv>
 #include <chrono>
 #include <csignal>
-#include <cstdint>
 #include <exception>
 #include <filesystem>
 #include <iostream>
@@ -32,41 +31,9 @@ namespace {
 
 std::atomic_bool keep_running{true};
 
-enum class CameraBackend {
-    rpicam,
-    gstreamer,
-};
-
 void handle_signal(int) {
     keep_running = false;
 }
-
-struct Options {
-    std::string udp_bind{"0.0.0.0"};
-    std::uint16_t udp_port{14550};
-    std::string serial_device;
-    std::uint32_t baud_rate{115200};
-    std::uint32_t snapshot_interval_ms{1000};
-    bool camera_enabled{false};
-    CameraBackend camera_backend{CameraBackend::rpicam};
-    std::uint16_t camera_udp_port{5601};
-    bool apriltag_enabled{false};
-    std::string camera_calibration_file;
-    std::string camera_extrinsics_file;
-    std::optional<double> apriltag_tag_size_m;
-    bool camera_preview_enabled{false};
-    std::uint16_t camera_preview_port{8080};
-    std::uint32_t camera_width{640};
-    std::uint32_t camera_height{480};
-    std::uint32_t camera_fps{30};
-    std::string board_types_file;
-    bool json_output{false};
-    bool sitl_mode{false};
-    bool autonomous{false};
-    bool exit_after_autonomy{false};
-    bool interactive{false};
-    bool show_help{false};
-};
 
 class ConsoleSession {
 public:
@@ -90,136 +57,12 @@ private:
     bool active_;
 };
 
-template <typename T>
-T parse_number(const std::string_view text, const std::string_view name) {
-    T value{};
-    const auto [end, error] = std::from_chars(
-        text.data(),
-        text.data() + text.size(),
-        value
-    );
-    if (error != std::errc{} || end != text.data() + text.size()) {
-        throw std::invalid_argument(
-            "Invalid numeric value for " + std::string(name)
-        );
-    }
-    return value;
-}
-
-Options parse_options(const int argc, char** argv) {
-    Options options;
-
-    for (int index = 1; index < argc; ++index) {
-        const std::string_view argument{argv[index]};
-        const auto require_value = [&]() -> std::string_view {
-            if (index + 1 >= argc) {
-                throw std::invalid_argument(
-                    "Missing value after " + std::string(argument)
-                );
-            }
-            ++index;
-            return argv[index];
-        };
-
-        if (argument == "--udp-bind") {
-            options.udp_bind = require_value();
-        } else if (argument == "--udp-port") {
-            options.udp_port = parse_number<std::uint16_t>(
-                require_value(),
-                argument
-            );
-        } else if (argument == "--serial") {
-            options.serial_device = require_value();
-        } else if (argument == "--baud") {
-            options.baud_rate = parse_number<std::uint32_t>(
-                require_value(),
-                argument
-            );
-        } else if (argument == "--snapshot-ms") {
-            options.snapshot_interval_ms = parse_number<std::uint32_t>(
-                require_value(),
-                argument
-            );
-        } else if (argument == "--camera") {
-            options.camera_enabled = true;
-        } else if (argument == "--camera-source") {
-            const auto source = require_value();
-            if (source == "rpicam") {
-                options.camera_backend = CameraBackend::rpicam;
-            } else if (source == "gstreamer") {
-                options.camera_backend = CameraBackend::gstreamer;
-            } else {
-                throw std::invalid_argument(
-                    "--camera-source must be rpicam or gstreamer"
-                );
-            }
-        } else if (argument == "--camera-udp-port") {
-            options.camera_udp_port =
-                parse_number<std::uint16_t>(
-                    require_value(),
-                    argument
-                );
-        } else if (argument == "--apriltag") {
-            options.apriltag_enabled = true;
-        } else if (argument == "--camera-calibration") {
-            options.camera_calibration_file = require_value();
-        } else if (argument == "--camera-extrinsics") {
-            options.camera_extrinsics_file = require_value();
-        } else if (argument == "--apriltag-size-mm") {
-            options.apriltag_tag_size_m =
-                parse_number<double>(require_value(), argument) /
-                1000.0;
-        } else if (argument == "--camera-preview") {
-            options.camera_preview_enabled = true;
-        } else if (argument == "--camera-preview-port") {
-            options.camera_preview_port =
-                parse_number<std::uint16_t>(
-                    require_value(),
-                    argument
-                );
-        } else if (argument == "--camera-width") {
-            options.camera_width = parse_number<std::uint32_t>(
-                require_value(),
-                argument
-            );
-        } else if (argument == "--camera-height") {
-            options.camera_height = parse_number<std::uint32_t>(
-                require_value(),
-                argument
-            );
-        } else if (argument == "--camera-fps") {
-            options.camera_fps = parse_number<std::uint32_t>(
-                require_value(),
-                argument
-            );
-        } else if (argument == "--board-types") {
-            options.board_types_file = require_value();
-        } else if (argument == "--json") {
-            options.json_output = true;
-        } else if (argument == "--sitl") {
-            options.sitl_mode = true;
-        } else if (argument == "--autonomous") {
-            options.autonomous = true;
-        } else if (argument == "--exit-after-autonomy") {
-            options.exit_after_autonomy = true;
-        } else if (argument == "--interactive") {
-            options.interactive = true;
-        } else if (argument == "--help" || argument == "-h") {
-            options.show_help = true;
-        } else {
-            throw std::invalid_argument(
-                "Unknown argument: " + std::string(argument)
-            );
-        }
-    }
-
-    return options;
-}
 
 std::optional<
     onboard_autonomy::adapters::ardupilot::BoardTypeCatalog
 > load_board_type_catalog(
-    const Options& options,
+    const onboard_autonomy::presentation::cli::CommandLineOptions&
+        options,
     const std::filesystem::path& executable
 ) {
     std::vector<std::filesystem::path> candidates;
@@ -284,52 +127,23 @@ std::filesystem::path find_camera_preview_page(
     );
 }
 
-void print_help() {
-    std::cout
-        << "OnboardAutonomy companion service\n\n"
-        << "SITL UDP mode:\n"
-        << "  onboard_autonomy --sitl [--udp-bind 0.0.0.0]"
-        << " [--udp-port 14550]\n\n"
-        << "Pixhawk serial mode on Linux:\n"
-        << "  onboard_autonomy --serial /dev/ttyACM0"
-        << " [--baud 115200]\n\n"
-        << "Options:\n"
-        << "  --snapshot-ms N   Refresh/output interval, default 1000\n"
-        << "  --camera          Enable the configured camera source\n"
-        << "  --camera-source S rpicam or gstreamer, default rpicam\n"
-        << "  --camera-udp-port N"
-        << " GStreamer RTP/H.264 port, default 5601\n"
-        << "  --camera-width N  YUV420 width, default 640\n"
-        << "  --camera-height N YUV420 height, default 480\n"
-        << "  --camera-fps N    rpicam capture rate, default 30\n"
-        << "  --apriltag        Detect tagStandard41h12 targets\n"
-        << "  --camera-calibration FILE"
-        << "  Verified camera calibration JSON\n"
-        << "  --camera-extrinsics FILE"
-        << "  Camera-optical to body-FRD transform JSON\n"
-        << "  --apriltag-size-mm N"
-        << "  Physical span between detection corners\n"
-        << "  --camera-preview  Serve live grayscale preview over HTTP\n"
-        << "  --camera-preview-port N"
-        << " HTTP preview port, default 8080\n"
-        << "  --board-types FILE Override ArduPilot board table path\n"
-        << "  --json            Print machine-readable JSON snapshots\n"
-        << "  --sitl            Assert UDP peer is ArduPilot SITL;"
-        << " allow motion\n"
-        << "  --autonomous      Run startup and vision autonomy runtime\n"
-        << "  --exit-after-autonomy"
-        << "  Exit when autonomy completes or fails\n"
-        << "  --interactive     Enable manual LAND and quit keys\n"
-        << "  --help             Show this help\n";
-}
-
 }  // namespace
 
 int main(const int argc, char** argv) {
     try {
-        const Options options = parse_options(argc, argv);
+        std::vector<std::string_view> arguments;
+        arguments.reserve(static_cast<std::size_t>(argc - 1));
+        for (int index = 1; index < argc; ++index) {
+            arguments.emplace_back(argv[index]);
+        }
+        const auto options =
+            onboard_autonomy::presentation::cli::parse_command_line(
+                arguments
+            );
         if (options.show_help) {
-            print_help();
+            std::cout
+                << onboard_autonomy::presentation::cli::
+                       command_line_help();
             return 0;
         }
 
@@ -342,46 +156,10 @@ int main(const int argc, char** argv) {
               >{}
             : load_board_type_catalog(options, argv[0]);
 
-        if (options.exit_after_autonomy && !options.autonomous) {
-            throw std::invalid_argument(
-                "--exit-after-autonomy requires --autonomous"
-            );
-        }
-        if ((options.apriltag_enabled ||
-             options.camera_preview_enabled) &&
-            !options.camera_enabled) {
-            throw std::invalid_argument(
-                "AprilTag detection and camera preview require "
-                "--camera"
-            );
-        }
         const bool has_camera_calibration =
             !options.camera_calibration_file.empty();
-        if (has_camera_calibration !=
-            options.apriltag_tag_size_m.has_value()) {
-            throw std::invalid_argument(
-                "camera calibration and AprilTag size must be "
-                "provided together"
-            );
-        }
-        if (has_camera_calibration &&
-            !options.apriltag_enabled) {
-            throw std::invalid_argument(
-                "AprilTag pose requires --apriltag"
-            );
-        }
         const bool has_camera_extrinsics =
             !options.camera_extrinsics_file.empty();
-        if (has_camera_extrinsics && !has_camera_calibration) {
-            throw std::invalid_argument(
-                "camera extrinsics require calibrated AprilTag pose"
-            );
-        }
-        if (options.autonomous && !has_camera_extrinsics) {
-            throw std::invalid_argument(
-                "autonomous runtime requires --camera-extrinsics"
-            );
-        }
 
         const bool motion_requested =
             options.autonomous ||
@@ -393,7 +171,9 @@ int main(const int argc, char** argv) {
                           RuntimeEnvironment::sitl
                     : onboard_autonomy::application::
                           RuntimeEnvironment::hardware_or_unknown,
-                options.serial_device.empty()
+                options.transport ==
+                        onboard_autonomy::presentation::cli::
+                            TransportBackend::udp
                     ? onboard_autonomy::application::
                           MavlinkTransport::udp
                     : onboard_autonomy::application::
@@ -418,7 +198,9 @@ int main(const int argc, char** argv) {
         std::unique_ptr<
             onboard_autonomy::application::ports::Transport
         > transport;
-        if (options.serial_device.empty()) {
+        if (options.transport ==
+            onboard_autonomy::presentation::cli::
+                TransportBackend::udp) {
             transport =
                 onboard_autonomy::adapters::transport::make_udp_transport(
                 options.udp_bind,
@@ -437,7 +219,8 @@ int main(const int argc, char** argv) {
         > camera_source;
         if (options.camera_enabled) {
             if (options.camera_backend ==
-                CameraBackend::rpicam) {
+                onboard_autonomy::presentation::cli::
+                    CameraBackend::rpicam) {
                 camera_source =
                     onboard_autonomy::adapters::camera::
                         make_rpicam_camera_source(
