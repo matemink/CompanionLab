@@ -181,7 +181,10 @@ Engineering focus: computer vision, guidance integration, algorithms.
   by AprilTag, with target ID and corner overlay.
 - [x] Add a hardened non-root `systemd` service and bounded streaming
   JSONL log rotation while preserving live output in `journald`.
-- [ ] Profile and optimize the ARM release build.
+- [x] Add a bounded whole-process-group ARM profiler with CPU, RSS,
+  temperature, throttling, and machine-readable reports.
+- [ ] Run the profiler on Raspberry Pi 5, establish an evidence-backed
+  baseline, and optimize only measured bottlenecks.
 - [x] Recover camera processes/streams and Linux serial sessions without
   restarting the companion process; validate serial recovery with a real PTY
   replacement and repeat telemetry setup after heartbeat recovery.

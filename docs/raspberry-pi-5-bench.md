@@ -174,6 +174,40 @@ To stop or remove automatic startup:
 sudo systemctl disable --now onboard-autonomy@"$USER".service
 ```
 
+### Profile the complete runtime
+
+Stop the managed service first so only one runtime owns the camera and serial
+device, then run the bounded process-group profiler from the package:
+
+```bash
+sudo systemctl stop onboard-autonomy@"$USER".service
+bin/profile_onboard_autonomy_pi.sh
+```
+
+The default 60-second run measures the C++ runtime and all of its child
+processes together, including `rpicam`, camera preview, and the Python JSONL
+sink. It records average/p95 CPU, aggregate peak RSS, process count, SoC
+temperature, and Raspberry Pi throttling bits under:
+
+```text
+~/.local/state/onboard_autonomy/profiles/<run-id>/
+```
+
+The report fails if it is not running on ARM64, the runtime exits early, the
+sample window is incomplete, `vcgencmd` data is absent, or any throttling bit
+is observed. Change the duration only when needed:
+
+```bash
+ONBOARD_AUTONOMY_PROFILE_SECONDS=120 \
+  bin/profile_onboard_autonomy_pi.sh
+```
+
+Restart the managed service after the profile:
+
+```bash
+sudo systemctl start onboard-autonomy@"$USER".service
+```
+
 The cross-built binary is a deployment candidate, not an ABI promise.
 Ubuntu and Raspberry Pi OS can ship different glibc versions. If the
 diagnostic reports missing runtime support, perform the native build

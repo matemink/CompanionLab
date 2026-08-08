@@ -74,6 +74,8 @@ Pi.
   device path, and restarts telemetry configuration after heartbeat recovery.
 - A packaged non-root `systemd` service with automatic startup recovery and
   size/count-bounded streaming JSONL logs mirrored to `journald`.
+- A bounded Raspberry Pi process-group profiler for CPU, RSS, temperature,
+  throttling, and machine-readable baseline reports.
 - Native Linux tests, Python integration tests, fault injection, and an
   ARM64 cross-build quality gate in GitHub Actions.
 
