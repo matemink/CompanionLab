@@ -35,6 +35,17 @@ public:
                 CameraSourcePhase::streaming;
     }
 
+    void reconnecting(
+        std::string error,
+        const std::uint64_t restart_count
+    ) {
+        status_.phase =
+            onboard_autonomy::application::ports::
+                CameraSourcePhase::reconnecting;
+        status_.error = std::move(error);
+        status_.restart_count = restart_count;
+    }
+
     [[nodiscard]] std::optional<
         onboard_autonomy::application::ports::CameraFrame
     > take_latest_frame() override {
@@ -243,6 +254,59 @@ void gstreamer_pipeline_is_explicit_and_machine_readable() {
     );
 }
 
+void recovery_timings_must_be_non_zero() {
+    onboard_autonomy::adapters::camera::GStreamerCameraConfig
+        gstreamer;
+    gstreamer.frame_timeout_ms = 0;
+    bool gstreamer_rejected = false;
+    try {
+        static_cast<void>(
+            onboard_autonomy::adapters::camera::
+                make_gstreamer_camera_arguments(gstreamer)
+        );
+    } catch (const std::invalid_argument&) {
+        gstreamer_rejected = true;
+    }
+
+    onboard_autonomy::adapters::camera::RpicamCameraConfig rpicam;
+    rpicam.restart_delay_ms = 0;
+    bool rpicam_rejected = false;
+    try {
+        static_cast<void>(
+            onboard_autonomy::adapters::camera::
+                make_rpicam_camera_source(rpicam)
+        );
+    } catch (const std::invalid_argument&) {
+        rpicam_rejected = true;
+    }
+
+    require(
+        gstreamer_rejected && rpicam_rejected,
+        "camera recovery timeouts must reject zero-duration loops"
+    );
+}
+
+void monitor_exposes_camera_recovery_state() {
+    FakeCameraSource source;
+    onboard_autonomy::application::CameraMonitor monitor{source};
+    source.reconnecting(
+        "GStreamer frame stalled for 2000 ms",
+        3
+    );
+
+    const auto snapshot = monitor.snapshot(
+        onboard_autonomy::domain::TimePoint{}
+    );
+    require(
+        snapshot.phase ==
+                onboard_autonomy::application::ports::
+                    CameraSourcePhase::reconnecting &&
+            snapshot.camera_restarts == 3U &&
+            !snapshot.error.empty(),
+        "camera monitor must preserve visible recovery evidence"
+    );
+}
+
 void monitor_forwards_the_processed_frame_to_preview() {
     FakeCameraSource source;
     FakeTargetDetector detector;
@@ -286,6 +350,7 @@ void app_snapshot_json_preserves_vehicle_and_adds_camera() {
         .height = 480,
         .received_frames = 5,
         .dropped_before_processing = 0,
+        .camera_restarts = 2,
         .frames_with_capture_timestamp = 5,
         .measured_fps = std::nullopt,
         .latest_latency_ms = 21.5,
@@ -302,6 +367,8 @@ void app_snapshot_json_preserves_vehicle_and_adds_camera() {
                 std::string::npos &&
             json.find("Camera Module 3 \\\"Wide\\\"") !=
                 std::string::npos &&
+            json.find("\"camera_restarts\":2") !=
+                std::string::npos &&
             json.find("\"latest_latency_ms\":21.500") !=
                 std::string::npos,
         "application JSON must remain backward compatible and add camera"
@@ -314,6 +381,8 @@ void run_camera_monitor_tests() {
     monitor_calculates_frame_rate_latency_and_gaps();
     metadata_parser_accepts_only_frame_wall_clock();
     gstreamer_pipeline_is_explicit_and_machine_readable();
+    recovery_timings_must_be_non_zero();
+    monitor_exposes_camera_recovery_state();
     monitor_forwards_the_processed_frame_to_preview();
     app_snapshot_json_preserves_vehicle_and_adds_camera();
 }

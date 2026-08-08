@@ -106,6 +106,14 @@ pipeline, receives Gazebo RTP/H.264 over UDP, decodes it, and publishes the
 same fixed-size I420 frame type through the same port. The application layer
 therefore does not branch between physical and simulated cameras.
 
+Both adapters treat a process exit, pipe failure, missing metadata, or two
+seconds without frame progress as a recoverable source failure. They stop the
+child process, wait for a bounded retry delay, and start it again until the
+owner requests shutdown. `CameraSourcePhase::reconnecting`, the last error,
+and a monotonic restart counter cross the port; the first complete frame moves
+the source back to `streaming`. Only complete frames receive sequence numbers,
+so retry attempts do not masquerade as dropped camera frames.
+
 `FrameWallClock` is paired with each completed frame. `CameraMonitor`
 calculates consumed FPS, sequence gaps, latest/average/maximum
 sensor-to-application latency, and frame age. It does not know whether

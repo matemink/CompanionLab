@@ -145,6 +145,17 @@ directions only after verified takeoff, then requires OnboardAutonomy to record
 heartbeat loss and ArduPilot to enter LAND independently. The tlog must contain
 no LAND or RTL command from companion component `191`.
 
+Verify camera-process and stream recovery without restarting OnboardAutonomy:
+
+```bash
+.venv/bin/python python/camera_recovery_acceptance.py \
+    --companion "${HOME}/build/onboard_autonomy/onboard_autonomy"
+```
+
+The harness starts the Gazebo camera, records decoded frames, stops the entire
+producer, requires a visible `reconnecting` state, restarts Gazebo, and accepts
+only after the same companion process consumes new frames.
+
 ## Failure injection
 
 Each scenario first requires a healthy baseline and then changes one

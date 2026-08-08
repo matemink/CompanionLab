@@ -68,7 +68,8 @@ Pi.
   autonomous startup, with an independent link-cut SITL acceptance test.
 - Raspberry Pi Camera Module 3 and Gazebo RTP/H.264 ingestion into the same
   YUV420 pipeline, with performance metrics, AprilTag detection, and a
-  read-only browser preview.
+  read-only browser preview. Both camera backends restart automatically after
+  a process exit or bounded frame stall.
 - Native Linux tests, Python integration tests, fault injection, and an
   ARM64 cross-build quality gate in GitHub Actions.
 
