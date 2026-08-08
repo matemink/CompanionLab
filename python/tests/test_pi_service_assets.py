@@ -33,7 +33,9 @@ class PiServiceAssetTests(unittest.TestCase):
         ).read_text(encoding="utf-8")
         for asset in (
             "rotate_jsonl_logs.py",
+            "runtime_profile.py",
             "install_onboard_autonomy_service.sh",
+            "profile_onboard_autonomy_pi.sh",
             "onboard-autonomy@.service",
             "onboard-autonomy.env.example",
         ):

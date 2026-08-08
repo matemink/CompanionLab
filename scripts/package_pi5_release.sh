@@ -54,11 +54,13 @@ install -m 0755 \
     "${project_dir}/python/calibrate_camera.py" \
     "${project_dir}/python/camera_benchmark.py" \
     "${project_dir}/python/rotate_jsonl_logs.py" \
+    "${project_dir}/python/runtime_profile.py" \
     "${project_dir}/scripts/benchmark_pi_camera.sh" \
     "${project_dir}/scripts/capture_camera_calibration.sh" \
     "${project_dir}/scripts/configure_pi5_uart.sh" \
     "${project_dir}/scripts/diagnose_pi_hardware.sh" \
     "${project_dir}/scripts/install_onboard_autonomy_service.sh" \
+    "${project_dir}/scripts/profile_onboard_autonomy_pi.sh" \
     "${project_dir}/scripts/run_onboard_autonomy_pi.sh" \
     "${stage_dir}/bin/"
 install -d "${stage_dir}/share/onboard_autonomy/systemd"

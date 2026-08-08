@@ -1,10 +1,19 @@
+import importlib.util
 import os
 from io import StringIO
 from pathlib import Path
+import sys
 import tempfile
 import unittest
 
-from rotate_jsonl_logs import rotate_jsonl_logs, stream_jsonl_logs
+
+MODULE_PATH = Path(__file__).parents[1] / "rotate_jsonl_logs.py"
+SPEC = importlib.util.spec_from_file_location("rotate_jsonl_logs", MODULE_PATH)
+assert SPEC is not None
+assert SPEC.loader is not None
+LOG_ROTATION = importlib.util.module_from_spec(SPEC)
+sys.modules[SPEC.name] = LOG_ROTATION
+SPEC.loader.exec_module(LOG_ROTATION)
 
 
 class LogRotationTests(unittest.TestCase):
@@ -27,7 +36,7 @@ class LogRotationTests(unittest.TestCase):
             self._log(directory, "telemetry-2.jsonl", 10, 2)
             self._log(directory, "telemetry-3.jsonl", 10, 3)
 
-            result = rotate_jsonl_logs(directory, 2, 100)
+            result = LOG_ROTATION.rotate_jsonl_logs(directory, 2, 100)
 
             self.assertEqual(
                 result.kept,
@@ -54,7 +63,7 @@ class LogRotationTests(unittest.TestCase):
             unrelated = directory / "notes.jsonl"
             unrelated.write_text("keep", encoding="utf-8")
 
-            result = rotate_jsonl_logs(directory, 10, 100)
+            result = LOG_ROTATION.rotate_jsonl_logs(directory, 10, 100)
 
             self.assertEqual(result.kept, (newest.name,))
             self.assertEqual(result.removed, (older.name,))
@@ -65,9 +74,9 @@ class LogRotationTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             directory = Path(temporary)
             with self.assertRaisesRegex(ValueError, "max_files"):
-                rotate_jsonl_logs(directory, 0, 1)
+                LOG_ROTATION.rotate_jsonl_logs(directory, 0, 1)
             with self.assertRaisesRegex(ValueError, "max_total_bytes"):
-                rotate_jsonl_logs(directory, 1, 0)
+                LOG_ROTATION.rotate_jsonl_logs(directory, 1, 0)
 
     def test_stream_is_mirrored_and_rotated_while_running(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -75,7 +84,7 @@ class LogRotationTests(unittest.TestCase):
             source = StringIO("one\ntwo\nthree\n")
             mirror = StringIO()
 
-            result = stream_jsonl_logs(
+            result = LOG_ROTATION.stream_jsonl_logs(
                 source,
                 mirror,
                 directory,
@@ -97,7 +106,7 @@ class LogRotationTests(unittest.TestCase):
     def test_stream_rejects_invalid_file_limit(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             with self.assertRaisesRegex(ValueError, "max_file_bytes"):
-                stream_jsonl_logs(
+                LOG_ROTATION.stream_jsonl_logs(
                     StringIO(),
                     StringIO(),
                     Path(temporary),
@@ -118,7 +127,7 @@ class LogRotationTests(unittest.TestCase):
             )
             mirror = StringIO()
 
-            stream_jsonl_logs(
+            LOG_ROTATION.stream_jsonl_logs(
                 StringIO("new\n"),
                 mirror,
                 directory,
