@@ -75,13 +75,27 @@ camera_calibration="${ONBOARD_AUTONOMY_CAMERA_CALIBRATION:-${script_dir}/../shar
 preview_enabled="${ONBOARD_AUTONOMY_CAMERA_PREVIEW_ENABLED:-1}"
 preview_port="${ONBOARD_AUTONOMY_CAMERA_PREVIEW_PORT:-8080}"
 log_dir="${ONBOARD_AUTONOMY_LOG_DIR:-${HOME}/.local/state/onboard_autonomy}"
+log_max_files="${ONBOARD_AUTONOMY_LOG_MAX_FILES:-20}"
+log_max_total_bytes="${ONBOARD_AUTONOMY_LOG_MAX_TOTAL_BYTES:-104857600}"
+log_max_file_bytes="${ONBOARD_AUTONOMY_LOG_MAX_FILE_BYTES:-10485760}"
+log_rotator="${ONBOARD_AUTONOMY_LOG_ROTATOR:-${script_dir}/rotate_jsonl_logs.py}"
+if [[ ! -f "${log_rotator}" ]]; then
+    project_rotator="${script_dir}/../python/rotate_jsonl_logs.py"
+    if [[ -f "${project_rotator}" ]]; then
+        log_rotator="${project_rotator}"
+    fi
+fi
+if [[ ! -f "${log_rotator}" ]]; then
+    printf 'JSONL log rotator not found: %s\n' "${log_rotator}" >&2
+    exit 6
+fi
 mkdir -p "${log_dir}"
-log_file="${log_dir}/telemetry-$(date -u +%Y%m%dT%H%M%SZ).jsonl"
+log_stem="telemetry-$(date -u +%Y%m%dT%H%M%SZ)-$$"
 
 printf 'OnboardAutonomy hardware bench\n'
 printf '  Mode:   OBSERVE ONLY\n'
 printf '  Link:   %s at %s baud\n' "${device}" "${baud}"
-printf '  Log:    %s\n' "${log_file}"
+printf '  Logs:   %s/%s*.jsonl\n' "${log_dir}" "${log_stem}"
 printf '  Safety: autonomous motion is disabled on serial hardware\n\n'
 
 declare -a camera_arguments=()
@@ -134,4 +148,10 @@ fi
     --snapshot-ms "${snapshot_ms}" \
     "${camera_arguments[@]}" \
     --json |
-    tee -a "${log_file}"
+    python3 "${log_rotator}" \
+        --stream \
+        --directory "${log_dir}" \
+        --stem "${log_stem}" \
+        --max-files "${log_max_files}" \
+        --max-total-bytes "${log_max_total_bytes}" \
+        --max-file-bytes "${log_max_file_bytes}"
