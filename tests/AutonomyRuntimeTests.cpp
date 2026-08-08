@@ -281,6 +281,33 @@ void rejected_link_failsafe_stops_runtime_output() {
     );
 }
 
+void restart_clears_terminal_autonomy_state() {
+    AutonomyRuntime runtime{{.enabled = true}};
+    auto vehicle = flying_vehicle();
+    vehicle.connected = false;
+    static_cast<void>(runtime.update(
+        vehicle,
+        completed_startup(),
+        accepted_failsafe(),
+        TimePoint{}
+    ));
+    require(
+        runtime.snapshot().phase == AutonomyRuntimePhase::failed,
+        "test setup must reach a terminal autonomy state"
+    );
+
+    runtime.restart();
+
+    const auto snapshot = runtime.snapshot();
+    require(
+        snapshot.phase == AutonomyRuntimePhase::waiting_for_startup &&
+            snapshot.land_attempt == 0 &&
+            !snapshot.vision_landing_target_active &&
+            !snapshot.failure_result.has_value(),
+        "restart must reset autonomy state for another flight"
+    );
+}
+
 }  // namespace
 
 void run_autonomy_runtime_tests() {
@@ -289,4 +316,5 @@ void run_autonomy_runtime_tests() {
     prolonged_target_loss_requests_fallback_land();
     link_loss_stops_runtime_output();
     rejected_link_failsafe_stops_runtime_output();
+    restart_clears_terminal_autonomy_state();
 }

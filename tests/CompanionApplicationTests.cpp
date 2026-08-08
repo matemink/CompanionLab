@@ -78,6 +78,49 @@ private:
     std::vector<std::vector<std::uint8_t>> outgoing_;
 };
 
+class FakeCameraSource final
+    : public onboard_autonomy::application::ports::CameraSource {
+public:
+    std::optional<
+        onboard_autonomy::application::ports::CameraFrame
+    > take_latest_frame() override {
+        return std::nullopt;
+    }
+
+    onboard_autonomy::application::ports::CameraSourceStatus
+    status() const override {
+        onboard_autonomy::application::ports::CameraSourceStatus result;
+        result.phase = onboard_autonomy::application::ports::
+            CameraSourcePhase::streaming;
+        result.description = "fake camera";
+        return result;
+    }
+};
+
+class FakeTargetDetector final
+    : public onboard_autonomy::application::ports::TargetDetector {
+public:
+    onboard_autonomy::domain::TargetDetectionBatch detect(
+        const onboard_autonomy::application::ports::CameraFrame&
+    ) override {
+        return {};
+    }
+
+    std::string description() const override {
+        return "fake detector";
+    }
+};
+
+onboard_autonomy::domain::CameraExtrinsics identity_extrinsics() {
+    onboard_autonomy::domain::CameraExtrinsics extrinsics;
+    extrinsics.rotation_camera_to_body = {
+        1.0, 0.0, 0.0,
+        0.0, 1.0, 0.0,
+        0.0, 0.0, 1.0,
+    };
+    return extrinsics;
+}
+
 std::uint32_t message_id(const std::vector<std::uint8_t>& frame) {
     mavlink_message_t receive_buffer{};
     mavlink_status_t receive_status{};
@@ -313,7 +356,7 @@ void quiet_transport_does_not_stall_runtime_scheduling() {
     );
 }
 
-void interactive_motion_commands_are_guarded() {
+void interactive_autonomy_restart_is_guarded() {
     const onboard_autonomy::domain::TimePoint start{};
 
     FakeTransport blocked_transport;
@@ -321,8 +364,8 @@ void interactive_motion_commands_are_guarded() {
         blocked_transport
     };
     require(
-        !blocked_application.request_land(start),
-        "manual LAND must be blocked without motion permission"
+        !blocked_application.request_autonomy_start(start),
+        "autonomy start must be blocked without motion permission"
     );
     require(
         blocked_application.snapshot(start).link_events.back().detail ==
@@ -331,48 +374,65 @@ void interactive_motion_commands_are_guarded() {
     );
 
     FakeTransport transport;
+    FakeCameraSource camera;
+    FakeTargetDetector detector;
     onboard_autonomy::application::CompanionApplication application{
         transport,
         {
-            .flight_startup = {},
-            .autonomy_runtime = {},
+            .flight_startup = {
+                .enabled = true,
+                .takeoff_altitude_m = 8.0,
+            },
+            .autonomy_runtime = {
+                .enabled = true,
+            },
             .motion_commands_allowed = true,
-            .camera_source = nullptr,
-            .target_detector = nullptr,
+            .camera_source = &camera,
+            .target_detector = &detector,
             .camera_preview_sink = nullptr,
-            .camera_extrinsics = std::nullopt,
+            .camera_extrinsics = identity_extrinsics(),
         }
     };
     require(
-        !application.request_land(start),
-        "manual LAND must be blocked before heartbeat"
+        !application.request_autonomy_start(start),
+        "autonomy start must be blocked before heartbeat"
     );
 
     transport.enqueue(autopilot_heartbeat());
     application.poll(start);
-    const auto frames_before_land = transport.outgoing().size();
-
     require(
-        application.request_land(
-            start + std::chrono::milliseconds(10)
+        !application.request_autonomy_start(
+            start + std::chrono::milliseconds(1)
         ),
-        "connected interactive application must send manual LAND"
+        "an active autonomy run must not be restarted"
     );
+
+    application.poll(start + std::chrono::seconds(91));
+    transport.enqueue(autopilot_heartbeat());
+    application.poll(start + std::chrono::seconds(92));
     require(
-        transport.outgoing().size() == frames_before_land + 1 &&
-            message_id(transport.outgoing().back()) ==
-                MAVLINK_MSG_ID_COMMAND_LONG,
-        "manual LAND must emit one COMMAND_LONG frame"
+        application.request_autonomy_start(
+            start + std::chrono::seconds(92) +
+                std::chrono::milliseconds(1)
+        ),
+        "a disarmed terminal run must be restartable"
     );
 
     const auto snapshot = application.snapshot(
-        start + std::chrono::milliseconds(10)
+        start + std::chrono::seconds(92) +
+            std::chrono::milliseconds(1)
     );
     require(
-        snapshot.link_events.back().label == "LAND" &&
+        snapshot.flight_startup.phase ==
+                onboard_autonomy::application::
+                    FlightStartupPhase::waiting_for_vehicle &&
+            snapshot.autonomy.phase ==
+                onboard_autonomy::application::
+                    AutonomyRuntimePhase::waiting_for_startup &&
+            snapshot.link_events.back().label == "START" &&
             snapshot.link_events.back().status ==
                 onboard_autonomy::application::LinkEventStatus::pending,
-        "manual LAND must appear as pending outbound traffic"
+        "restart must reset both state machines and remain observable"
     );
 }
 
@@ -412,6 +472,6 @@ void autonomy_runtime_requires_vision_guidance() {
 void run_companion_application_tests() {
     application_orchestrates_the_complete_telemetry_setup();
     quiet_transport_does_not_stall_runtime_scheduling();
-    interactive_motion_commands_are_guarded();
+    interactive_autonomy_restart_is_guarded();
     autonomy_runtime_requires_vision_guidance();
 }

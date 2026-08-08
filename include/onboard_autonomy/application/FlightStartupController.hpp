@@ -60,7 +60,7 @@ public:
         domain::TimePoint now
     );
 
-    void cancel(std::string detail);
+    void restart();
     [[nodiscard]] FlightStartupSnapshot snapshot() const;
 
 private:

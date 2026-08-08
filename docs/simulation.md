@@ -31,7 +31,10 @@ ONBOARD_AUTONOMY_AUTONOMOUS=1 \
 ```
 
 On Windows, `StartOnboardAutonomyGazeboDemo.cmd` launches the same stack
-in visible WSL/WSLg windows.
+in visible WSL/WSLg windows, enables interactive console input, waits for
+the first simulated camera frame, and opens the preview in the default
+browser. The launcher keeps the rendering-sensor server separate from the
+WSLg GUI client so camera processing does not depend on the GUI lifecycle.
 
 | Process | Responsibility |
 | --- | --- |
@@ -57,9 +60,10 @@ scripted demonstration routes:
    a target triggers an ordinary fallback LAND instead of indefinite hover.
 6. Finish only when ArduPilot reports the vehicle disarmed.
 
-In interactive mode, `L` requests an immediate LAND and cancels automatic
-startup/guidance. `Q` exits the runtime. The keys do not select alternate
-flight plans.
+After a completed or failed run, interactive mode lets `S` start the same
+guarded autonomy sequence again without restarting the simulator. The
+request is blocked while the vehicle is armed or a run is already active.
+`Q` exits the runtime. It does not select an alternate flight plan.
 
 Run the non-interactive acceptance flight with compact JSON telemetry and
 exit automatically after completion or failure:

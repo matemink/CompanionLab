@@ -222,6 +222,40 @@ void startup_waits_for_accepted_link_failsafe() {
     );
 }
 
+void restart_clears_terminal_startup_state() {
+    FlightStartupController controller{
+        {.enabled = true, .takeoff_altitude_m = 5.0}
+    };
+    auto vehicle = ready_vehicle();
+    static_cast<void>(controller.update(
+        vehicle,
+        false,
+        accepted_failsafe(),
+        TimePoint{}
+    ));
+    vehicle.connected = false;
+    static_cast<void>(controller.update(
+        vehicle,
+        false,
+        accepted_failsafe(),
+        TimePoint{} + std::chrono::seconds(1)
+    ));
+    require(
+        controller.snapshot().phase == FlightStartupPhase::failed,
+        "test setup must reach a terminal startup state"
+    );
+
+    controller.restart();
+
+    const auto snapshot = controller.snapshot();
+    require(
+        snapshot.phase == FlightStartupPhase::waiting_for_vehicle &&
+            snapshot.attempt == 0 &&
+            !snapshot.failure_result.has_value(),
+        "restart must reset startup state for another flight"
+    );
+}
+
 }  // namespace
 
 void run_flight_startup_controller_tests() {
@@ -229,4 +263,5 @@ void run_flight_startup_controller_tests() {
     startup_fails_after_three_missing_acknowledgements();
     startup_stops_on_heartbeat_loss();
     startup_waits_for_accepted_link_failsafe();
+    restart_clears_terminal_startup_state();
 }

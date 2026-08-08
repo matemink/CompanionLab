@@ -38,7 +38,7 @@ public:
     // deterministic.
     void poll();
     void poll(domain::TimePoint now);
-    [[nodiscard]] bool request_land(domain::TimePoint now);
+    [[nodiscard]] bool request_autonomy_start(domain::TimePoint now);
     [[nodiscard]] AppSnapshot snapshot(domain::TimePoint now);
 
 private:
