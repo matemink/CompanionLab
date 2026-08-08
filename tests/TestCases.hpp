@@ -15,3 +15,4 @@ void run_vision_monitor_tests();
 void run_camera_calibration_loader_tests();
 void run_camera_extrinsics_loader_tests();
 void run_transport_tests();
+void run_motion_safety_policy_tests();

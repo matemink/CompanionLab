@@ -145,7 +145,9 @@ so an unsuccessful GUI path is not presented as a working feature.
 
 ## Safety boundary
 
-Automated scenario motion is enabled only for UDP/SITL. The executable
-rejects demo and interactive motion modes when a serial transport is
-selected. Gazebo scenarios must not be reused as motor-test procedures on
-physical hardware.
+Automated scenario motion is enabled only when the operator explicitly
+passes `--sitl` over UDP. UDP by itself may represent a real MAVLink router,
+Wi-Fi bridge, or Ethernet bridge and therefore remains observation-only.
+The project SITL launcher supplies the assertion; serial rejects `--sitl`.
+Gazebo scenarios must not be reused as motor-test procedures on physical
+hardware.
