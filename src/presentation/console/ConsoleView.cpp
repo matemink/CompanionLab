@@ -1074,7 +1074,7 @@ std::string render_console(
     write_centered_line(
         output,
         snapshot.motion_commands_allowed
-            ? "[L] LAND NOW     [Q] QUIT"
+            ? "[S] START AGAIN     [Q] QUIT"
             : "LIVE VIEW     MOTION KEYS DISABLED     CTRL+C EXIT",
         snapshot.motion_commands_allowed
             ? Tone::normal

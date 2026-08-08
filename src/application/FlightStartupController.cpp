@@ -84,8 +84,7 @@ FlightStartupController::FlightStartupController(
         );
     }
     if (config_.enabled) {
-        phase_ = FlightStartupPhase::waiting_for_vehicle;
-        detail_ = "Waiting for the flight-controller heartbeat";
+        restart();
     }
 }
 
@@ -297,11 +296,21 @@ void FlightStartupController::on_command_ack(
     }
 }
 
-void FlightStartupController::cancel(std::string detail) {
-    phase_ = FlightStartupPhase::disabled;
-    detail_ = std::move(detail);
+void FlightStartupController::restart() {
+    if (!config_.enabled) {
+        phase_ = FlightStartupPhase::disabled;
+        detail_ = "Flight startup disabled";
+    } else {
+        phase_ = FlightStartupPhase::waiting_for_vehicle;
+        detail_ = "Waiting for the flight-controller heartbeat";
+    }
+    vehicle_system_id_.reset();
+    attempt_ = 0;
     awaiting_ack_ = false;
     command_accepted_ = false;
+    acknowledgement_deadline_ = {};
+    phase_deadline_ = {};
+    failure_result_.reset();
 }
 
 FlightStartupSnapshot FlightStartupController::snapshot() const {

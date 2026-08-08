@@ -287,8 +287,12 @@ public:
           motion_commands_allowed_(
               options.motion_commands_allowed
           ),
-          flight_startup_(std::move(options.flight_startup)),
-          autonomy_runtime_(std::move(options.autonomy_runtime)),
+          autonomy_scenario_configured_(
+              options.flight_startup.enabled &&
+              options.autonomy_runtime.enabled
+          ),
+          flight_startup_(options.flight_startup),
+          autonomy_runtime_(options.autonomy_runtime),
           camera_extrinsics_(options.camera_extrinsics),
           decoder_{
               vehicle_state_,
@@ -697,13 +701,24 @@ private:
     }
 
 public:
-    bool request_land(const domain::TimePoint now) {
+    bool request_autonomy_start(const domain::TimePoint now) {
         if (!motion_commands_allowed_) {
             record_event(
                 LinkEventDirection::outbound,
                 LinkEventStatus::failure,
-                "LAND",
+                "START",
                 "BLOCKED BY MOTION SAFETY POLICY",
+                now
+            );
+            return false;
+        }
+
+        if (!autonomy_scenario_configured_) {
+            record_event(
+                LinkEventDirection::outbound,
+                LinkEventStatus::failure,
+                "START",
+                "AUTONOMOUS SCENARIO NOT CONFIGURED",
                 now
             );
             return false;
@@ -714,36 +729,53 @@ public:
             record_event(
                 LinkEventDirection::outbound,
                 LinkEventStatus::failure,
-                "LAND",
-                "NOT SENT | NO FLIGHT CONTROLLER",
+                "START",
+                "BLOCKED | NO FLIGHT CONTROLLER",
                 now
             );
             return false;
         }
 
-        flight_startup_.cancel("Manual LAND requested");
-        autonomy_runtime_.cancel("Manual LAND requested");
-        const bool sent = write_frame(
-            adapters::mavlink::encode_land(
-                *vehicle.system_id,
-                0
-            ),
-            now,
-            "COMMAND_LONG",
-            "LAND"
-        );
+        if (vehicle.armed) {
+            record_event(
+                LinkEventDirection::outbound,
+                LinkEventStatus::failure,
+                "START",
+                "BLOCKED | VEHICLE IS ARMED",
+                now
+            );
+            return false;
+        }
+
+        const auto startup = flight_startup_.snapshot();
+        const auto autonomy = autonomy_runtime_.snapshot();
+        const bool startup_finished =
+            startup.phase == FlightStartupPhase::completed ||
+            startup.phase == FlightStartupPhase::failed;
+        const bool autonomy_finished =
+            autonomy.phase == AutonomyRuntimePhase::completed ||
+            autonomy.phase == AutonomyRuntimePhase::failed;
+        if (!startup_finished || !autonomy_finished) {
+            record_event(
+                LinkEventDirection::outbound,
+                LinkEventStatus::warning,
+                "START",
+                "SCENARIO ALREADY RUNNING",
+                now
+            );
+            return false;
+        }
+
+        flight_startup_.restart();
+        autonomy_runtime_.restart();
         record_event(
             LinkEventDirection::outbound,
-            sent
-                ? LinkEventStatus::pending
-                : LinkEventStatus::failure,
-            "LAND",
-            sent
-                ? "MANUAL OVERRIDE"
-                : "MANUAL OVERRIDE | WRITE FAILED",
+            LinkEventStatus::pending,
+            "START",
+            "AUTONOMOUS FLIGHT REQUESTED",
             now
         );
-        return sent;
+        return true;
     }
 
     AppSnapshot snapshot(const domain::TimePoint now) {
@@ -990,6 +1022,7 @@ private:
 
     ports::Transport& transport_;
     bool motion_commands_allowed_{false};
+    bool autonomy_scenario_configured_{false};
     domain::VehicleState vehicle_state_;
     CompanionLinkFailsafe companion_link_failsafe_;
     adapters::mavlink::TelemetryStreamConfigurator telemetry_configurator_;
@@ -1036,8 +1069,10 @@ void CompanionApplication::poll() {
     impl_->poll();
 }
 
-bool CompanionApplication::request_land(const domain::TimePoint now) {
-    return impl_->request_land(now);
+bool CompanionApplication::request_autonomy_start(
+    const domain::TimePoint now
+) {
+    return impl_->request_autonomy_start(now);
 }
 
 AppSnapshot CompanionApplication::snapshot(const domain::TimePoint now) {

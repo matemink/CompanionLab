@@ -69,7 +69,7 @@ public:
         domain::TimePoint now
     );
 
-    void cancel(std::string detail);
+    void restart();
     [[nodiscard]] AutonomyRuntimeSnapshot snapshot() const;
 
 private:

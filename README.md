@@ -9,10 +9,11 @@ UAVs. It runs against ArduCopter SITL or a physical Pixhawk, handles
 MAVLink command and telemetry flows, processes onboard camera frames,
 and exposes vehicle state through an operator console and JSON snapshots.
 
-The project is building toward vision-guided precision landing on a
-Raspberry Pi 5 and Pixhawk 6C. Development remains reproducible without
-real flight: motion is verified in SITL and Gazebo, while hardware work
-is performed on a propeller-free bench.
+The project implements vision-guided precision landing in ArduCopter SITL
+and Gazebo and is progressing toward the same path on a Raspberry Pi 5 and
+Pixhawk 6C. Development remains reproducible without real flight: motion is
+verified in simulation, while hardware work is performed on a propeller-free
+bench.
 
 ## System overview
 
@@ -95,6 +96,21 @@ on the documented bench setup.
 ## Quick start
 
 Ubuntu 24.04 or Raspberry Pi OS 64-bit is recommended.
+
+After completing the Gazebo prerequisites in the
+[simulation runbook](docs/simulation.md), Windows users can launch Gazebo,
+ArduCopter SITL, the interactive OnboardAutonomy console, and the browser
+camera preview with:
+
+```text
+StartOnboardAutonomyGazeboDemo.cmd
+```
+
+The first guarded precision-landing run starts automatically. After it
+finishes and the simulated vehicle disarms, press `S` in the console to run
+the same scenario again or `Q` to exit OnboardAutonomy.
+
+For a development build and fast generated-telemetry check:
 
 ```bash
 sudo bash scripts/bootstrap_ubuntu.sh
@@ -191,6 +207,6 @@ automatically. See the
 - [Development and SITL runbook](docs/development.md)
 - [Gazebo simulation runbook](docs/simulation.md)
 - [Raspberry Pi 5 and Pixhawk 6C bench](docs/raspberry-pi-5-bench.md)
-- [Camera calibration workflow](docs/learning/29-camera-calibration.uk.md)
-- [AprilTag target tracking](docs/learning/30-apriltag-target-tracking.uk.md)
+- [Camera calibration workflow (Ukrainian)](docs/learning/29-camera-calibration.uk.md)
+- [AprilTag target tracking (Ukrainian)](docs/learning/30-apriltag-target-tracking.uk.md)
 - [Roadmap](docs/roadmap.md)

@@ -20,8 +20,7 @@ AutonomyRuntime::AutonomyRuntime(AutonomyRuntimeConfig config)
         );
     }
     if (config_.enabled) {
-        phase_ = AutonomyRuntimePhase::waiting_for_startup;
-        detail_ = "Waiting for verified flight startup";
+        restart();
     }
 }
 
@@ -237,11 +236,25 @@ void AutonomyRuntime::on_command_ack(
     }
 }
 
-void AutonomyRuntime::cancel(std::string detail) {
-    phase_ = AutonomyRuntimePhase::disabled;
-    detail_ = std::move(detail);
+void AutonomyRuntime::restart() {
+    if (!config_.enabled) {
+        phase_ = AutonomyRuntimePhase::disabled;
+        detail_ = "Autonomy runtime disabled";
+    } else {
+        phase_ = AutonomyRuntimePhase::waiting_for_startup;
+        detail_ = "Waiting for verified flight startup";
+    }
+    motion_safety_status_ = MotionSafetyStatus::no_intent;
+    vehicle_system_id_.reset();
+    land_command_after_.reset();
+    target_missing_since_.reset();
+    next_landing_target_ = {};
+    acknowledgement_deadline_ = {};
+    landing_deadline_ = {};
+    land_attempt_ = 0;
     awaiting_land_ack_ = false;
     vision_landing_target_active_ = false;
+    failure_result_.reset();
 }
 
 AutonomyRuntimeSnapshot AutonomyRuntime::snapshot() const {

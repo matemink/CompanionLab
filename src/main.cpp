@@ -345,9 +345,11 @@ int main(const int argc, char** argv) {
             while (const auto key = console_input.poll()) {
                 const auto command_time =
                     std::chrono::steady_clock::now();
-                if (*key == 'l' || *key == 'L') {
+                if (*key == 's' || *key == 'S') {
                     static_cast<void>(
-                        application.request_land(command_time)
+                        application.request_autonomy_start(
+                            command_time
+                        )
                     );
                     next_snapshot = command_time;
                 } else if (*key == 'q' || *key == 'Q') {

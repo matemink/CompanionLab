@@ -178,7 +178,7 @@ void command_bus_shows_both_directions() {
         "command and acknowledgement labels must be visible"
     );
     require(
-        output.find("[L] LAND NOW") != std::string::npos &&
+        output.find("[S] START AGAIN") != std::string::npos &&
             output.find("[Q] QUIT") != std::string::npos,
         "interactive command hints must be visible"
     );
