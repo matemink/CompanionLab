@@ -1,5 +1,6 @@
 #pragma once
 
+#include "onboard_autonomy/application/CompanionLinkFailsafe.hpp"
 #include "onboard_autonomy/application/FlightCommand.hpp"
 #include "onboard_autonomy/domain/VehicleState.hpp"
 
@@ -41,6 +42,7 @@ public:
     [[nodiscard]] std::vector<FlightActionRequest> update(
         const domain::VehicleSnapshot& vehicle,
         bool telemetry_ready,
+        const CompanionLinkFailsafeSnapshot& companion_link_failsafe,
         domain::TimePoint now
     );
 
@@ -69,7 +71,8 @@ private:
     void fail(std::string detail);
     void update_readiness_detail(
         const domain::VehicleSnapshot& vehicle,
-        bool telemetry_ready
+        bool telemetry_ready,
+        const CompanionLinkFailsafeSnapshot& companion_link_failsafe
     );
     [[nodiscard]] std::optional<FlightActionRequest> update_command(
         FlightAction action,

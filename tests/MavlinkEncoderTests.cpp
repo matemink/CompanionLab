@@ -220,6 +220,34 @@ void battery_threshold_request_uses_parameter_protocol() {
     );
 }
 
+void named_parameter_request_uses_parameter_protocol() {
+    constexpr std::uint8_t system_id{1};
+    const auto message = decode_message(
+        onboard_autonomy::adapters::mavlink::
+            encode_parameter_request_read(
+                system_id,
+                "FS_GCS_TIMEOUT"
+            )
+    );
+    mavlink_param_request_read_t request{};
+    mavlink_msg_param_request_read_decode(&message, &request);
+
+    require(
+        message.msgid == MAVLINK_MSG_ID_PARAM_REQUEST_READ &&
+            request.target_system == system_id &&
+            request.target_component == MAV_COMP_ID_AUTOPILOT1 &&
+            request.param_index == -1,
+        "named parameter read must target the active autopilot"
+    );
+    require(
+        std::string(
+            request.param_id,
+            request.param_id + sizeof(request.param_id)
+        ).starts_with("FS_GCS_TIMEOUT"),
+        "named parameter read must preserve its 16-byte id"
+    );
+}
+
 void autopilot_version_uses_one_shot_message_request() {
     constexpr std::uint8_t system_id{7};
     const auto command = decode_command_long(
@@ -369,6 +397,7 @@ void run_mavlink_encoder_tests() {
     companion_heartbeat_uses_standard_identity();
     message_interval_request_uses_command_long();
     battery_threshold_request_uses_parameter_protocol();
+    named_parameter_request_uses_parameter_protocol();
     autopilot_version_uses_one_shot_message_request();
     flight_commands_use_documented_arducopter_parameters();
     movement_and_precision_messages_use_documented_frames();

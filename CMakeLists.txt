@@ -35,7 +35,7 @@ FetchContent_MakeAvailable(nlohmann_json)
 FetchContent_Declare(
     apriltag_source
     GIT_REPOSITORY https://github.com/AprilRobotics/apriltag.git
-    GIT_TAG 12cf56b93d8f1f95e528246c8000c36881fb43fb
+    GIT_TAG 94be783968e5091bcc9972c72c84fd63efce2935
     GIT_SHALLOW FALSE
 )
 
@@ -251,6 +251,7 @@ add_library(
     src/application/AppSnapshot.cpp
     src/application/AutonomyRuntime.cpp
     src/application/CameraMonitor.cpp
+    src/application/CompanionLinkFailsafe.cpp
     src/application/DecisionEngine.cpp
     src/application/FlightStartupController.cpp
     src/application/MotionSafetyPolicy.cpp
@@ -380,6 +381,7 @@ if(BUILD_TESTING)
         tests/BoardTypeCatalogTests.cpp
         tests/CameraMonitorTests.cpp
         tests/CommandLineTests.cpp
+        tests/CompanionLinkFailsafeTests.cpp
         tests/CameraCalibrationLoaderTests.cpp
         tests/CameraExtrinsicsLoaderTests.cpp
         tests/VisionMonitorTests.cpp

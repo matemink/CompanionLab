@@ -28,6 +28,7 @@ AutonomyRuntime::AutonomyRuntime(AutonomyRuntimeConfig config)
 std::vector<FlightActionRequest> AutonomyRuntime::update(
     const domain::VehicleSnapshot& vehicle,
     const FlightStartupSnapshot& startup,
+    const CompanionLinkFailsafeSnapshot& companion_link_failsafe,
     const domain::TimePoint now,
     std::optional<domain::BodyFramePosition> landing_target
 ) {
@@ -47,6 +48,13 @@ std::vector<FlightActionRequest> AutonomyRuntime::update(
             detail_ = "Waiting for verified flight startup";
             return actions;
         }
+        if (!companion_link_failsafe.accepted()) {
+            fail(
+                "Companion-link failsafe is not valid: " +
+                companion_link_failsafe.detail
+            );
+            return actions;
+        }
         phase_ = AutonomyRuntimePhase::active;
         detail_ = "Autonomy active; waiting for vision target";
         target_missing_since_ = now;
@@ -55,6 +63,13 @@ std::vector<FlightActionRequest> AutonomyRuntime::update(
 
     if (!vehicle.connected || !vehicle.system_id.has_value()) {
         fail("Flight-controller heartbeat was lost during autonomy");
+        return actions;
+    }
+    if (!companion_link_failsafe.accepted()) {
+        fail(
+            "Companion-link failsafe is no longer valid: " +
+            companion_link_failsafe.detail
+        );
         return actions;
     }
     vehicle_system_id_ = vehicle.system_id;

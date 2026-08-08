@@ -26,6 +26,15 @@ void snapshot_keeps_runtime_state_without_camera_data() {
     snapshot.autonomy.detail = "Autonomy active";
     snapshot.autonomy.vision_landing_target_active = true;
     snapshot.motion_commands_allowed = true;
+    snapshot.companion_heartbeat_active = true;
+    snapshot.companion_link_failsafe.phase =
+        onboard_autonomy::application::
+            CompanionLinkFailsafePhase::accepted;
+    snapshot.companion_link_failsafe.action =
+        onboard_autonomy::application::
+            ArduPilotGcsFailsafeAction::land;
+    snapshot.companion_link_failsafe.timeout_s = 3.0;
+    snapshot.companion_link_failsafe.options = 0U;
 
     const auto json = nlohmann::json::parse(snapshot.to_json());
 
@@ -45,6 +54,16 @@ void snapshot_keeps_runtime_state_without_camera_data() {
     require(
         json.at("motion_commands_allowed") == true,
         "JSON booleans must not be encoded as integers"
+    );
+    require(
+        json.at("companion_heartbeat_active") == true &&
+            json.at("companion_link_failsafe").at("phase") ==
+                "accepted" &&
+            json.at("companion_link_failsafe").at("action") ==
+                "land" &&
+            json.at("companion_link_failsafe").at("timeout_s") ==
+                3.0,
+        "JSON must expose the independently enforced link-loss policy"
     );
 }
 

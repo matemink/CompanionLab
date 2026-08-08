@@ -130,6 +130,21 @@ The harness starts every process, waits on protocol evidence instead of
 fixed sleeps, writes logs under `artifacts/sitl-smoke/`, and terminates
 its process group when the check completes.
 
+Run the production autonomy flight and independently verified companion-link
+failsafe flight:
+
+```bash
+.venv/bin/python python/autonomy_sitl_acceptance.py \
+    --companion "${HOME}/build/onboard_autonomy/onboard_autonomy"
+.venv/bin/python python/link_failsafe_sitl_acceptance.py \
+    --companion "${HOME}/build/onboard_autonomy/onboard_autonomy"
+```
+
+The second harness inserts a controllable UDP relay. It cuts both MAVLink
+directions only after verified takeoff, then requires OnboardAutonomy to record
+heartbeat loss and ArduPilot to enter LAND independently. The tlog must contain
+no LAND or RTL command from companion component `191`.
+
 ## Failure injection
 
 Each scenario first requires a healthy baseline and then changes one

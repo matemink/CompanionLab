@@ -151,6 +151,25 @@ The encoder uses the same generated MAVLink headers to create outbound
 frames. OnboardAutonomy discovers the autopilot system ID, uses component ID
 `191`, and broadcasts an onboard-controller heartbeat at 1 Hz.
 
+### Companion-link failsafe policy
+
+The MAVLink adapter forwards generic `PARAM_VALUE` records without embedding
+safety policy. `CompanionLinkFailsafe` in the application layer gives the four
+required ArduPilot values typed meaning: action, timeout, options bitmask, and
+watched heartbeat system id.
+
+Autonomous startup requires `FS_GCS_ENABLE=5` (Always LAND), a timeout from 2
+to 10 seconds, no GCS continuation override in `FS_OPTIONS`, and
+`SYSID_MYGCS` equal to the onboard-controller heartbeat system id. Values are
+requested repeatedly after connection and reset when the flight-controller
+heartbeat becomes stale. They are never written automatically.
+
+This creates two independent layers. OnboardAutonomy stops new actions when
+its input becomes stale. ArduPilot monitors the 1 Hz companion heartbeat and
+performs LAND if the Raspberry Pi, process, cable, or MAVLink route disappears.
+The UDP link-cut acceptance keeps ArduPilot alive while isolating the companion
+and verifies both sides from JSON and tlog evidence.
+
 ### Vehicle state
 
 The state model owns freshness windows and readiness rules. Missing data
@@ -166,8 +185,9 @@ fresh world state, running autonomy and safety decisions, and writing
 outbound frames. Its public header uses Pimpl so MAVLink implementation
 types do not leak into callers.
 
-`AppSnapshot` combines domain state with application-level heartbeat
-and telemetry-setup status. Presentation depends on this neutral model,
+`AppSnapshot` combines domain state with application-level heartbeat,
+telemetry-setup, and companion-link failsafe status. Presentation depends on
+this neutral model,
 not on `MavlinkDecoder` or `TelemetryStreamConfigurator`.
 
 ### Telemetry configurator
@@ -182,7 +202,8 @@ state machine.
 ### Production autonomy runtime
 
 `FlightStartupController` owns the finite startup sequence: verify an
-ArduPilot multicopter and complete telemetry, wait for pre-arm readiness,
+ArduPilot multicopter, complete telemetry, validate the ArduPilot-owned
+link-loss LAND policy, wait for pre-arm readiness,
 enter GUIDED, arm, take off, and confirm each transition from both
 `COMMAND_ACK` and vehicle telemetry. Commands use bounded retries and phase
 deadlines. The controller does not own landing guidance.

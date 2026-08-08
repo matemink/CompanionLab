@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <string_view>
 #include <vector>
 
 namespace onboard_autonomy::adapters::mavlink {
@@ -22,6 +23,12 @@ std::vector<std::uint8_t> encode_set_message_interval(
 
 std::vector<std::uint8_t> encode_battery_arming_voltage_request(
     std::uint8_t vehicle_system_id,
+    std::uint8_t component_id = kCompanionComponentId
+);
+
+std::vector<std::uint8_t> encode_parameter_request_read(
+    std::uint8_t vehicle_system_id,
+    std::string_view parameter_id,
     std::uint8_t component_id = kCompanionComponentId
 );
 

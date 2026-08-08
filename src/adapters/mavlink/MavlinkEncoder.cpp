@@ -2,17 +2,16 @@
 
 #include <ardupilotmega/mavlink.h>
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstdint>
+#include <stdexcept>
+#include <string_view>
 #include <vector>
 
 namespace onboard_autonomy::adapters::mavlink {
 namespace {
-
-constexpr std::array<char, 16> kBatteryArmingVoltageParameter{
-    'B', 'A', 'T', 'T', '_', 'A', 'R', 'M', '_', 'V', 'O', 'L', 'T',
-};
 
 std::vector<std::uint8_t> encode_command_long(
     const std::uint8_t vehicle_system_id,
@@ -101,6 +100,31 @@ std::vector<std::uint8_t> encode_battery_arming_voltage_request(
     const std::uint8_t vehicle_system_id,
     const std::uint8_t component_id
 ) {
+    return encode_parameter_request_read(
+        vehicle_system_id,
+        "BATT_ARM_VOLT",
+        component_id
+    );
+}
+
+std::vector<std::uint8_t> encode_parameter_request_read(
+    const std::uint8_t vehicle_system_id,
+    const std::string_view parameter_id,
+    const std::uint8_t component_id
+) {
+    if (parameter_id.empty() || parameter_id.size() > 16U) {
+        throw std::invalid_argument(
+            "MAVLink parameter id must contain 1 to 16 characters"
+        );
+    }
+
+    std::array<char, 16> encoded_parameter_id{};
+    std::copy(
+        parameter_id.begin(),
+        parameter_id.end(),
+        encoded_parameter_id.begin()
+    );
+
     mavlink_message_t message{};
     mavlink_msg_param_request_read_pack(
         vehicle_system_id,
@@ -108,7 +132,7 @@ std::vector<std::uint8_t> encode_battery_arming_voltage_request(
         &message,
         vehicle_system_id,
         MAV_COMP_ID_AUTOPILOT1,
-        kBatteryArmingVoltageParameter.data(),
+        encoded_parameter_id.data(),
         -1
     );
 

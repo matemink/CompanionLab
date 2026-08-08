@@ -72,6 +72,8 @@ Status: implemented and verified locally against ArduCopter 4.6.3.
   and MAVLink `LANDING_TARGET` encoding before connecting vision.
 - [x] Replace scripted product demos with a startup controller and
   continuous autonomy runtime driven by current world state.
+- [x] Validate the ArduPilot companion-heartbeat LAND policy before
+  autonomous startup and prove independent link-loss recovery in SITL.
 
 Engineering focus: Python, Embedded Linux, ArduPilot, integration
 tests, observability, and developer tooling.
@@ -141,6 +143,11 @@ Production simulation acceptance evidence: 78 valid body-FRD
 `LANDING_TARGET` messages, accepted GUIDED/ARM/TAKEOFF/LAND, automatic
 DISARMED, and 0.000 m final horizontal error in the recorded run. See
 `docs/evidence/precision-landing-sitl.md`.
+
+Independent safety acceptance evidence: ArduPilot entered LAND 3.237 seconds
+after a controlled companion-link cut, emitted `GCS Failsafe`, and disarmed;
+the companion tlog contained no LAND or RTL command. See
+`docs/evidence/companion-link-failsafe-sitl.md`.
 
 Engineering focus: computer vision, guidance integration, algorithms.
 
