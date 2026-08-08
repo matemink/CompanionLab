@@ -182,7 +182,11 @@ Engineering focus: computer vision, guidance integration, algorithms.
 - [x] Add a hardened non-root `systemd` service and bounded streaming
   JSONL log rotation while preserving live output in `journald`.
 - [ ] Profile and optimize the ARM release build.
-- [ ] Validate graceful restart and device reconnection.
+- [x] Recover camera processes/streams and Linux serial sessions without
+  restarting the companion process; validate serial recovery with a real PTY
+  replacement and repeat telemetry setup after heartbeat recovery.
+- [ ] Repeat the established-link USB unplug/replug acceptance test with the
+  physical Raspberry Pi 5 and Pixhawk 6C.
 
 Engineering focus: Embedded Linux, ARM Cortex, target deployment.
 

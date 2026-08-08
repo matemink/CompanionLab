@@ -208,10 +208,50 @@ void rejected_command_fails_immediately() {
     );
 }
 
+void reconnect_restarts_the_complete_stream_sequence() {
+    onboard_autonomy::adapters::mavlink::TelemetryStreamConfigurator configurator;
+    const onboard_autonomy::domain::TimePoint now{};
+
+    for (int request = 0; request < 6; ++request) {
+        require(
+            configurator.update(true, 1, now).has_value(),
+            "initial stream sequence must emit every request"
+        );
+        configurator.on_command_ack(accepted_ack(), now);
+    }
+    require(
+        configurator.snapshot().phase ==
+            onboard_autonomy::adapters::mavlink::TelemetrySetupPhase::active,
+        "initial stream sequence must become active"
+    );
+
+    require(
+        !configurator.update(false, 1, now).has_value(),
+        "disconnect must not emit telemetry commands"
+    );
+    const auto disconnected = configurator.snapshot();
+    require(
+        disconnected.phase == onboard_autonomy::adapters::mavlink::
+            TelemetrySetupPhase::waiting_for_vehicle &&
+            disconnected.completed_requests == 0,
+        "disconnect must clear the previous telemetry session"
+    );
+
+    const auto first_reconnected_request =
+        configurator.update(true, 1, now);
+    require(
+        first_reconnected_request.has_value() &&
+            decode_command(*first_reconnected_request).param1 ==
+                static_cast<float>(MAVLINK_MSG_ID_SYS_STATUS),
+        "reconnect must restart configuration from SYS_STATUS"
+    );
+}
+
 }  // namespace
 
 void run_telemetry_stream_configurator_tests() {
     requests_each_required_stream_sequentially();
     retries_then_fails_when_ack_is_missing();
     rejected_command_fails_immediately();
+    reconnect_restarts_the_complete_stream_sequence();
 }
