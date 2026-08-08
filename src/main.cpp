@@ -7,6 +7,7 @@
 #include "onboard_autonomy/adapters/vision/CameraCalibrationLoader.hpp"
 #include "onboard_autonomy/adapters/vision/CameraExtrinsicsLoader.hpp"
 #include "onboard_autonomy/application/CompanionApplication.hpp"
+#include "onboard_autonomy/application/MotionSafetyPolicy.hpp"
 #include "onboard_autonomy/presentation/console/ConsoleInput.hpp"
 #include "onboard_autonomy/presentation/console/ConsoleView.hpp"
 
@@ -60,6 +61,7 @@ struct Options {
     std::uint32_t camera_fps{30};
     std::string board_types_file;
     bool json_output{false};
+    bool sitl_mode{false};
     std::optional<onboard_autonomy::application::ScenarioId>
         startup_scenario;
     bool exit_after_scenario{false};
@@ -195,6 +197,8 @@ Options parse_options(const int argc, char** argv) {
             options.board_types_file = require_value();
         } else if (argument == "--json") {
             options.json_output = true;
+        } else if (argument == "--sitl") {
+            options.sitl_mode = true;
         } else if (argument == "--demo-flight") {
             if (options.startup_scenario.has_value()) {
                 throw std::invalid_argument(
@@ -310,7 +314,7 @@ void print_help() {
     std::cout
         << "OnboardAutonomy companion service\n\n"
         << "SITL UDP mode:\n"
-        << "  onboard_autonomy [--udp-bind 0.0.0.0]"
+        << "  onboard_autonomy --sitl [--udp-bind 0.0.0.0]"
         << " [--udp-port 14550]\n\n"
         << "Pixhawk serial mode on Linux:\n"
         << "  onboard_autonomy --serial /dev/ttyACM0"
@@ -336,6 +340,8 @@ void print_help() {
         << " HTTP preview port, default 8080\n"
         << "  --board-types FILE Override ArduPilot board table path\n"
         << "  --json            Print machine-readable JSON snapshots\n"
+        << "  --sitl            Assert UDP peer is ArduPilot SITL;"
+        << " allow motion\n"
         << "  --demo-flight     Run the guarded 5 m SITL flight demo\n"
         << "  --scenario N      Run SITL scenario 1..5\n"
         << "  --exit-after-scenario"
@@ -408,12 +414,26 @@ int main(const int argc, char** argv) {
             );
         }
 
-        if ((options.startup_scenario.has_value() ||
-             options.interactive) &&
-            !options.serial_device.empty()) {
+        const bool motion_requested =
+            options.startup_scenario.has_value() ||
+            options.interactive;
+        const auto motion_safety =
+            onboard_autonomy::application::evaluate_motion_safety(
+                options.sitl_mode
+                    ? onboard_autonomy::application::
+                          RuntimeEnvironment::sitl
+                    : onboard_autonomy::application::
+                          RuntimeEnvironment::hardware_or_unknown,
+                options.serial_device.empty()
+                    ? onboard_autonomy::application::
+                          MavlinkTransport::udp
+                    : onboard_autonomy::application::
+                          MavlinkTransport::serial,
+                motion_requested
+            );
+        if (!motion_safety.configuration_valid) {
             throw std::invalid_argument(
-                "motion commands are restricted to UDP/SITL; "
-                "serial flight controllers are not allowed"
+                std::string(motion_safety.reason)
             );
         }
 
@@ -546,8 +566,7 @@ int main(const int argc, char** argv) {
                             ),
                     },
                 .motion_commands_allowed =
-                    options.startup_scenario.has_value() ||
-                    console_input.active(),
+                    motion_safety.motion_commands_allowed,
                 .camera_source = camera_source.get(),
                 .target_detector = target_detector.get(),
                 .camera_preview_sink = camera_preview.get(),

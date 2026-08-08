@@ -157,10 +157,11 @@ real aircraft. See [docs/roadmap.md](docs/roadmap.md).
 ## Safety
 
 Normal startup is observation-only. Automated motion requires an
-explicit SITL-only flag or interactive trigger. The executable rejects
-motion scenarios when a serial transport is selected. Physical bench
-work is performed with propellers removed, and autonomous behavior is
-validated in simulation before hardware-in-the-loop testing.
+explicit `--sitl` assertion; neither UDP nor an interactive terminal is
+treated as proof of simulation. Serial and unknown or real UDP endpoints
+remain observation-only. Physical bench work is performed with propellers
+removed, and autonomous behavior is validated in simulation before
+hardware-in-the-loop testing.
 
 ## Documentation
 
