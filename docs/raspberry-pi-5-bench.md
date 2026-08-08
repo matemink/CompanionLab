@@ -136,6 +136,44 @@ ONBOARD_AUTONOMY_SERIAL=/dev/serial/by-id/usb-... \
     bin/run_onboard_autonomy_pi.sh
 ```
 
+### Install as a boot service
+
+The packaged installer copies the release to `/opt/onboard-autonomy`,
+installs a hardened non-root `systemd` unit, and preserves an existing
+configuration during upgrades:
+
+```bash
+sudo bin/install_onboard_autonomy_service.sh
+sudo nano /etc/onboard-autonomy/onboard-autonomy.env
+sudo systemctl enable --now onboard-autonomy@"$USER".service
+```
+
+Inspect the service and follow its operator output with:
+
+```bash
+systemctl status onboard-autonomy@"$USER".service
+journalctl -u onboard-autonomy@"$USER".service -f
+```
+
+The service runs as the selected Pi user rather than `root`. If no serial
+candidate exists at boot, `systemd` retries the launcher every three seconds,
+so connecting the Pixhawk later does not require a manual restart. Camera
+process and stream recovery happens inside the runtime.
+
+Telemetry JSONL files remain under
+`~/.local/state/onboard_autonomy`. The default policy keeps at most 20 files,
+10 MiB per file, and 100 MiB in total. Each JSON line is flushed immediately
+and mirrored to `journald`; these limits can be changed in the environment
+file through `ONBOARD_AUTONOMY_LOG_MAX_FILES`,
+`ONBOARD_AUTONOMY_LOG_MAX_FILE_BYTES`, and
+`ONBOARD_AUTONOMY_LOG_MAX_TOTAL_BYTES`.
+
+To stop or remove automatic startup:
+
+```bash
+sudo systemctl disable --now onboard-autonomy@"$USER".service
+```
+
 The cross-built binary is a deployment candidate, not an ABI promise.
 Ubuntu and Raspberry Pi OS can ship different glibc versions. If the
 diagnostic reports missing runtime support, perform the native build
@@ -160,8 +198,9 @@ Expected behavior:
 - GPS and battery remain not ready if the corresponding messages are
   absent.
 - Disconnecting USB changes `connected` to `false` after the freshness
-  timeout or terminates with a serial error. Automatic device reopening
-  is a later milestone.
+  timeout or terminates with a serial error. If the process terminates,
+  `systemd` restarts it; reopening an established serial link inside the
+  same process remains a later milestone.
 - `camera.phase` changes from `starting` to `streaming`.
 - On the verified Pi 5 and IMX708 Wide setup, the runtime sustained
   `30.013 FPS` with zero processing drops and approximately `10 ms`

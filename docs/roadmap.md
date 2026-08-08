@@ -179,7 +179,8 @@ Engineering focus: computer vision, guidance integration, algorithms.
   processing drops, and approximately 10 ms latency on Raspberry Pi 5.
 - [x] Add a read-only browser camera preview from the same Y plane used
   by AprilTag, with target ID and corner overlay.
-- [ ] Add a systemd service and JSONL log rotation.
+- [x] Add a hardened non-root `systemd` service and bounded streaming
+  JSONL log rotation while preserving live output in `journald`.
 - [ ] Profile and optimize the ARM release build.
 - [ ] Validate graceful restart and device reconnection.
 

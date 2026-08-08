@@ -1,0 +1,36 @@
+[Unit]
+Description=OnboardAutonomy companion runtime for %i
+Documentation=https://github.com/matemink/OnboardAutonomy
+After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=%i
+Environment=ONBOARD_AUTONOMY_BINARY=/opt/onboard-autonomy/bin/onboard_autonomy
+EnvironmentFile=-/etc/onboard-autonomy/onboard-autonomy.env
+ExecStart=/opt/onboard-autonomy/bin/run_onboard_autonomy_pi.sh
+Restart=on-failure
+RestartSec=3s
+TimeoutStopSec=15s
+KillMode=control-group
+UMask=0027
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/home/%i/.local/state/onboard_autonomy
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+CapabilityBoundingSet=
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+SystemCallArchitectures=native
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
