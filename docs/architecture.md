@@ -1,7 +1,8 @@
 # Architecture
 
-OnboardAutonomy keeps flight-controller I/O, protocol decoding, state, vision,
-and test orchestration separate.
+OnboardAutonomy keeps flight-controller I/O, protocol decoding, state,
+autonomy decisions, safety supervision, vision, and test orchestration
+separate.
 
 ```mermaid
 flowchart LR
@@ -11,16 +12,21 @@ flowchart LR
     Application --> Decoder["MAVLink Decoder"]
     Decoder --> State["VehicleState"]
     State --> Application
-    Application --> Scenario["C++ Scenario Runner"]
-    Scenario -->|"Actions"| Encoder
-    State -->|"Verified state"| Scenario
+    State --> Startup["Flight Startup Controller"]
+    Startup --> Runtime["Autonomy Runtime"]
+    State --> World["World State"]
+    World --> Decision["Decision Engine"]
+    Decision --> Safety["Safety Supervisor"]
+    Safety --> Runtime
+    Startup -->|"Actions"| Encoder
+    Runtime -->|"Actions"| Encoder
     Decoder -->|"COMMAND_ACK"| StreamConfig["Telemetry Configurator"]
     StreamConfig --> Encoder["MAVLink Encoder"]
     Encoder --> Application
     Application --> AppSnapshot["AppSnapshot"]
     AppSnapshot --> Console["Operator Console"]
     AppSnapshot --> Snapshot["JSON Health Snapshot"]
-    Python["Python Scenario Runner"] --> SITL
+    Python["Python fault-injection harness"] --> SITL
     Camera["Camera Module 3"] --> Rpicam["rpicam adapter"]
     GazeboCamera["Gazebo landing camera"] --> GStreamer["RTP/H.264 GStreamer adapter"]
     Rpicam --> CameraPort["CameraSource port"]
@@ -37,8 +43,8 @@ flowchart LR
     Tracker --> PreviewPort
     PreviewPort --> HTTP["HTTP preview adapter"]
     HTTP --> Browser["Windows browser canvas"]
-    Tracker --> Guidance["Future landing guidance"]
-    Guidance --> Encoder
+    Tracker --> Transform["Camera to body-FRD transform"]
+    Transform --> World
 ```
 
 ## Build-time boundaries
@@ -148,9 +154,10 @@ invalidates the entire connected snapshot.
 
 `CompanionApplication` owns the long-running use-case orchestration:
 reading transport bytes, feeding the decoder, scheduling the companion
-heartbeat, advancing telemetry setup, and writing outbound frames. Its
-public header uses Pimpl so MAVLink implementation types do not leak
-into callers.
+heartbeat, advancing telemetry setup and flight startup, constructing
+fresh world state, running autonomy and safety decisions, and writing
+outbound frames. Its public header uses Pimpl so MAVLink implementation
+types do not leak into callers.
 
 `AppSnapshot` combines domain state with application-level heartbeat
 and telemetry-setup status. Presentation depends on this neutral model,
@@ -165,20 +172,25 @@ the command but does not echo the requested message ID. Each request has
 a two-second timeout and at most three attempts. Disconnecting resets the
 state machine.
 
-### Scenario runner
+### Production autonomy runtime
 
-The C++ `ScenarioRunner` executes typed scenario definitions. Command steps
-wait for `COMMAND_ACK` and telemetry confirmation. Route steps send
-`SET_POSITION_TARGET_LOCAL_NED` and compare the observed
-`LOCAL_POSITION_NED` against the target. RTL and landing complete only
-after the vehicle reports `DISARMED`.
+`FlightStartupController` owns the finite startup sequence: verify an
+ArduPilot multicopter and complete telemetry, wait for pre-arm readiness,
+enter GUIDED, arm, take off, and confirm each transition from both
+`COMMAND_ACK` and vehicle telemetry. Commands use bounded retries and phase
+deadlines. The controller does not own landing guidance.
 
-Five scenarios are available from the interactive terminal. The precision
-scenario accepts only a confirmed AprilTag track no older than 250 ms. The
-application transforms the camera-optical pose through configured camera
-extrinsics and the runner streams the resulting body-FRD position as MAVLink
-`LANDING_TARGET` at 5 Hz. LAND is requested only after one second of
-continuous target availability.
+After startup, `WorldState` is the immutable input for one decision cycle.
+`DecisionEngine` may create a short-lived `DesiredMotion`, but it never sends
+MAVLink. `SafetySupervisor` independently rejects disconnected, disarmed,
+expired, or invalid motion. `AutonomyRuntime` converts only an approved
+intent into `LANDING_TARGET` output at 5 Hz and requests LAND after one
+second of continuously valid target data.
+
+A missing or stale target stops vision setpoints immediately and resets the
+warmup. If no target is available for five seconds before LAND, the runtime
+requests an ordinary ArduPilot LAND instead of hovering indefinitely. After
+LAND is accepted, completion still requires telemetry-confirmed DISARMED.
 
 Python remains test orchestration: it starts SITL, injects failures, and
 asserts behavior from JSON output.
@@ -187,8 +199,9 @@ asserts behavior from JSON output.
 
 Vision produces a confirmed, freshness-aware metric track in the
 camera-optical frame. `CompanionApplication` applies the configured rigid
-camera-to-body transform; `ScenarioRunner` owns acquisition warmup, target
-stream cadence, and target-loss behavior; the MAVLink adapter only encodes
-the resulting `LANDING_TARGET`. ArduPilot remains responsible for the
-flight-control loop. Physical scale and mounting measurements are still a
-required safety gate before enabling this path on real hardware.
+camera-to-body transform. `DecisionEngine`, `SafetySupervisor`, and
+`AutonomyRuntime` own intent lifetime, target warmup, stream cadence, and
+target-loss behavior; the MAVLink adapter only encodes the resulting
+`LANDING_TARGET`. ArduPilot remains responsible for the flight-control loop.
+Physical scale and mounting measurements are still a required safety gate
+before enabling this path on real hardware.

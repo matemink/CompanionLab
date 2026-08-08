@@ -249,12 +249,15 @@ onboard_autonomy_enable_warnings(onboard_autonomy_ardupilot_catalog_adapter)
 add_library(
     onboard_autonomy_application
     src/application/AppSnapshot.cpp
+    src/application/AutonomyRuntime.cpp
     src/application/CameraMonitor.cpp
+    src/application/DecisionEngine.cpp
+    src/application/FlightStartupController.cpp
     src/application/MotionSafetyPolicy.cpp
+    src/application/SafetySupervisor.cpp
     src/application/TargetTracker.cpp
     src/application/VisionMonitor.cpp
-    src/application/Scenario.cpp
-    src/application/ScenarioRunner.cpp
+    src/application/WorldState.cpp
     src/application/CompanionApplication.cpp
 )
 target_link_libraries(
@@ -358,12 +361,15 @@ if(BUILD_TESTING)
     add_executable(
         onboard_autonomy_tests
         tests/CompanionApplicationTests.cpp
+        tests/AppSnapshotTests.cpp
+        tests/AutonomyCoreTests.cpp
+        tests/AutonomyRuntimeTests.cpp
+        tests/FlightStartupControllerTests.cpp
         tests/BoardTypeCatalogTests.cpp
         tests/CameraMonitorTests.cpp
         tests/CameraCalibrationLoaderTests.cpp
         tests/CameraExtrinsicsLoaderTests.cpp
         tests/VisionMonitorTests.cpp
-        tests/ScenarioRunnerTests.cpp
         tests/ConsoleViewTests.cpp
         tests/MavlinkDecoderTests.cpp
         tests/MavlinkEncoderTests.cpp
@@ -392,6 +398,7 @@ if(BUILD_TESTING)
             onboard_autonomy_transport_adapter
             onboard_autonomy_transport_port
             apriltag
+            nlohmann_json::nlohmann_json
     )
     target_compile_definitions(
         onboard_autonomy_tests

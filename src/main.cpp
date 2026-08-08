@@ -62,9 +62,8 @@ struct Options {
     std::string board_types_file;
     bool json_output{false};
     bool sitl_mode{false};
-    std::optional<onboard_autonomy::application::ScenarioId>
-        startup_scenario;
-    bool exit_after_scenario{false};
+    bool autonomous{false};
+    bool exit_after_autonomy{false};
     bool interactive{false};
     bool show_help{false};
 };
@@ -199,35 +198,10 @@ Options parse_options(const int argc, char** argv) {
             options.json_output = true;
         } else if (argument == "--sitl") {
             options.sitl_mode = true;
-        } else if (argument == "--demo-flight") {
-            if (options.startup_scenario.has_value()) {
-                throw std::invalid_argument(
-                    "only one startup scenario may be selected"
-                );
-            }
-            options.startup_scenario =
-                onboard_autonomy::application::ScenarioId::hover_check;
-        } else if (argument == "--scenario") {
-            if (options.startup_scenario.has_value()) {
-                throw std::invalid_argument(
-                    "only one startup scenario may be selected"
-                );
-            }
-            const auto value = parse_number<std::uint8_t>(
-                require_value(),
-                argument
-            );
-            if (value < 1 || value > 5) {
-                throw std::invalid_argument(
-                    "--scenario must be between 1 and 5"
-                );
-            }
-            options.startup_scenario =
-                static_cast<
-                    onboard_autonomy::application::ScenarioId
-                >(value);
-        } else if (argument == "--exit-after-scenario") {
-            options.exit_after_scenario = true;
+        } else if (argument == "--autonomous") {
+            options.autonomous = true;
+        } else if (argument == "--exit-after-autonomy") {
+            options.exit_after_autonomy = true;
         } else if (argument == "--interactive") {
             options.interactive = true;
         } else if (argument == "--help" || argument == "-h") {
@@ -342,11 +316,10 @@ void print_help() {
         << "  --json            Print machine-readable JSON snapshots\n"
         << "  --sitl            Assert UDP peer is ArduPilot SITL;"
         << " allow motion\n"
-        << "  --demo-flight     Run the guarded 5 m SITL flight demo\n"
-        << "  --scenario N      Run SITL scenario 1..5\n"
-        << "  --exit-after-scenario"
-        << "  Exit when startup scenario completes\n"
-        << "  --interactive     Enable SITL keyboard scenario triggers\n"
+        << "  --autonomous      Run startup and vision autonomy runtime\n"
+        << "  --exit-after-autonomy"
+        << "  Exit when autonomy completes or fails\n"
+        << "  --interactive     Enable manual LAND and quit keys\n"
         << "  --help             Show this help\n";
 }
 
@@ -369,10 +342,9 @@ int main(const int argc, char** argv) {
               >{}
             : load_board_type_catalog(options, argv[0]);
 
-        if (options.exit_after_scenario &&
-            !options.startup_scenario.has_value()) {
+        if (options.exit_after_autonomy && !options.autonomous) {
             throw std::invalid_argument(
-                "--exit-after-scenario requires --scenario"
+                "--exit-after-autonomy requires --autonomous"
             );
         }
         if ((options.apriltag_enabled ||
@@ -405,17 +377,14 @@ int main(const int argc, char** argv) {
                 "camera extrinsics require calibrated AprilTag pose"
             );
         }
-        if (options.startup_scenario ==
-                onboard_autonomy::application::ScenarioId::
-                    precision_landing &&
-            !has_camera_extrinsics) {
+        if (options.autonomous && !has_camera_extrinsics) {
             throw std::invalid_argument(
-                "precision landing requires --camera-extrinsics"
+                "autonomous runtime requires --camera-extrinsics"
             );
         }
 
         const bool motion_requested =
-            options.startup_scenario.has_value() ||
+            options.autonomous ||
             options.interactive;
         const auto motion_safety =
             onboard_autonomy::application::evaluate_motion_safety(
@@ -555,16 +524,13 @@ int main(const int argc, char** argv) {
         onboard_autonomy::application::CompanionApplication application{
             *transport,
             {
-                .scenario_runner =
-                    {
-                        .enabled =
-                            options.startup_scenario.has_value(),
-                        .initial_scenario =
-                            options.startup_scenario.value_or(
-                                onboard_autonomy::application::ScenarioId::
-                                    hover_check
-                            ),
-                    },
+                .flight_startup = {
+                    .enabled = options.autonomous,
+                    .takeoff_altitude_m = 8.0,
+                },
+                .autonomy_runtime = {
+                    .enabled = options.autonomous,
+                },
                 .motion_commands_allowed =
                     motion_safety.motion_commands_allowed,
                 .camera_source = camera_source.get(),
@@ -574,7 +540,7 @@ int main(const int argc, char** argv) {
             }
         };
         auto next_snapshot = std::chrono::steady_clock::now();
-        bool startup_scenario_failed = false;
+        bool autonomy_failed = false;
         const auto configured_snapshot_interval =
             std::chrono::milliseconds(options.snapshot_interval_ms);
         const auto snapshot_interval = options.json_output
@@ -596,19 +562,7 @@ int main(const int argc, char** argv) {
             while (const auto key = console_input.poll()) {
                 const auto command_time =
                     std::chrono::steady_clock::now();
-                if (*key >= '1' && *key <= '5') {
-                    const auto scenario_id =
-                        static_cast<
-                            onboard_autonomy::application::ScenarioId
-                        >(*key - '0');
-                    static_cast<void>(
-                        application.trigger_scenario(
-                            scenario_id,
-                            command_time
-                        )
-                    );
-                    next_snapshot = command_time;
-                } else if (*key == 'l' || *key == 'L') {
+                if (*key == 'l' || *key == 'L') {
                     static_cast<void>(
                         application.request_land(command_time)
                     );
@@ -643,17 +597,17 @@ int main(const int argc, char** argv) {
                            )
                         << std::flush;
                 }
-                if (options.exit_after_scenario &&
-                    (snapshot.scenario.phase ==
+                if (options.exit_after_autonomy &&
+                    (snapshot.autonomy.phase ==
                          onboard_autonomy::application::
-                             ScenarioRunnerPhase::completed ||
-                     snapshot.scenario.phase ==
+                             AutonomyRuntimePhase::completed ||
+                     snapshot.autonomy.phase ==
                          onboard_autonomy::application::
-                             ScenarioRunnerPhase::failed)) {
-                    startup_scenario_failed =
-                        snapshot.scenario.phase ==
+                             AutonomyRuntimePhase::failed)) {
+                    autonomy_failed =
+                        snapshot.autonomy.phase ==
                         onboard_autonomy::application::
-                            ScenarioRunnerPhase::failed;
+                            AutonomyRuntimePhase::failed;
                     keep_running = false;
                 }
                 next_snapshot = now + snapshot_interval;
@@ -661,7 +615,7 @@ int main(const int argc, char** argv) {
             std::this_thread::sleep_for(std::chrono::milliseconds(5));
         }
 
-        return startup_scenario_failed ? 2 : 0;
+        return autonomy_failed ? 2 : 0;
     } catch (const std::exception& error) {
         std::cerr << "OnboardAutonomy error: " << error.what() << '\n';
         return 1;

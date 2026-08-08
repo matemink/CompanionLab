@@ -38,16 +38,12 @@ if [[ "${ONBOARD_AUTONOMY_GAZEBO_VISION:-0}" == "1" ]]; then
     )
 fi
 
-if [[ "${ONBOARD_AUTONOMY_DEMO_FLIGHT:-0}" == "1" ]]; then
-    arguments+=(--demo-flight)
+if [[ "${ONBOARD_AUTONOMY_AUTONOMOUS:-0}" == "1" ]]; then
+    arguments+=(--autonomous)
 fi
 
-if [[ -n "${ONBOARD_AUTONOMY_SCENARIO:-}" ]]; then
-    arguments+=(--scenario "${ONBOARD_AUTONOMY_SCENARIO}")
-fi
-
-if [[ "${ONBOARD_AUTONOMY_EXIT_AFTER_SCENARIO:-0}" == "1" ]]; then
-    arguments+=(--exit-after-scenario)
+if [[ "${ONBOARD_AUTONOMY_EXIT_AFTER_AUTONOMY:-0}" == "1" ]]; then
+    arguments+=(--exit-after-autonomy)
 fi
 
 if [[ "${ONBOARD_AUTONOMY_JSON:-0}" == "1" ]]; then

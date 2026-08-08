@@ -139,8 +139,6 @@ std::string flight_action_name(const FlightAction action) {
             return "ARM";
         case FlightAction::takeoff:
             return "TAKEOFF";
-        case FlightAction::move_local:
-            return "MOVE_LOCAL";
         case FlightAction::return_to_launch:
             return "RTL";
         case FlightAction::land:
@@ -153,8 +151,6 @@ std::string flight_action_name(const FlightAction action) {
 
 std::string flight_action_message_name(const FlightAction action) {
     switch (action) {
-        case FlightAction::move_local:
-            return "SET_POSITION_TARGET_LOCAL_NED";
         case FlightAction::landing_target:
             return "LANDING_TARGET";
         case FlightAction::set_guided_mode:
@@ -168,8 +164,7 @@ std::string flight_action_message_name(const FlightAction action) {
 }
 
 bool action_expects_ack(const FlightAction action) {
-    return action != FlightAction::move_local &&
-           action != FlightAction::landing_target;
+    return action != FlightAction::landing_target;
 }
 
 std::string flight_action_detail(
@@ -189,13 +184,6 @@ std::string flight_action_detail(
                      << request.altitude_m << " M";
             detail = altitude.str();
             break;
-        }
-        case FlightAction::move_local: {
-            std::ostringstream offset;
-            offset << std::fixed << std::setprecision(1)
-                   << "N/E/D " << request.x_m << "/"
-                   << request.y_m << "/" << request.z_m << " M";
-            return offset.str();
         }
         case FlightAction::return_to_launch:
             detail = "RETURN TO HOME";
@@ -265,13 +253,6 @@ std::vector<std::uint8_t> encode_flight_action(
                 request.altitude_m,
                 request.confirmation
             );
-        case FlightAction::move_local:
-            return adapters::mavlink::encode_local_position_target(
-                request.vehicle_system_id,
-                request.x_m,
-                request.y_m,
-                request.z_m
-            );
         case FlightAction::return_to_launch:
             return adapters::mavlink::encode_return_to_launch(
                 request.vehicle_system_id,
@@ -306,7 +287,8 @@ public:
           motion_commands_allowed_(
               options.motion_commands_allowed
           ),
-          scenario_runner_(std::move(options.scenario_runner)),
+          flight_startup_(std::move(options.flight_startup)),
+          autonomy_runtime_(std::move(options.autonomy_runtime)),
           camera_extrinsics_(options.camera_extrinsics),
           decoder_{
               vehicle_state_,
@@ -374,9 +356,18 @@ public:
                       return;
                   }
 
-                  scenario_runner_.on_command_ack(
+                  const auto outcome =
+                      map_ack_outcome(acknowledgement.result);
+                  flight_startup_.on_command_ack(
                       *flight_action,
-                      map_ack_outcome(acknowledgement.result),
+                      outcome,
+                      acknowledgement.result,
+                      acknowledgement.source_system,
+                      now
+                  );
+                  autonomy_runtime_.on_command_ack(
+                      *flight_action,
+                      outcome,
                       acknowledgement.result,
                       acknowledgement.source_system,
                       now
@@ -397,9 +388,19 @@ public:
                   );
               },
           } {
-        if (!motion_commands_allowed_ &&
-            scenario_runner_.snapshot().phase !=
-                ScenarioRunnerPhase::disabled) {
+        const auto startup = flight_startup_.snapshot();
+        const auto runtime = autonomy_runtime_.snapshot();
+        const bool startup_enabled =
+            startup.phase != FlightStartupPhase::disabled;
+        const bool runtime_enabled =
+            runtime.phase != AutonomyRuntimePhase::disabled;
+        if (startup_enabled != runtime_enabled) {
+            throw std::invalid_argument(
+                "flight startup and autonomy runtime must be enabled "
+                "together"
+            );
+        }
+        if (!motion_commands_allowed_ && startup_enabled) {
             throw std::invalid_argument(
                 "automated flight requires explicit motion permission"
             );
@@ -422,11 +423,9 @@ public:
                 "camera extrinsics require AprilTag pose detection"
             );
         }
-        const auto startup = scenario_runner_.snapshot();
-        if (startup.scenario_id == ScenarioId::precision_landing &&
-            !camera_extrinsics_.has_value()) {
+        if (runtime_enabled && !camera_extrinsics_.has_value()) {
             throw std::invalid_argument(
-                "precision landing requires vision guidance"
+                "autonomy runtime requires vision guidance"
             );
         }
     }
@@ -569,20 +568,45 @@ private:
             );
         }
 
-        const auto flight_actions = scenario_runner_.update(
+        const auto startup_actions = flight_startup_.update(
             vehicle,
             telemetry_ready,
-            now,
-            current_landing_target(now)
+            now
         );
-        for (const auto& action : flight_actions) {
+        for (const auto& action : startup_actions) {
             const bool sent = write_frame(
                 encode_flight_action(action),
                 now,
                 flight_action_message_name(action.action),
                 flight_action_name(action.action)
             );
-            scenario_runner_.on_action_sent(action, sent, now);
+            flight_startup_.on_action_sent(action, sent, now);
+            record_event(
+                LinkEventDirection::outbound,
+                sent
+                    ? LinkEventStatus::pending
+                    : LinkEventStatus::failure,
+                flight_action_name(action.action),
+                flight_action_detail(action) +
+                    (sent ? "" : " | WRITE FAILED"),
+                now
+            );
+        }
+
+        const auto autonomy_actions = autonomy_runtime_.update(
+            vehicle,
+            flight_startup_.snapshot(),
+            now,
+            current_landing_target(now)
+        );
+        for (const auto& action : autonomy_actions) {
+            const bool sent = write_frame(
+                encode_flight_action(action),
+                now,
+                flight_action_message_name(action.action),
+                flight_action_name(action.action)
+            );
+            autonomy_runtime_.on_action_sent(action, sent, now);
             record_event(
                 LinkEventDirection::outbound,
                 sent
@@ -597,49 +621,6 @@ private:
     }
 
 public:
-    bool trigger_scenario(
-        const ScenarioId id,
-        const domain::TimePoint now
-    ) {
-        const auto& scenario = scenario_definition(id);
-        const auto number = static_cast<unsigned int>(id);
-        if (!motion_commands_allowed_) {
-            record_event(
-                LinkEventDirection::outbound,
-                LinkEventStatus::failure,
-                "SCENARIO " + std::to_string(number),
-                "BLOCKED BY MOTION SAFETY POLICY",
-                now
-            );
-            return false;
-        }
-        if (id == ScenarioId::precision_landing &&
-            !camera_extrinsics_.has_value()) {
-            record_event(
-                LinkEventDirection::outbound,
-                LinkEventStatus::failure,
-                "SCENARIO " + std::to_string(number),
-                "VISION GUIDANCE IS NOT CONFIGURED",
-                now
-            );
-            return false;
-        }
-
-        const bool started = scenario_runner_.start(id, now);
-        record_event(
-            LinkEventDirection::outbound,
-            started
-                ? LinkEventStatus::pending
-                : LinkEventStatus::warning,
-            "SCENARIO " + std::to_string(number),
-            started
-                ? scenario.summary
-                : "IGNORED | SCENARIO ALREADY RUNNING",
-            now
-        );
-        return started;
-    }
-
     bool request_land(const domain::TimePoint now) {
         if (!motion_commands_allowed_) {
             record_event(
@@ -664,7 +645,8 @@ public:
             return false;
         }
 
-        scenario_runner_.cancel("Manual LAND requested");
+        flight_startup_.cancel("Manual LAND requested");
+        autonomy_runtime_.cancel("Manual LAND requested");
         const bool sent = write_frame(
             adapters::mavlink::encode_land(
                 *vehicle.system_id,
@@ -710,7 +692,8 @@ public:
             .vision = camera_monitor_.has_value()
                 ? camera_monitor_->vision_snapshot(now)
                 : std::nullopt,
-            .scenario = scenario_runner_.snapshot(),
+            .flight_startup = flight_startup_.snapshot(),
+            .autonomy = autonomy_runtime_.snapshot(),
             .motion_commands_allowed = motion_commands_allowed_,
             .link_events = {
                 link_events_.begin(),
@@ -925,7 +908,8 @@ private:
     bool motion_commands_allowed_{false};
     domain::VehicleState vehicle_state_;
     adapters::mavlink::TelemetryStreamConfigurator telemetry_configurator_;
-    ScenarioRunner scenario_runner_;
+    FlightStartupController flight_startup_;
+    AutonomyRuntime autonomy_runtime_;
     std::optional<CameraMonitor> camera_monitor_;
     std::optional<domain::CameraExtrinsics> camera_extrinsics_;
     adapters::mavlink::MavlinkDecoder decoder_;
@@ -963,13 +947,6 @@ void CompanionApplication::poll(const domain::TimePoint now) {
 
 void CompanionApplication::poll() {
     impl_->poll();
-}
-
-bool CompanionApplication::trigger_scenario(
-    const ScenarioId id,
-    const domain::TimePoint now
-) {
-    return impl_->trigger_scenario(id, now);
 }
 
 bool CompanionApplication::request_land(const domain::TimePoint now) {

@@ -11,7 +11,8 @@
 namespace onboard_autonomy::application {
 
 struct CompanionApplicationOptions {
-    ScenarioRunnerConfig scenario_runner;
+    FlightStartupConfig flight_startup;
+    AutonomyRuntimeConfig autonomy_runtime;
     bool motion_commands_allowed{false};
     ports::CameraSource* camera_source{nullptr};
     ports::TargetDetector* target_detector{nullptr};
@@ -37,10 +38,6 @@ public:
     // deterministic.
     void poll();
     void poll(domain::TimePoint now);
-    [[nodiscard]] bool trigger_scenario(
-        ScenarioId id,
-        domain::TimePoint now
-    );
     [[nodiscard]] bool request_land(domain::TimePoint now);
     [[nodiscard]] AppSnapshot snapshot(domain::TimePoint now);
 

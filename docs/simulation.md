@@ -2,7 +2,8 @@
 
 Gazebo owns the 3D world, sensors, and vehicle physics. ArduCopter SITL
 owns the flight-control loop. OnboardAutonomy sends MAVLink commands,
-observes acknowledgements and telemetry, and advances guarded scenarios.
+observes acknowledgements and telemetry, and advances the guarded autonomy
+runtime.
 
 ## Prerequisites
 
@@ -25,6 +26,7 @@ Run the three processes in separate terminals:
 bash scripts/run_gazebo_apriltag.sh
 bash scripts/run_arducopter_gazebo.sh
 ONBOARD_AUTONOMY_INTERACTIVE=1 \
+ONBOARD_AUTONOMY_AUTONOMOUS=1 \
     bash scripts/run_onboard_autonomy_gazebo_vision.sh
 ```
 
@@ -36,42 +38,53 @@ in visible WSL/WSLg windows.
 | Gazebo Harmonic | Iris model, world physics, and simulated camera |
 | ArduCopter SITL | Stabilization, navigation modes, arming, and landing |
 | MAVProxy | MAVLink routing and an optional flight console |
-| OnboardAutonomy | Scenario state machine, commands, telemetry confirmation, and operator TUI |
+| OnboardAutonomy | Flight startup, vision decisions, safety supervision, commands, and operator TUI |
 
-## Interactive scenarios
+## Autonomous flight
 
-The operator console accepts five scenario triggers:
+`--autonomous` starts one production-shaped path rather than a menu of
+scripted demonstration routes:
 
-| Key | Scenario | Behavior |
-| --- | --- | --- |
-| `1` | Hover | Take off, hold, and land |
-| `2` | Out and RTL | Fly 15 m north, return, and land at home |
-| `3` | Square | Fly a 10 m square, then return to launch |
-| `4` | Search | Fly a 24 m by 12 m search pattern, then RTL |
-| `5` | Precision | Approach and land on the camera-observed AprilTag pad |
+1. Wait for a connected ArduPilot multicopter, complete telemetry setup,
+   and pre-arm readiness.
+2. Request GUIDED, arm, and take off to 8 m, confirming each command with
+   `COMMAND_ACK` and the resulting vehicle state.
+3. Convert the fresh AprilTag track to body-FRD, create a short-lived
+   desired motion, and pass it through the independent safety supervisor.
+4. Stream approved `LANDING_TARGET` messages at 5 Hz and request LAND only
+   after one second of continuous target availability.
+5. Stop stale target output immediately. Before LAND, five seconds without
+   a target triggers an ordinary fallback LAND instead of indefinite hover.
+6. Finish only when ArduPilot reports the vehicle disarmed.
 
-`L` requests an immediate LAND and cancels the active scenario. `Q`
-exits the runtime.
+In interactive mode, `L` requests an immediate LAND and cancels automatic
+startup/guidance. `Q` exits the runtime. The keys do not select alternate
+flight plans.
 
-Command steps wait for `COMMAND_ACK`. Route steps compare
-`LOCAL_POSITION_NED` telemetry with their target. RTL and landing finish
-only after the vehicle reports `DISARMED`; an accepted command alone is
-not treated as completed motion.
-
-The precision scenario moves 3 m north and 1.5 m east after takeoff so the
-complete marker remains inside the landing camera field of view. It requires
-one second of continuously fresh confirmed observations before requesting
-LAND, then streams body-FRD `LANDING_TARGET` messages at 5 Hz. A target older
-than 250 ms is not sent to ArduPilot.
-
-Run the non-interactive acceptance flight with compact JSON telemetry:
+Run the non-interactive acceptance flight with compact JSON telemetry and
+exit automatically after completion or failure:
 
 ```bash
-ONBOARD_AUTONOMY_SCENARIO=5 \
-ONBOARD_AUTONOMY_EXIT_AFTER_SCENARIO=1 \
+ONBOARD_AUTONOMY_AUTONOMOUS=1 \
+ONBOARD_AUTONOMY_EXIT_AFTER_AUTONOMY=1 \
 ONBOARD_AUTONOMY_JSON=1 \
     bash scripts/run_onboard_autonomy_gazebo_vision.sh
 ```
+
+For a reproducible acceptance run, let the external Python harness start all
+three processes, capture artifacts, validate the final production snapshot,
+and inspect MAVProxy's tlog independently:
+
+```bash
+source ~/venv-ardupilot/bin/activate
+python python/autonomy_sitl_acceptance.py
+```
+
+The harness never sends flight commands. It fails unless the production C++
+runtime reaches completed startup and autonomous landing, reports disarmed,
+and leaves independent evidence for all four accepted commands, sustained
+body-FRD `LANDING_TARGET`, expected modes, and at most 0.75 m horizontal
+landing error.
 
 ## Operator console
 
@@ -80,7 +93,7 @@ an unbounded log stream. It keeps visible:
 
 - the Raspberry Pi 5 and Pixhawk 6C link;
 - current mode, arm state, altitude, GPS, battery, and warnings;
-- active scenario and step progress;
+- flight-startup and continuous-autonomy phases;
 - the latest complete MAVLink frame sent and received;
 - semantic command, acknowledgement, and state-confirmation events.
 
@@ -110,8 +123,9 @@ is not expected while the vehicle rests directly on top of the pad because
 the camera is too close to see all four corners. Validate acquisition after
 takeoff.
 
-The verified acceptance run and its known close-range limitation are recorded
-in [precision-landing-sitl.md](evidence/precision-landing-sitl.md).
+The verified production acceptance run and its known close-range limitation
+are recorded in
+[precision-landing-sitl.md](evidence/precision-landing-sitl.md).
 
 ## Reference gimbal stream
 
@@ -145,9 +159,9 @@ so an unsuccessful GUI path is not presented as a working feature.
 
 ## Safety boundary
 
-Automated scenario motion is enabled only when the operator explicitly
+Automated motion is enabled only when the operator explicitly
 passes `--sitl` over UDP. UDP by itself may represent a real MAVLink router,
 Wi-Fi bridge, or Ethernet bridge and therefore remains observation-only.
 The project SITL launcher supplies the assertion; serial rejects `--sitl`.
-Gazebo scenarios must not be reused as motor-test procedures on physical
+The Gazebo command must not be reused as a motor-test procedure on physical
 hardware.

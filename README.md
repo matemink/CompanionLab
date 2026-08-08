@@ -46,8 +46,8 @@ represent software.
 
 ArduPilot remains responsible for stabilization and flight control.
 OnboardAutonomy owns companion-computer concerns: telemetry, health,
-scenario orchestration, vision, diagnostics, and future landing-target
-guidance. The diagram shows the target deployment: camera frames enter
+flight startup, vision, landing guidance, safety supervision, and
+diagnostics. The diagram shows the target deployment: camera frames enter
 OnboardAutonomy on Raspberry Pi 5, which sends guidance through either
 ArduPilot firmware on a physical Pixhawk or ArduPilot SITL. In simulation,
 the same runtime can run on the Ubuntu/WSL development host instead of the
@@ -61,8 +61,9 @@ Pi.
 - Sequential telemetry-rate configuration with `COMMAND_ACK`, timeouts,
   and bounded retries.
 - ArduPilot firmware and board metadata without model-name guessing.
-- Five guarded SITL scenarios with command acknowledgements and telemetry
-  confirmation: hover, out-and-RTL, square, search, and precision landing.
+- A production-shaped autonomy runtime with readiness-gated takeoff,
+  fresh vision intent, independent safety supervision, and precision
+  landing with a bounded target-loss fallback.
 - Raspberry Pi Camera Module 3 and Gazebo RTP/H.264 ingestion into the same
   YUV420 pipeline, with performance metrics, AprilTag detection, and a
   read-only browser preview.
@@ -74,7 +75,7 @@ Pi.
 | Environment | Evidence |
 | --- | --- |
 | Ubuntu 24.04 / WSL2 | Native C++ build, unit tests, ArduCopter SITL, and fault injection |
-| Gazebo Harmonic | Automated takeoff, route scenarios, RTL, landing, and H.264 camera stream |
+| Gazebo Harmonic | Automated takeoff, vision-guided landing, target-loss fallback, and H.264 camera stream |
 | Raspberry Pi 5 | ARM64 runtime, Camera Module 3 Wide, and concurrent camera/MAVLink processing |
 | Pixhawk 6C | Real USB MAVLink telemetry, health state, metadata, and acknowledged stream requests |
 
@@ -147,12 +148,16 @@ calibrated AprilTag pose, and target-tracking stages are implemented. The
 project-owned Gazebo world streams a downward camera over RTP/H.264 through
 the same application camera port used by the rest of the vision pipeline.
 
-The simulated precision scenario now completes the full vertical slice:
-AprilTag pose, confirmed fresh track, camera-optical to body-FRD transform,
-5 Hz MAVLink `LANDING_TARGET`, ArduPilot LAND, touchdown, and DISARMED. The
-verified run finished 0.456 m from the marker center. Physical printed-target
-scale validation remains required before enabling this guidance path on a
-real aircraft. See [docs/roadmap.md](docs/roadmap.md).
+The production autonomy path separates startup from continuous operation.
+It verifies readiness, GUIDED mode, arming, and takeoff before consuming a
+fresh AprilTag track through `WorldState`, `DecisionEngine`, and
+`SafetySupervisor`. Approved body-FRD targets are streamed as MAVLink
+`LANDING_TARGET` at 5 Hz; stale targets stop guidance immediately and a
+bounded loss triggers an ordinary LAND. Physical printed-target scale
+validation remains required before enabling this path on a real aircraft.
+The automated Gazebo acceptance run reached 8.04 m, emitted 78 valid
+body-FRD targets, completed automatic disarm, and finished at the marker
+origin in the recorded run. See [docs/roadmap.md](docs/roadmap.md).
 
 ## Safety
 

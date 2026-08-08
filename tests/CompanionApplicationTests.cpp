@@ -296,7 +296,8 @@ void interactive_motion_commands_are_guarded() {
     onboard_autonomy::application::CompanionApplication application{
         transport,
         {
-            .scenario_runner = {},
+            .flight_startup = {},
+            .autonomy_runtime = {},
             .motion_commands_allowed = true,
             .camera_source = nullptr,
             .target_detector = nullptr,
@@ -304,13 +305,6 @@ void interactive_motion_commands_are_guarded() {
             .camera_extrinsics = std::nullopt,
         }
     };
-    require(
-        !application.trigger_scenario(
-            onboard_autonomy::application::ScenarioId::precision_landing,
-            start
-        ),
-        "precision landing must be blocked without vision guidance"
-    );
     require(
         !application.request_land(start),
         "manual LAND must be blocked before heartbeat"
@@ -342,34 +336,21 @@ void interactive_motion_commands_are_guarded() {
                 onboard_autonomy::application::LinkEventStatus::pending,
         "manual LAND must appear as pending outbound traffic"
     );
-    require(
-        application.trigger_scenario(
-            onboard_autonomy::application::ScenarioId::hover_check,
-            start + std::chrono::milliseconds(20)
-        ),
-        "interactive application must accept scenario trigger"
-    );
-    require(
-        application.snapshot(
-            start + std::chrono::milliseconds(20)
-        ).scenario.phase ==
-            onboard_autonomy::application::
-                ScenarioRunnerPhase::waiting_for_vehicle,
-        "scenario trigger must restart the flight state machine"
-    );
 }
 
-void startup_precision_landing_requires_vision_guidance() {
+void autonomy_runtime_requires_vision_guidance() {
     FakeTransport transport;
     bool rejected = false;
     try {
         onboard_autonomy::application::CompanionApplication application{
             transport,
             {
-                .scenario_runner = {
+                .flight_startup = {
                     .enabled = true,
-                    .initial_scenario = onboard_autonomy::application::
-                        ScenarioId::precision_landing,
+                    .takeoff_altitude_m = 8.0,
+                },
+                .autonomy_runtime = {
+                    .enabled = true,
                 },
                 .motion_commands_allowed = true,
                 .camera_source = nullptr,
@@ -384,7 +365,7 @@ void startup_precision_landing_requires_vision_guidance() {
     }
     require(
         rejected,
-        "startup precision landing must require vision guidance"
+        "autonomy runtime must require vision guidance"
     );
 }
 
@@ -394,5 +375,5 @@ void run_companion_application_tests() {
     application_orchestrates_the_complete_telemetry_setup();
     quiet_transport_does_not_stall_runtime_scheduling();
     interactive_motion_commands_are_guarded();
-    startup_precision_landing_requires_vision_guidance();
+    autonomy_runtime_requires_vision_guidance();
 }

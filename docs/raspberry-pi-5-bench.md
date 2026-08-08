@@ -3,7 +3,7 @@
 This procedure validates ARM64 Linux deployment and physical MAVLink
 communication without running motors. OnboardAutonomy may request telemetry
 message rates, but the serial hardware mode cannot start ARM, TAKEOFF,
-LAND, route, or precision-landing scenarios.
+LAND or autonomous precision-landing behavior.
 
 ## Safety
 
