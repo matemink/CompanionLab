@@ -272,11 +272,11 @@ public:
     }
 
     ~AprilTagTargetDetector() override {
-        if (family_ != nullptr) {
-            tagStandard41h12_destroy(family_);
-        }
         if (detector_ != nullptr) {
             apriltag_detector_destroy(detector_);
+        }
+        if (family_ != nullptr) {
+            tagStandard41h12_destroy(family_);
         }
     }
 

@@ -488,6 +488,56 @@ void command_ack_is_forwarded_to_its_handler() {
     require(observed_at == now, "ACK receive time must be preserved");
 }
 
+void parameter_value_is_forwarded_to_its_handler() {
+    onboard_autonomy::domain::VehicleState state;
+    std::optional<
+        onboard_autonomy::adapters::mavlink::ParameterValue
+    > observed;
+    onboard_autonomy::adapters::mavlink::MavlinkDecoder decoder{
+        state,
+        {},
+        {},
+        [&observed](
+            const onboard_autonomy::adapters::mavlink::ParameterValue&
+                parameter,
+            const onboard_autonomy::domain::TimePoint
+        ) {
+            observed = parameter;
+        },
+    };
+
+    mavlink_param_value_t parameter{};
+    parameter.param_value = 5.0F;
+    parameter.param_type = MAV_PARAM_TYPE_INT8;
+    constexpr char parameter_name[] = "FS_GCS_ENABLE";
+    std::memcpy(
+        parameter.param_id,
+        parameter_name,
+        sizeof(parameter_name)
+    );
+    mavlink_message_t message{};
+    mavlink_msg_param_value_encode(
+        1,
+        MAV_COMP_ID_AUTOPILOT1,
+        &message,
+        &parameter
+    );
+
+    decoder.ingest(
+        serialize(message),
+        onboard_autonomy::domain::TimePoint{}
+    );
+    require(
+        observed.has_value() &&
+            observed->source_system == 1 &&
+            observed->source_component == MAV_COMP_ID_AUTOPILOT1 &&
+            observed->id == "FS_GCS_ENABLE" &&
+            observed->value == 5.0 &&
+            observed->type == MAV_PARAM_TYPE_INT8,
+        "PARAM_VALUE handler must preserve typed parameter data"
+    );
+}
+
 }  // namespace
 
 void run_mavlink_decoder_tests() {
@@ -499,4 +549,5 @@ void run_mavlink_decoder_tests() {
     autopilot_version_is_unpacked_into_domain_metadata();
     companion_heartbeat_does_not_replace_autopilot();
     command_ack_is_forwarded_to_its_handler();
+    parameter_value_is_forwarded_to_its_handler();
 }

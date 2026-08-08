@@ -2,6 +2,7 @@
 
 #include "onboard_autonomy/application/AutonomyRuntime.hpp"
 #include "onboard_autonomy/application/CameraMonitor.hpp"
+#include "onboard_autonomy/application/CompanionLinkFailsafe.hpp"
 #include "onboard_autonomy/application/FlightStartupController.hpp"
 #include "onboard_autonomy/domain/VehicleState.hpp"
 
@@ -64,6 +65,7 @@ struct TelemetryStatus {
 struct AppSnapshot {
     domain::VehicleSnapshot vehicle;
     bool companion_heartbeat_active{false};
+    CompanionLinkFailsafeSnapshot companion_link_failsafe;
     TelemetryStatus telemetry;
     std::optional<CameraSnapshot> camera;
     std::optional<VisionSnapshot> vision;

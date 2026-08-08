@@ -79,11 +79,15 @@ std::string parameter_id(const mavlink_param_value_t& message) {
 MavlinkDecoder::MavlinkDecoder(
     domain::VehicleState& state,
     CommandAckHandler command_ack_handler,
-    MessageHandler message_handler
+    MessageHandler message_handler,
+    ParameterValueHandler parameter_value_handler
 )
     : state_(state),
       command_ack_handler_(std::move(command_ack_handler)),
-      message_handler_(std::move(message_handler)) {}
+      message_handler_(std::move(message_handler)),
+      parameter_value_handler_(
+          std::move(parameter_value_handler)
+      ) {}
 
 void MavlinkDecoder::ingest(
     const std::span<const std::uint8_t> bytes,
@@ -252,9 +256,24 @@ void MavlinkDecoder::handle_message(
         case MAVLINK_MSG_ID_PARAM_VALUE: {
             mavlink_param_value_t parameter{};
             mavlink_msg_param_value_decode(&message, &parameter);
-            if (parameter_id(parameter) == "BATT_ARM_VOLT") {
+            const auto id = parameter_id(parameter);
+            if (id == "BATT_ARM_VOLT") {
                 state_.on_battery_arming_voltage(
                     static_cast<double>(parameter.param_value),
+                    now
+                );
+            }
+            if (parameter_value_handler_) {
+                parameter_value_handler_(
+                    ParameterValue{
+                        .source_system = message.sysid,
+                        .source_component = message.compid,
+                        .id = id,
+                        .value = static_cast<double>(
+                            parameter.param_value
+                        ),
+                        .type = parameter.param_type,
+                    },
                     now
                 );
             }

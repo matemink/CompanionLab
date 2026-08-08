@@ -82,9 +82,15 @@ printf 'First flight: mode GUIDED -> arm throttle -> takeoff 5 -> land\n\n'
 mavproxy_args=(
     --master=tcp:127.0.0.1:5760
     --sitl=127.0.0.1:5501
-    --out=udp:127.0.0.1:14550
+    --out="udp:127.0.0.1:${ONBOARD_AUTONOMY_MAVLINK_OUT_PORT:-14550}"
     --streamrate=-1
 )
+
+if [[ -n "${ONBOARD_AUTONOMY_MAVLINK_MONITOR_PORT:-}" ]]; then
+    mavproxy_args+=(
+        --out="udp:127.0.0.1:${ONBOARD_AUTONOMY_MAVLINK_MONITOR_PORT}"
+    )
+fi
 
 if [[ -n "${ONBOARD_AUTONOMY_TLOG:-}" ]]; then
     mavproxy_args+=(--logfile="${ONBOARD_AUTONOMY_TLOG}")

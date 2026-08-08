@@ -1,6 +1,7 @@
 #pragma once
 
 #include "onboard_autonomy/application/DecisionEngine.hpp"
+#include "onboard_autonomy/application/CompanionLinkFailsafe.hpp"
 #include "onboard_autonomy/application/FlightCommand.hpp"
 #include "onboard_autonomy/application/FlightStartupController.hpp"
 #include "onboard_autonomy/application/SafetySupervisor.hpp"
@@ -48,6 +49,7 @@ public:
     [[nodiscard]] std::vector<FlightActionRequest> update(
         const domain::VehicleSnapshot& vehicle,
         const FlightStartupSnapshot& startup,
+        const CompanionLinkFailsafeSnapshot& companion_link_failsafe,
         domain::TimePoint now,
         std::optional<domain::BodyFramePosition> landing_target =
             std::nullopt

@@ -120,6 +120,18 @@ void write_optional_decimal(
     }
 }
 
+template <typename T>
+void write_optional_number(
+    std::ostringstream& output,
+    const std::optional<T>& value
+) {
+    if (value.has_value()) {
+        output << static_cast<std::uint64_t>(*value);
+    } else {
+        output << "null";
+    }
+}
+
 }  // namespace
 
 std::string AppSnapshot::to_json() const {
@@ -130,7 +142,53 @@ std::string AppSnapshot::to_json() const {
 
     std::ostringstream output;
     output << std::boolalpha;
-    output << vehicle_json << ",\"camera\":";
+    output << vehicle_json;
+    output << ",\"companion_heartbeat_active\":"
+           << companion_heartbeat_active;
+    output << ",\"companion_link_failsafe\":{";
+    output << "\"phase\":\""
+           << companion_link_failsafe_phase_name(
+                  companion_link_failsafe.phase
+              )
+           << '"';
+    output << ",\"detail\":\""
+           << json_escape(companion_link_failsafe.detail) << '"';
+    output << ",\"heartbeat_system_id\":";
+    write_optional_number(
+        output,
+        companion_link_failsafe.heartbeat_system_id
+    );
+    output << ",\"configured_gcs_system_id\":";
+    write_optional_number(
+        output,
+        companion_link_failsafe.configured_gcs_system_id
+    );
+    output << ",\"action\":";
+    if (companion_link_failsafe.action.has_value()) {
+        output << '"'
+               << ardupilot_gcs_failsafe_action_name(
+                      *companion_link_failsafe.action
+                  )
+               << '"';
+    } else {
+        output << "null";
+    }
+    output << ",\"timeout_s\":";
+    write_optional_decimal(
+        output,
+        companion_link_failsafe.timeout_s
+    );
+    output << ",\"options\":";
+    write_optional_number(
+        output,
+        companion_link_failsafe.options
+    );
+    output << ",\"parameters_received\":"
+           << companion_link_failsafe.parameters_received;
+    output << ",\"parameters_required\":"
+           << companion_link_failsafe.parameters_required;
+    output << '}';
+    output << ",\"camera\":";
     if (!camera.has_value()) {
         output << "null";
     } else {

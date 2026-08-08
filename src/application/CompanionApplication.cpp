@@ -387,6 +387,29 @@ public:
                       now
                   );
               },
+              [this](
+                  const adapters::mavlink::ParameterValue& parameter,
+                  const domain::TimePoint now
+              ) {
+                  companion_link_failsafe_.on_parameter(
+                      parameter.source_system,
+                      parameter.source_component,
+                      parameter.id,
+                      parameter.value
+                  );
+                  for (const auto expected :
+                       CompanionLinkFailsafe::parameter_names) {
+                      if (parameter.id == expected) {
+                          record_activity(
+                              LinkEventDirection::inbound,
+                              "PARAM_VALUE",
+                              parameter.id,
+                              now
+                          );
+                          break;
+                      }
+                  }
+              },
           } {
         const auto startup = flight_startup_.snapshot();
         const auto runtime = autonomy_runtime_.snapshot();
@@ -463,6 +486,16 @@ private:
         }
 
         const auto vehicle = vehicle_state_.snapshot(now);
+        const bool newly_connected =
+            vehicle.connected && !vehicle_was_connected_;
+        companion_link_failsafe_.observe_vehicle(
+            vehicle.connected,
+            vehicle.system_id
+        );
+        if (newly_connected) {
+            failsafe_parameter_index_ = 0;
+            next_failsafe_parameter_request_ = now;
+        }
         observe_vehicle(vehicle, now);
         if (!vehicle.connected) {
             companion_heartbeat_active_ = false;
@@ -514,6 +547,47 @@ private:
         const bool telemetry_ready =
             telemetry_configurator_.snapshot().phase ==
             adapters::mavlink::TelemetrySetupPhase::active;
+        if (telemetry_ready &&
+            vehicle.system_id.has_value() &&
+            now >= next_failsafe_parameter_request_) {
+            const auto parameter_name =
+                CompanionLinkFailsafe::parameter_names[
+                    failsafe_parameter_index_
+                ];
+            const bool sent = write_frame(
+                adapters::mavlink::encode_parameter_request_read(
+                    *vehicle.system_id,
+                    parameter_name
+                ),
+                now,
+                "PARAM_REQUEST_READ",
+                std::string(parameter_name)
+            );
+            record_event(
+                LinkEventDirection::outbound,
+                sent
+                    ? LinkEventStatus::pending
+                    : LinkEventStatus::failure,
+                "PARAM READ",
+                std::string(parameter_name) +
+                    (sent ? "" : " | WRITE FAILED"),
+                now
+            );
+
+            ++failsafe_parameter_index_;
+            if (failsafe_parameter_index_ >=
+                CompanionLinkFailsafe::parameter_names.size()) {
+                failsafe_parameter_index_ = 0;
+                next_failsafe_parameter_request_ =
+                    now +
+                    (companion_link_failsafe_.snapshot().accepted()
+                         ? kAcceptedFailsafeRefreshInterval
+                         : kRejectedFailsafeRetryInterval);
+            } else {
+                next_failsafe_parameter_request_ =
+                    now + kFailsafeParameterSpacing;
+            }
+        }
         if (telemetry_ready &&
             vehicle.system_id.has_value() &&
             !vehicle.autopilot_metadata.has_value() &&
@@ -571,6 +645,7 @@ private:
         const auto startup_actions = flight_startup_.update(
             vehicle,
             telemetry_ready,
+            companion_link_failsafe_.snapshot(),
             now
         );
         for (const auto& action : startup_actions) {
@@ -596,6 +671,7 @@ private:
         const auto autonomy_actions = autonomy_runtime_.update(
             vehicle,
             flight_startup_.snapshot(),
+            companion_link_failsafe_.snapshot(),
             now,
             current_landing_target(now)
         );
@@ -676,6 +752,8 @@ public:
             .vehicle = vehicle_state_.snapshot(now),
             .companion_heartbeat_active =
                 companion_heartbeat_active_,
+            .companion_link_failsafe =
+                companion_link_failsafe_.snapshot(),
             .telemetry =
                 {
                     .state = map_telemetry_state(telemetry.phase),
@@ -898,6 +976,12 @@ private:
         std::chrono::seconds(1);
     static constexpr auto kBatteryParameterRetryInterval =
         std::chrono::seconds(2);
+    static constexpr auto kFailsafeParameterSpacing =
+        std::chrono::milliseconds(200);
+    static constexpr auto kRejectedFailsafeRetryInterval =
+        std::chrono::seconds(2);
+    static constexpr auto kAcceptedFailsafeRefreshInterval =
+        std::chrono::seconds(10);
     static constexpr auto kAutopilotVersionRetryInterval =
         std::chrono::seconds(2);
     static constexpr auto kMaximumLandingTargetAge =
@@ -907,6 +991,7 @@ private:
     ports::Transport& transport_;
     bool motion_commands_allowed_{false};
     domain::VehicleState vehicle_state_;
+    CompanionLinkFailsafe companion_link_failsafe_;
     adapters::mavlink::TelemetryStreamConfigurator telemetry_configurator_;
     FlightStartupController flight_startup_;
     AutonomyRuntime autonomy_runtime_;
@@ -916,6 +1001,7 @@ private:
     std::array<std::uint8_t, 4096> receive_buffer_{};
     domain::TimePoint next_heartbeat_{};
     domain::TimePoint next_battery_parameter_request_{};
+    domain::TimePoint next_failsafe_parameter_request_{};
     domain::TimePoint next_autopilot_version_request_{};
     std::optional<domain::TimePoint> started_at_;
     std::deque<LinkEvent> link_events_;
@@ -928,6 +1014,7 @@ private:
     std::optional<bool> previous_armed_;
     bool autopilot_metadata_was_available_{false};
     bool companion_heartbeat_active_{false};
+    std::size_t failsafe_parameter_index_{0};
 };
 
 CompanionApplication::CompanionApplication(

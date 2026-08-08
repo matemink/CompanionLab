@@ -12,6 +12,8 @@ namespace {
 
 using onboard_autonomy::application::AutonomyRuntime;
 using onboard_autonomy::application::AutonomyRuntimePhase;
+using onboard_autonomy::application::CompanionLinkFailsafePhase;
+using onboard_autonomy::application::CompanionLinkFailsafeSnapshot;
 using onboard_autonomy::application::FlightAction;
 using onboard_autonomy::application::FlightActionRequest;
 using onboard_autonomy::application::FlightCommandAckOutcome;
@@ -43,6 +45,13 @@ FlightStartupSnapshot completed_startup() {
     return startup;
 }
 
+CompanionLinkFailsafeSnapshot accepted_failsafe() {
+    CompanionLinkFailsafeSnapshot failsafe;
+    failsafe.phase = CompanionLinkFailsafePhase::accepted;
+    failsafe.detail = "ArduPilot LAND policy accepted";
+    return failsafe;
+}
+
 FlightActionRequest only_action(
     const std::vector<FlightActionRequest>& actions,
     const FlightAction expected,
@@ -64,6 +73,7 @@ void runtime_waits_for_startup() {
         runtime.update(
             flying_vehicle(),
             startup,
+            accepted_failsafe(),
             TimePoint{}
         ).empty(),
         "runtime must not bypass flight startup"
@@ -87,7 +97,13 @@ void runtime_streams_fresh_target_and_lands() {
     };
 
     auto action = only_action(
-        runtime.update(vehicle, startup, start, target),
+        runtime.update(
+            vehicle,
+            startup,
+            accepted_failsafe(),
+            start,
+            target
+        ),
         FlightAction::landing_target,
         "fresh target must start LANDING_TARGET stream"
     );
@@ -103,6 +119,7 @@ void runtime_streams_fresh_target_and_lands() {
         runtime.update(
             vehicle,
             startup,
+            accepted_failsafe(),
             start + std::chrono::milliseconds(400)
         ).empty(),
         "target loss must suppress guidance immediately"
@@ -116,6 +133,7 @@ void runtime_streams_fresh_target_and_lands() {
         runtime.update(
             vehicle,
             startup,
+            accepted_failsafe(),
             start + std::chrono::milliseconds(500),
             target
         ),
@@ -131,6 +149,7 @@ void runtime_streams_fresh_target_and_lands() {
     const auto actions = runtime.update(
         vehicle,
         startup,
+        accepted_failsafe(),
         start + std::chrono::milliseconds(1500),
         target
     );
@@ -163,6 +182,7 @@ void runtime_streams_fresh_target_and_lands() {
         runtime.update(
             vehicle,
             startup,
+            accepted_failsafe(),
             start + std::chrono::seconds(2),
             target
         ).empty(),
@@ -172,6 +192,7 @@ void runtime_streams_fresh_target_and_lands() {
     static_cast<void>(runtime.update(
         vehicle,
         startup,
+        accepted_failsafe(),
         start + std::chrono::seconds(3),
         target
     ));
@@ -193,13 +214,19 @@ void prolonged_target_loss_requests_fallback_land() {
     const TimePoint start{};
 
     require(
-        runtime.update(vehicle, startup, start).empty(),
+        runtime.update(
+            vehicle,
+            startup,
+            accepted_failsafe(),
+            start
+        ).empty(),
         "initial target absence must allow a bounded search window"
     );
     const auto land = only_action(
         runtime.update(
             vehicle,
             startup,
+            accepted_failsafe(),
             start + std::chrono::seconds(5)
         ),
         FlightAction::land,
@@ -220,6 +247,7 @@ void link_loss_stops_runtime_output() {
         runtime.update(
             vehicle,
             completed_startup(),
+            accepted_failsafe(),
             TimePoint{},
             BodyFramePosition{0.0, 0.0, 8.0}
         ).empty(),
@@ -231,6 +259,28 @@ void link_loss_stops_runtime_output() {
     );
 }
 
+void rejected_link_failsafe_stops_runtime_output() {
+    AutonomyRuntime runtime{{.enabled = true}};
+    CompanionLinkFailsafeSnapshot rejected;
+    rejected.phase = CompanionLinkFailsafePhase::rejected;
+    rejected.detail = "FS_OPTIONS bypasses the GCS failsafe";
+
+    require(
+        runtime.update(
+            flying_vehicle(),
+            completed_startup(),
+            rejected,
+            TimePoint{},
+            BodyFramePosition{0.0, 0.0, 8.0}
+        ).empty(),
+        "invalid link failsafe must suppress autonomy output"
+    );
+    require(
+        runtime.snapshot().phase == AutonomyRuntimePhase::failed,
+        "invalid link failsafe must fail the autonomy runtime"
+    );
+}
+
 }  // namespace
 
 void run_autonomy_runtime_tests() {
@@ -238,4 +288,5 @@ void run_autonomy_runtime_tests() {
     runtime_streams_fresh_target_and_lands();
     prolonged_target_loss_requests_fallback_land();
     link_loss_stops_runtime_output();
+    rejected_link_failsafe_stops_runtime_output();
 }

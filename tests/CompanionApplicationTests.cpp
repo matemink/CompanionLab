@@ -10,6 +10,7 @@
 #include <chrono>
 #include <cstdint>
 #include <deque>
+#include <iterator>
 #include <span>
 #include <stdexcept>
 #include <string>
@@ -108,6 +109,38 @@ std::size_t count_messages(
             return message_id(frame) == expected_id;
         }
     ));
+}
+
+std::string parameter_request_id(
+    const std::vector<std::uint8_t>& frame
+) {
+    mavlink_message_t receive_buffer{};
+    mavlink_status_t receive_status{};
+    mavlink_message_t parsed_message{};
+    mavlink_status_t parsed_status{};
+    for (const auto byte : frame) {
+        if (mavlink_frame_char_buffer(
+                &receive_buffer,
+                &receive_status,
+                byte,
+                &parsed_message,
+                &parsed_status
+            ) == MAVLINK_FRAMING_OK) {
+            break;
+        }
+    }
+    require(
+        parsed_message.msgid == MAVLINK_MSG_ID_PARAM_REQUEST_READ,
+        "frame must contain PARAM_REQUEST_READ"
+    );
+    mavlink_param_request_read_t request{};
+    mavlink_msg_param_request_read_decode(&parsed_message, &request);
+    const auto end = std::find(
+        std::begin(request.param_id),
+        std::end(request.param_id),
+        '\0'
+    );
+    return {std::begin(request.param_id), end};
 }
 
 std::vector<std::uint8_t> autopilot_heartbeat() {
@@ -209,12 +242,17 @@ void application_orchestrates_the_complete_telemetry_setup() {
         "six accepted commands must activate telemetry"
     );
     require(
-        transport.outgoing().size() == 9 &&
+        transport.outgoing().size() == 10 &&
             message_id(transport.outgoing()[7]) ==
+                MAVLINK_MSG_ID_PARAM_REQUEST_READ &&
+            parameter_request_id(transport.outgoing()[7]) ==
+                "FS_GCS_ENABLE" &&
+            message_id(transport.outgoing()[8]) ==
                 MAVLINK_MSG_ID_COMMAND_LONG &&
             message_id(transport.outgoing().back()) ==
                 MAVLINK_MSG_ID_PARAM_REQUEST_READ,
-        "application must request version and BATT_ARM_VOLT after setup"
+        "application must request failsafe policy, version, and battery "
+        "threshold after setup"
     );
     require(
         snapshot.link_events.size() <= 8,

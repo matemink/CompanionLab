@@ -382,6 +382,44 @@ std::string telemetry_detail(
     return "TELEMETRY UNKNOWN";
 }
 
+std::string companion_link_failsafe_detail(
+    const application::CompanionLinkFailsafeSnapshot& failsafe
+) {
+    if (!failsafe.accepted()) {
+        return "LINK FAILSAFE / " + failsafe.detail;
+    }
+
+    std::ostringstream detail;
+    detail << "LINK FAILSAFE READY / ARDUPILOT LAND";
+    if (failsafe.timeout_s.has_value()) {
+        detail << " / " << std::fixed << std::setprecision(1)
+               << *failsafe.timeout_s << " S";
+    }
+    if (failsafe.configured_gcs_system_id.has_value()) {
+        detail << " / SYSID "
+               << static_cast<unsigned int>(
+                      *failsafe.configured_gcs_system_id
+                  );
+    }
+    return detail.str();
+}
+
+Tone companion_link_failsafe_tone(
+    const application::CompanionLinkFailsafeSnapshot& failsafe
+) {
+    switch (failsafe.phase) {
+        case application::CompanionLinkFailsafePhase::accepted:
+            return Tone::good;
+        case application::CompanionLinkFailsafePhase::rejected:
+            return Tone::bad;
+        case application::CompanionLinkFailsafePhase::reading_parameters:
+            return Tone::waiting;
+        case application::CompanionLinkFailsafePhase::waiting_for_vehicle:
+            return Tone::dim;
+    }
+    return Tone::bad;
+}
+
 Tone metadata_tone(const application::AppSnapshot& snapshot) {
     if (snapshot.telemetry.state ==
         application::TelemetrySetupState::failed) {
@@ -927,6 +965,16 @@ std::string render_console(
         output,
         board_detail(vehicle, board_type_resolver),
         metadata_tone(snapshot),
+        use_color
+    );
+    write_centered_line(
+        output,
+        companion_link_failsafe_detail(
+            snapshot.companion_link_failsafe
+        ),
+        companion_link_failsafe_tone(
+            snapshot.companion_link_failsafe
+        ),
         use_color
     );
     if (snapshot.camera.has_value()) {

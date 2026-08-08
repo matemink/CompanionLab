@@ -2,6 +2,7 @@
 
 #include "onboard_autonomy/domain/VehicleState.hpp"
 #include "onboard_autonomy/adapters/mavlink/CommandAck.hpp"
+#include "onboard_autonomy/adapters/mavlink/ParameterValue.hpp"
 
 #include <ardupilotmega/mavlink.h>
 
@@ -25,11 +26,14 @@ public:
         std::function<void(const CommandAck&, domain::TimePoint)>;
     using MessageHandler =
         std::function<void(const MessageObservation&, domain::TimePoint)>;
+    using ParameterValueHandler =
+        std::function<void(const ParameterValue&, domain::TimePoint)>;
 
     explicit MavlinkDecoder(
         domain::VehicleState& state,
         CommandAckHandler command_ack_handler = {},
-        MessageHandler message_handler = {}
+        MessageHandler message_handler = {},
+        ParameterValueHandler parameter_value_handler = {}
     );
 
     void ingest(std::span<const std::uint8_t> bytes, domain::TimePoint now);
@@ -40,6 +44,7 @@ private:
     domain::VehicleState& state_;
     CommandAckHandler command_ack_handler_;
     MessageHandler message_handler_;
+    ParameterValueHandler parameter_value_handler_;
     mavlink_message_t receive_message_{};
     mavlink_status_t receive_status_{};
 };

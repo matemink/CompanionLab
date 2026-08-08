@@ -64,6 +64,8 @@ Pi.
 - A production-shaped autonomy runtime with readiness-gated takeoff,
   fresh vision intent, independent safety supervision, and precision
   landing with a bounded target-loss fallback.
+- Read-only validation of ArduPilot's companion-heartbeat failsafe before
+  autonomous startup, with an independent link-cut SITL acceptance test.
 - Raspberry Pi Camera Module 3 and Gazebo RTP/H.264 ingestion into the same
   YUV420 pipeline, with performance metrics, AprilTag detection, and a
   read-only browser preview.
@@ -157,7 +159,9 @@ bounded loss triggers an ordinary LAND. Physical printed-target scale
 validation remains required before enabling this path on a real aircraft.
 The automated Gazebo acceptance run reached 8.04 m, emitted 78 valid
 body-FRD targets, completed automatic disarm, and finished at the marker
-origin in the recorded run. See [docs/roadmap.md](docs/roadmap.md).
+origin in the recorded run. A separate controlled link-cut run proved that
+ArduPilot entered LAND 3.237 seconds after the final companion heartbeat,
+without a companion LAND command. See [docs/roadmap.md](docs/roadmap.md).
 
 ## Safety
 
@@ -167,6 +171,12 @@ treated as proof of simulation. Serial and unknown or real UDP endpoints
 remain observation-only. Physical bench work is performed with propellers
 removed, and autonomous behavior is validated in simulation before
 hardware-in-the-loop testing.
+
+Before any autonomous startup, the runtime reads `FS_GCS_ENABLE`,
+`FS_GCS_TIMEOUT`, `FS_OPTIONS`, and `SYSID_MYGCS`. It accepts only the
+documented Always LAND policy and never changes flight-controller parameters
+automatically. See the
+[companion-link failsafe evidence](docs/evidence/companion-link-failsafe-sitl.md).
 
 ## Documentation
 

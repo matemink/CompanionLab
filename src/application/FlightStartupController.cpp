@@ -92,6 +92,7 @@ FlightStartupController::FlightStartupController(
 std::vector<FlightActionRequest> FlightStartupController::update(
     const domain::VehicleSnapshot& vehicle,
     const bool telemetry_ready,
+    const CompanionLinkFailsafeSnapshot& companion_link_failsafe,
     const domain::TimePoint now
 ) {
     std::vector<FlightActionRequest> actions;
@@ -104,6 +105,15 @@ std::vector<FlightActionRequest> FlightStartupController::update(
     if (phase_ != FlightStartupPhase::waiting_for_vehicle &&
         !vehicle.connected) {
         fail("Flight-controller heartbeat was lost during startup");
+        return actions;
+    }
+    if (phase_ != FlightStartupPhase::waiting_for_vehicle &&
+        phase_ != FlightStartupPhase::waiting_for_readiness &&
+        !companion_link_failsafe.accepted()) {
+        fail(
+            "Companion-link failsafe is no longer valid: " +
+            companion_link_failsafe.detail
+        );
         return actions;
     }
 
@@ -138,6 +148,7 @@ std::vector<FlightActionRequest> FlightStartupController::update(
                 }
                 if (telemetry_ready && vehicle.armable &&
                     !vehicle.armed &&
+                    companion_link_failsafe.accepted() &&
                     vehicle.relative_altitude_m.has_value()) {
                     enter_phase(
                         FlightStartupPhase::setting_guided,
@@ -145,7 +156,11 @@ std::vector<FlightActionRequest> FlightStartupController::update(
                     );
                     continue;
                 }
-                update_readiness_detail(vehicle, telemetry_ready);
+                update_readiness_detail(
+                    vehicle,
+                    telemetry_ready,
+                    companion_link_failsafe
+                );
                 return actions;
 
             case FlightStartupPhase::setting_guided:
@@ -342,10 +357,14 @@ void FlightStartupController::fail(std::string detail) {
 
 void FlightStartupController::update_readiness_detail(
     const domain::VehicleSnapshot& vehicle,
-    const bool telemetry_ready
+    const bool telemetry_ready,
+    const CompanionLinkFailsafeSnapshot& companion_link_failsafe
 ) {
     if (!telemetry_ready) {
         detail_ = "Waiting for telemetry stream setup";
+    } else if (!companion_link_failsafe.accepted()) {
+        detail_ = "Autonomy blocked: " +
+                  companion_link_failsafe.detail;
     } else if (vehicle.armed) {
         detail_ = "Waiting for the vehicle to be disarmed";
     } else if (!vehicle.gps_ready) {

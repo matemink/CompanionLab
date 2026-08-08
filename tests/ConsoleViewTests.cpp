@@ -49,6 +49,14 @@ void healthy_snapshot_is_human_readable() {
             .product_id = 0x5740,
         };
     app_snapshot.companion_heartbeat_active = true;
+    app_snapshot.companion_link_failsafe.phase =
+        onboard_autonomy::application::
+            CompanionLinkFailsafePhase::accepted;
+    app_snapshot.companion_link_failsafe.action =
+        onboard_autonomy::application::
+            ArduPilotGcsFailsafeAction::land;
+    app_snapshot.companion_link_failsafe.timeout_s = 3.0;
+    app_snapshot.companion_link_failsafe.configured_gcs_system_id = 1;
     app_snapshot.telemetry.state =
         onboard_autonomy::application::TelemetrySetupState::active;
     app_snapshot.telemetry.completed_requests = 6;
@@ -100,6 +108,12 @@ void healthy_snapshot_is_human_readable() {
     require(
         output.find("NO ACTIVE WARNINGS") != std::string::npos,
         "healthy state must remain visible without a log section"
+    );
+    require(
+        output.find(
+            "LINK FAILSAFE READY / ARDUPILOT LAND / 3.0 S / SYSID 1"
+        ) != std::string::npos,
+        "operator view must expose the flight-controller-owned fallback"
     );
 }
 

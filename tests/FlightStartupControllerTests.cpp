@@ -12,6 +12,8 @@ namespace {
 using onboard_autonomy::application::FlightAction;
 using onboard_autonomy::application::FlightActionRequest;
 using onboard_autonomy::application::FlightCommandAckOutcome;
+using onboard_autonomy::application::CompanionLinkFailsafePhase;
+using onboard_autonomy::application::CompanionLinkFailsafeSnapshot;
 using onboard_autonomy::application::FlightStartupController;
 using onboard_autonomy::application::FlightStartupPhase;
 using onboard_autonomy::domain::TimePoint;
@@ -37,6 +39,13 @@ VehicleSnapshot ready_vehicle() {
     vehicle.flight_mode = 0;
     vehicle.relative_altitude_m = 0.0;
     return vehicle;
+}
+
+CompanionLinkFailsafeSnapshot accepted_failsafe() {
+    CompanionLinkFailsafeSnapshot failsafe;
+    failsafe.phase = CompanionLinkFailsafePhase::accepted;
+    failsafe.detail = "ArduPilot LAND policy accepted";
+    return failsafe;
 }
 
 FlightActionRequest only_action(
@@ -74,7 +83,7 @@ void startup_ends_after_verified_takeoff() {
     const TimePoint start{};
 
     auto action = only_action(
-        controller.update(vehicle, true, start),
+        controller.update(vehicle, true, accepted_failsafe(), start),
         FlightAction::set_guided_mode,
         "startup must begin with GUIDED"
     );
@@ -85,6 +94,7 @@ void startup_ends_after_verified_takeoff() {
         controller.update(
             vehicle,
             true,
+            accepted_failsafe(),
             start + std::chrono::milliseconds(100)
         ),
         FlightAction::arm,
@@ -97,6 +107,7 @@ void startup_ends_after_verified_takeoff() {
         controller.update(
             vehicle,
             true,
+            accepted_failsafe(),
             start + std::chrono::milliseconds(200)
         ),
         FlightAction::takeoff,
@@ -113,6 +124,7 @@ void startup_ends_after_verified_takeoff() {
         controller.update(
             vehicle,
             true,
+            accepted_failsafe(),
             start + std::chrono::seconds(3)
         ).empty(),
         "altitude confirmation must not emit another command"
@@ -135,6 +147,7 @@ void startup_fails_after_three_missing_acknowledgements() {
             controller.update(
                 vehicle,
                 true,
+                accepted_failsafe(),
                 start + std::chrono::seconds(attempt * 3)
             ),
             FlightAction::set_guided_mode,
@@ -150,6 +163,7 @@ void startup_fails_after_three_missing_acknowledgements() {
     static_cast<void>(controller.update(
         vehicle,
         true,
+        accepted_failsafe(),
         start + std::chrono::seconds(9)
     ));
     require(
@@ -164,17 +178,47 @@ void startup_stops_on_heartbeat_loss() {
     };
     auto vehicle = ready_vehicle();
     const TimePoint start{};
-    static_cast<void>(controller.update(vehicle, false, start));
+    static_cast<void>(controller.update(
+        vehicle,
+        false,
+        accepted_failsafe(),
+        start
+    ));
 
     vehicle.connected = false;
     static_cast<void>(controller.update(
         vehicle,
         false,
+        accepted_failsafe(),
         start + std::chrono::seconds(1)
     ));
     require(
         controller.snapshot().phase == FlightStartupPhase::failed,
         "heartbeat loss must stop startup commands"
+    );
+}
+
+void startup_waits_for_accepted_link_failsafe() {
+    FlightStartupController controller{
+        {.enabled = true, .takeoff_altitude_m = 5.0}
+    };
+    CompanionLinkFailsafeSnapshot rejected;
+    rejected.phase = CompanionLinkFailsafePhase::rejected;
+    rejected.detail = "FS_GCS_ENABLE must be 5 (Always LAND)";
+
+    require(
+        controller.update(
+            ready_vehicle(),
+            true,
+            rejected,
+            TimePoint{}
+        ).empty(),
+        "rejected ArduPilot failsafe must block startup commands"
+    );
+    require(
+        controller.snapshot().detail.find("Autonomy blocked") !=
+            std::string::npos,
+        "startup must expose the failsafe rejection reason"
     );
 }
 
@@ -184,4 +228,5 @@ void run_flight_startup_controller_tests() {
     startup_ends_after_verified_takeoff();
     startup_fails_after_three_missing_acknowledgements();
     startup_stops_on_heartbeat_loss();
+    startup_waits_for_accepted_link_failsafe();
 }
