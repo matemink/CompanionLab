@@ -307,6 +307,7 @@ public:
               options.motion_commands_allowed
           ),
           scenario_runner_(std::move(options.scenario_runner)),
+          camera_extrinsics_(options.camera_extrinsics),
           decoder_{
               vehicle_state_,
               [this](
@@ -413,6 +414,19 @@ public:
                    options.camera_preview_sink != nullptr) {
             throw std::invalid_argument(
                 "vision and preview require a camera source"
+            );
+        }
+        if (camera_extrinsics_.has_value() &&
+            options.target_detector == nullptr) {
+            throw std::invalid_argument(
+                "camera extrinsics require AprilTag pose detection"
+            );
+        }
+        const auto startup = scenario_runner_.snapshot();
+        if (startup.scenario_id == ScenarioId::precision_landing &&
+            !camera_extrinsics_.has_value()) {
+            throw std::invalid_argument(
+                "precision landing requires vision guidance"
             );
         }
     }
@@ -545,7 +559,8 @@ public:
         const auto flight_actions = scenario_runner_.update(
             vehicle,
             telemetry_ready,
-            now
+            now,
+            current_landing_target(now)
         );
         for (const auto& action : flight_actions) {
             const bool sent = write_frame(
@@ -580,6 +595,17 @@ public:
                 LinkEventStatus::failure,
                 "SCENARIO " + std::to_string(number),
                 "BLOCKED BY MOTION SAFETY POLICY",
+                now
+            );
+            return false;
+        }
+        if (id == ScenarioId::precision_landing &&
+            !camera_extrinsics_.has_value()) {
+            record_event(
+                LinkEventDirection::outbound,
+                LinkEventStatus::failure,
+                "SCENARIO " + std::to_string(number),
+                "VISION GUIDANCE IS NOT CONFIGURED",
                 now
             );
             return false;
@@ -683,6 +709,29 @@ public:
     }
 
 private:
+    [[nodiscard]] std::optional<domain::BodyFramePosition>
+    current_landing_target(const domain::TimePoint now) const {
+        if (!camera_monitor_.has_value() ||
+            !camera_extrinsics_.has_value()) {
+            return std::nullopt;
+        }
+
+        const auto vision = camera_monitor_->vision_snapshot(now);
+        if (!vision.has_value() ||
+            vision->target_track.phase != TargetTrackPhase::tracking ||
+            !vision->target_track.position.has_value() ||
+            !vision->target_track.observation_age_ms.has_value() ||
+            *vision->target_track.observation_age_ms >
+                kMaximumLandingTargetAge.count()) {
+            return std::nullopt;
+        }
+
+        return domain::camera_to_body_frd(
+            *vision->target_track.position,
+            *camera_extrinsics_
+        );
+    }
+
     void record_event(
         const LinkEventDirection direction,
         const LinkEventStatus status,
@@ -854,6 +903,8 @@ private:
         std::chrono::seconds(2);
     static constexpr auto kAutopilotVersionRetryInterval =
         std::chrono::seconds(2);
+    static constexpr auto kMaximumLandingTargetAge =
+        std::chrono::milliseconds(250);
     static constexpr std::size_t kMaximumLinkEvents = 8;
 
     ports::Transport& transport_;
@@ -862,6 +913,7 @@ private:
     adapters::mavlink::TelemetryStreamConfigurator telemetry_configurator_;
     ScenarioRunner scenario_runner_;
     std::optional<CameraMonitor> camera_monitor_;
+    std::optional<domain::CameraExtrinsics> camera_extrinsics_;
     adapters::mavlink::MavlinkDecoder decoder_;
     std::array<std::uint8_t, 4096> receive_buffer_{};
     domain::TimePoint next_heartbeat_{};

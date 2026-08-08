@@ -215,7 +215,6 @@ void gstreamer_pipeline_is_explicit_and_machine_readable() {
                 {
                     .width = 640,
                     .height = 480,
-                    .frames_per_second = 30,
                     .udp_port = 5601,
                     .jitter_latency_ms = 75,
                     .command = "gst-launch-test",
@@ -237,8 +236,7 @@ void gstreamer_pipeline_is_explicit_and_machine_readable() {
                 "clock-rate=90000,encoding-name=H264,payload=96"
             ) &&
             contains(
-                "video/x-raw,format=I420,width=640,height=480,"
-                "framerate=30/1"
+                "video/x-raw,format=I420,width=640,height=480"
             ) &&
             contains("fdsink"),
         "GStreamer camera pipeline must decode RTP/H.264 into I420"

@@ -54,6 +54,13 @@ def main() -> int:
     armed_transitions: list[bool] = []
     last_armed: bool | None = None
     observed_modes: set[int] = set()
+    landing_target_count = 0
+    landing_target_frames: set[int] = set()
+    position_valid_values: set[int] = set()
+    first_landing_target: tuple[float, float, float] | None = None
+    last_landing_target: tuple[float, float, float] | None = None
+    final_local_position: tuple[float, float, float] | None = None
+    precision_statuses: list[str] = []
 
     while message := connection.recv_match():
         message_type = message.get_type()
@@ -73,6 +80,8 @@ def main() -> int:
                         text,
                     )
                 )
+            elif text.startswith("PrecLand:"):
+                precision_statuses.append(text)
         elif message_type == "COMMAND_LONG":
             command = int(message.command)
             if command in flight_command_names:
@@ -102,6 +111,24 @@ def main() -> int:
                 or altitude_m > maximum_relative_altitude_m
             ):
                 maximum_relative_altitude_m = altitude_m
+        elif message_type == "LOCAL_POSITION_NED":
+            final_local_position = (
+                float(message.x),
+                float(message.y),
+                float(message.z),
+            )
+        elif message_type == "LANDING_TARGET":
+            position = (
+                float(message.x),
+                float(message.y),
+                float(message.z),
+            )
+            landing_target_count += 1
+            landing_target_frames.add(int(message.frame))
+            position_valid_values.add(int(message.position_valid))
+            if first_landing_target is None:
+                first_landing_target = position
+            last_landing_target = position
         elif (
             message_type == "HEARTBEAT"
             and int(message.autopilot)
@@ -179,6 +206,50 @@ def main() -> int:
             f"    - sysid={system_id} compid={component_id}: "
             f"{name} result={result}"
         )
+    print("Precision landing evidence:")
+    print(f"  LANDING_TARGET messages: {landing_target_count}")
+    print(
+        "  frames: "
+        + (
+            ", ".join(str(frame) for frame in sorted(landing_target_frames))
+            if landing_target_frames
+            else "not observed"
+        )
+    )
+    print(
+        "  position_valid values: "
+        + (
+            ", ".join(
+                str(value) for value in sorted(position_valid_values)
+            )
+            if position_valid_values
+            else "not observed"
+        )
+    )
+    for label, position in (
+        ("first body F/R/D", first_landing_target),
+        ("last body F/R/D", last_landing_target),
+    ):
+        if position is not None:
+            print(
+                f"  {label}: {position[0]:.3f} / "
+                f"{position[1]:.3f} / {position[2]:.3f} m"
+            )
+    if final_local_position is not None:
+        horizontal_error = (
+            final_local_position[0] ** 2
+            + final_local_position[1] ** 2
+        ) ** 0.5
+        print(
+            "  final local N/E/D: "
+            f"{final_local_position[0]:.3f} / "
+            f"{final_local_position[1]:.3f} / "
+            f"{final_local_position[2]:.3f} m"
+        )
+        print(f"  final horizontal error: {horizontal_error:.3f} m")
+    print("  ArduPilot statuses:")
+    for status in dict.fromkeys(precision_statuses):
+        print(f"    - {status}")
 
     return 0
 

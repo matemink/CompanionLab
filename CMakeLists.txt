@@ -98,6 +98,7 @@ endfunction()
 add_library(
     onboard_autonomy_domain
     src/domain/CameraCalibration.cpp
+    src/domain/TargetTransform.cpp
     src/domain/VehicleState.cpp
 )
 target_link_libraries(
@@ -172,6 +173,7 @@ onboard_autonomy_enable_warnings(onboard_autonomy_apriltag_adapter)
 add_library(
     onboard_autonomy_camera_calibration_adapter
     src/adapters/vision/CameraCalibrationLoader.cpp
+    src/adapters/vision/CameraExtrinsicsLoader.cpp
 )
 target_link_libraries(
     onboard_autonomy_camera_calibration_adapter
@@ -342,7 +344,10 @@ install(
     DESTINATION ${CMAKE_INSTALL_DATADIR}/onboard_autonomy
 )
 install(
-    FILES config/camera-module-3-wide-640x480.json
+    FILES
+        config/camera-module-3-wide-640x480.json
+        config/gazebo-landing-camera-640x480.json
+        config/gazebo-landing-camera-extrinsics.json
     DESTINATION ${CMAKE_INSTALL_DATADIR}/onboard_autonomy
 )
 
@@ -355,6 +360,7 @@ if(BUILD_TESTING)
         tests/BoardTypeCatalogTests.cpp
         tests/CameraMonitorTests.cpp
         tests/CameraCalibrationLoaderTests.cpp
+        tests/CameraExtrinsicsLoaderTests.cpp
         tests/VisionMonitorTests.cpp
         tests/ScenarioRunnerTests.cpp
         tests/ConsoleViewTests.cpp
@@ -362,6 +368,7 @@ if(BUILD_TESTING)
         tests/MavlinkEncoderTests.cpp
         tests/TelemetryStreamConfiguratorTests.cpp
         tests/TargetTrackerTests.cpp
+        tests/TargetTransformTests.cpp
         tests/VehicleStateTests.cpp
         tests/TestMain.cpp
     )

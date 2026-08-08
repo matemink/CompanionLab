@@ -1,5 +1,9 @@
 # Gazebo AprilTag vision pipeline
 
+> Status: this chapter records the camera-ingestion milestone before flight
+> guidance was connected. The completed vision-to-`LANDING_TARGET` path is
+> documented in `32-vision-guided-precision-landing.uk.md`.
+
 ## Що додано
 
 `simulation/models/iris_with_landing_camera` розширює офіційний Iris

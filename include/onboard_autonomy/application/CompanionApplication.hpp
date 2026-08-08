@@ -3,8 +3,10 @@
 #include "onboard_autonomy/application/AppSnapshot.hpp"
 #include "onboard_autonomy/application/ports/CameraPreviewSink.hpp"
 #include "onboard_autonomy/application/ports/Transport.hpp"
+#include "onboard_autonomy/domain/TargetTransform.hpp"
 
 #include <memory>
+#include <optional>
 
 namespace onboard_autonomy::application {
 
@@ -14,6 +16,7 @@ struct CompanionApplicationOptions {
     ports::CameraSource* camera_source{nullptr};
     ports::TargetDetector* target_detector{nullptr};
     ports::CameraPreviewSink* camera_preview_sink{nullptr};
+    std::optional<domain::CameraExtrinsics> camera_extrinsics;
 };
 
 class CompanionApplication {

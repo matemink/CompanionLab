@@ -17,6 +17,7 @@ using onboard_autonomy::application::FlightCommandAckOutcome;
 using onboard_autonomy::application::ScenarioId;
 using onboard_autonomy::application::ScenarioRunner;
 using onboard_autonomy::application::ScenarioRunnerPhase;
+using onboard_autonomy::domain::BodyFramePosition;
 using onboard_autonomy::domain::TimePoint;
 using onboard_autonomy::domain::VehicleSnapshot;
 
@@ -285,8 +286,8 @@ void precision_landing_streams_target_before_land() {
         "precision scenario must first offset from home"
     );
     runner.on_action_sent(move, true, start + std::chrono::seconds(3));
-    vehicle.local_north_m = 8.0;
-    vehicle.local_east_m = 4.0;
+    vehicle.local_north_m = 3.0;
+    vehicle.local_east_m = 1.5;
     static_cast<void>(
         runner.update(
             vehicle,
@@ -295,31 +296,76 @@ void precision_landing_streams_target_before_land() {
         )
     );
 
-    const auto first_target = only_action(
+    require(
         runner.update(
             vehicle,
             true,
             start + std::chrono::seconds(6)
+        ).empty(),
+        "precision step must wait when vision has no confirmed target"
+    );
+
+    const BodyFramePosition vision_target{
+        .forward_m = 0.4,
+        .right_m = -0.2,
+        .down_m = 8.16,
+    };
+    const auto first_target = only_action(
+        runner.update(
+            vehicle,
+            true,
+            start + std::chrono::milliseconds(6100),
+            vision_target
         ),
         FlightAction::landing_target,
         "precision step must warm up LANDING_TARGET before LAND"
     );
     require(
-        first_target.x_m == -8.0 &&
-            first_target.y_m == -4.0 &&
-            first_target.z_m == 8.0,
-        "synthetic target must point from vehicle to home in body FRD"
+        first_target.x_m == vision_target.forward_m &&
+            first_target.y_m == vision_target.right_m &&
+            first_target.z_m == vision_target.down_m,
+        "LANDING_TARGET must use the confirmed body-FRD vision pose"
     );
     runner.on_action_sent(
         first_target,
         true,
-        start + std::chrono::seconds(6)
+        start + std::chrono::milliseconds(6100)
+    );
+
+    require(
+        runner.update(
+            vehicle,
+            true,
+            start + std::chrono::milliseconds(6500)
+        ).empty(),
+        "target loss must stop streaming and reset LAND warmup"
+    );
+    require(
+        !runner.snapshot().vision_landing_target_active,
+        "snapshot must expose vision target loss immediately"
+    );
+
+    const auto reacquired_target = only_action(
+        runner.update(
+            vehicle,
+            true,
+            start + std::chrono::milliseconds(6600),
+            vision_target
+        ),
+        FlightAction::landing_target,
+        "reacquisition must resume LANDING_TARGET streaming"
+    );
+    runner.on_action_sent(
+        reacquired_target,
+        true,
+        start + std::chrono::milliseconds(6600)
     );
 
     const auto actions = runner.update(
         vehicle,
         true,
-        start + std::chrono::seconds(7)
+        start + std::chrono::milliseconds(7600),
+        vision_target
     );
     require(
         std::any_of(
@@ -339,8 +385,8 @@ void precision_landing_streams_target_before_land() {
         "precision step must keep streaming target while requesting LAND"
     );
     require(
-        runner.snapshot().synthetic_landing_target_active,
-        "snapshot must expose the active synthetic target source"
+        runner.snapshot().vision_landing_target_active,
+        "snapshot must expose the active vision target source"
     );
 
     const auto land = std::find_if(
@@ -351,7 +397,7 @@ void precision_landing_streams_target_before_land() {
         }
     );
     require(land != actions.end(), "precision LAND command is required");
-    accept(runner, *land, start + std::chrono::seconds(7));
+    accept(runner, *land, start + std::chrono::milliseconds(7600));
 
     vehicle.relative_altitude_m = 0.15;
     vehicle.local_down_m = -0.15;
@@ -364,8 +410,8 @@ void precision_landing_streams_target_before_land() {
         "LANDING_TARGET must stop after confirmed touchdown"
     );
     require(
-        !runner.snapshot().synthetic_landing_target_active,
-        "touchdown must mark the synthetic target stream inactive"
+        !runner.snapshot().vision_landing_target_active,
+        "touchdown must mark the vision target stream inactive"
     );
 
     vehicle.armed = false;

@@ -31,10 +31,10 @@ std::size_t checked_frame_size(
     const GStreamerCameraConfig& config
 ) {
     if (config.width == 0U || config.height == 0U ||
-        config.frames_per_second == 0U || config.udp_port == 0U ||
+        config.udp_port == 0U ||
         config.width % 2U != 0U || config.height % 2U != 0U) {
         throw std::invalid_argument(
-            "GStreamer camera dimensions, FPS, and UDP port must be "
+            "GStreamer camera dimensions and UDP port must be "
             "positive; I420 dimensions must be even"
         );
     }
@@ -395,9 +395,7 @@ std::vector<std::string> make_gstreamer_camera_arguments(
         "!",
         "video/x-raw,format=I420,width=" +
             std::to_string(config.width) +
-            ",height=" + std::to_string(config.height) +
-            ",framerate=" +
-            std::to_string(config.frames_per_second) + "/1",
+            ",height=" + std::to_string(config.height),
         "!",
         "fdsink",
         "fd=1",

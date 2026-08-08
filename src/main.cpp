@@ -5,6 +5,7 @@
 #include "onboard_autonomy/adapters/transport/TransportFactory.hpp"
 #include "onboard_autonomy/adapters/vision/AprilTagTargetDetector.hpp"
 #include "onboard_autonomy/adapters/vision/CameraCalibrationLoader.hpp"
+#include "onboard_autonomy/adapters/vision/CameraExtrinsicsLoader.hpp"
 #include "onboard_autonomy/application/CompanionApplication.hpp"
 #include "onboard_autonomy/presentation/console/ConsoleInput.hpp"
 #include "onboard_autonomy/presentation/console/ConsoleView.hpp"
@@ -50,6 +51,7 @@ struct Options {
     std::uint16_t camera_udp_port{5601};
     bool apriltag_enabled{false};
     std::string camera_calibration_file;
+    std::string camera_extrinsics_file;
     std::optional<double> apriltag_tag_size_m;
     bool camera_preview_enabled{false};
     std::uint16_t camera_preview_port{8080};
@@ -160,6 +162,8 @@ Options parse_options(const int argc, char** argv) {
             options.apriltag_enabled = true;
         } else if (argument == "--camera-calibration") {
             options.camera_calibration_file = require_value();
+        } else if (argument == "--camera-extrinsics") {
+            options.camera_extrinsics_file = require_value();
         } else if (argument == "--apriltag-size-mm") {
             options.apriltag_tag_size_m =
                 parse_number<double>(require_value(), argument) /
@@ -319,10 +323,12 @@ void print_help() {
         << " GStreamer RTP/H.264 port, default 5601\n"
         << "  --camera-width N  YUV420 width, default 640\n"
         << "  --camera-height N YUV420 height, default 480\n"
-        << "  --camera-fps N    Capture rate, default 30\n"
+        << "  --camera-fps N    rpicam capture rate, default 30\n"
         << "  --apriltag        Detect tagStandard41h12 targets\n"
         << "  --camera-calibration FILE"
         << "  Verified camera calibration JSON\n"
+        << "  --camera-extrinsics FILE"
+        << "  Camera-optical to body-FRD transform JSON\n"
         << "  --apriltag-size-mm N"
         << "  Physical span between detection corners\n"
         << "  --camera-preview  Serve live grayscale preview over HTTP\n"
@@ -386,6 +392,21 @@ int main(const int argc, char** argv) {
                 "AprilTag pose requires --apriltag"
             );
         }
+        const bool has_camera_extrinsics =
+            !options.camera_extrinsics_file.empty();
+        if (has_camera_extrinsics && !has_camera_calibration) {
+            throw std::invalid_argument(
+                "camera extrinsics require calibrated AprilTag pose"
+            );
+        }
+        if (options.startup_scenario ==
+                onboard_autonomy::application::ScenarioId::
+                    precision_landing &&
+            !has_camera_extrinsics) {
+            throw std::invalid_argument(
+                "precision landing requires --camera-extrinsics"
+            );
+        }
 
         if ((options.startup_scenario.has_value() ||
              options.interactive) &&
@@ -445,8 +466,6 @@ int main(const int argc, char** argv) {
                             {
                                 .width = options.camera_width,
                                 .height = options.camera_height,
-                                .frames_per_second =
-                                    options.camera_fps,
                                 .udp_port = options.camera_udp_port,
                             }
                         );
@@ -487,6 +506,15 @@ int main(const int argc, char** argv) {
                         std::move(detector_config)
                     );
         }
+        std::optional<onboard_autonomy::domain::CameraExtrinsics>
+            camera_extrinsics;
+        if (has_camera_extrinsics) {
+            camera_extrinsics =
+                onboard_autonomy::adapters::vision::
+                    CameraExtrinsicsLoader::from_file(
+                        options.camera_extrinsics_file
+                    );
+        }
         std::unique_ptr<
             onboard_autonomy::application::ports::CameraPreviewSink
         > camera_preview;
@@ -523,6 +551,7 @@ int main(const int argc, char** argv) {
                 .camera_source = camera_source.get(),
                 .target_detector = target_detector.get(),
                 .camera_preview_sink = camera_preview.get(),
+                .camera_extrinsics = camera_extrinsics,
             }
         };
         auto next_snapshot = std::chrono::steady_clock::now();

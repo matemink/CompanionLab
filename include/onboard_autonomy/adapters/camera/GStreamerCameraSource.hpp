@@ -12,7 +12,6 @@ namespace onboard_autonomy::adapters::camera {
 struct GStreamerCameraConfig {
     std::uint32_t width{640};
     std::uint32_t height{480};
-    std::uint32_t frames_per_second{30};
     std::uint16_t udp_port{5601};
     std::uint32_t jitter_latency_ms{50};
     std::string command{"gst-launch-1.0"};

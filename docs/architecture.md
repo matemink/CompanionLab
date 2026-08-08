@@ -171,19 +171,21 @@ wait for `COMMAND_ACK` and telemetry confirmation. Route steps send
 after the vehicle reports `DISARMED`.
 
 Five scenarios are available from the interactive terminal. The precision
-scenario sends a synthetic body-FRD `LANDING_TARGET` in SITL; it is an
-integration seam for the current camera/AprilTag observations. Calibrated
-metric pose and freshness-aware tracking are implemented, but the explicit
-camera-to-body-FRD transform is not yet wired to MAVLink, so the scenario
-remains synthetic.
+scenario accepts only a confirmed AprilTag track no older than 250 ms. The
+application transforms the camera-optical pose through configured camera
+extrinsics and the runner streams the resulting body-FRD position as MAVLink
+`LANDING_TARGET` at 5 Hz. LAND is requested only after one second of
+continuous target availability.
 
 Python remains test orchestration: it starts SITL, injects failures, and
 asserts behavior from JSON output.
 
 ### Guidance
 
-Vision now ends at a confirmed, freshness-aware metric track in the
-camera-optical frame. Physical scale validation and the explicit
-camera-to-body-FRD transform remain required before this track can feed
-MAVLink `LANDING_TARGET`. ArduPilot remains responsible for the
-flight-control loop.
+Vision produces a confirmed, freshness-aware metric track in the
+camera-optical frame. `CompanionApplication` applies the configured rigid
+camera-to-body transform; `ScenarioRunner` owns acquisition warmup, target
+stream cadence, and target-loss behavior; the MAVLink adapter only encodes
+the resulting `LANDING_TARGET`. ArduPilot remains responsible for the
+flight-control loop. Physical scale and mounting measurements are still a
+required safety gate before enabling this path on real hardware.
