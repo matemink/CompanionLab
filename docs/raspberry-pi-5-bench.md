@@ -126,7 +126,7 @@ candidates, ARM64 ELF format, and runtime libraries. The launcher:
 - prefers stable `/dev/serial/by-id` names;
 - accepts exactly one serial candidate and refuses to guess otherwise;
 - defaults to 115200 baud;
-- runs `--serial --json --camera` by default;
+- runs `--transport serial --serial-device ... --json --camera` by default;
 - stores JSONL under `~/.local/state/onboard_autonomy`.
 
 Override an ambiguous serial device explicitly:

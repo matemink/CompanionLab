@@ -128,7 +128,8 @@ if [[ "${camera_enabled}" == "1" ]]; then
 fi
 
 "${binary}" \
-    --serial "${device}" \
+    --transport serial \
+    --serial-device "${device}" \
     --baud "${baud}" \
     --snapshot-ms "${snapshot_ms}" \
     "${camera_arguments[@]}" \

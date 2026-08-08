@@ -16,6 +16,7 @@ int main() {
         run_console_view_tests();
         run_board_type_catalog_tests();
         run_camera_monitor_tests();
+        run_command_line_tests();
         run_vision_monitor_tests();
         run_camera_calibration_loader_tests();
         run_camera_extrinsics_loader_tests();

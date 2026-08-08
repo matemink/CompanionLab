@@ -43,6 +43,7 @@ Start OnboardAutonomy:
 
 ```bash
 "${HOME}/build/onboard_autonomy/onboard_autonomy" \
+    --transport udp \
     --udp-bind 127.0.0.1 \
     --udp-port 14550
 ```
@@ -158,6 +159,7 @@ console:
 
 ```bash
 "${HOME}/build/onboard_autonomy/onboard_autonomy" \
+    --transport udp \
     --udp-port 14550 \
     --json
 ```

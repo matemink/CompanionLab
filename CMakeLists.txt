@@ -287,11 +287,23 @@ target_link_libraries(
 )
 onboard_autonomy_enable_warnings(onboard_autonomy_console_presentation)
 
+add_library(
+    onboard_autonomy_cli_presentation
+    src/presentation/cli/CommandLine.cpp
+)
+target_link_libraries(
+    onboard_autonomy_cli_presentation
+    PUBLIC
+        onboard_autonomy_public_headers
+)
+onboard_autonomy_enable_warnings(onboard_autonomy_cli_presentation)
+
 add_executable(onboard_autonomy src/main.cpp)
 target_link_libraries(
     onboard_autonomy
     PRIVATE
         onboard_autonomy_application
+        onboard_autonomy_cli_presentation
         onboard_autonomy_ardupilot_catalog_adapter
         onboard_autonomy_camera_adapter
         onboard_autonomy_camera_calibration_adapter
@@ -367,6 +379,7 @@ if(BUILD_TESTING)
         tests/FlightStartupControllerTests.cpp
         tests/BoardTypeCatalogTests.cpp
         tests/CameraMonitorTests.cpp
+        tests/CommandLineTests.cpp
         tests/CameraCalibrationLoaderTests.cpp
         tests/CameraExtrinsicsLoaderTests.cpp
         tests/VisionMonitorTests.cpp
@@ -385,6 +398,7 @@ if(BUILD_TESTING)
         onboard_autonomy_tests
         PRIVATE
             onboard_autonomy_application
+            onboard_autonomy_cli_presentation
             onboard_autonomy_ardupilot_catalog_adapter
             onboard_autonomy_camera_adapter
             onboard_autonomy_camera_calibration_adapter

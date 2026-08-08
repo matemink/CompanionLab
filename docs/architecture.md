@@ -68,9 +68,11 @@ flowchart LR
     Preview["onboard_autonomy_camera_preview_adapter"] --> PreviewPort
     AprilTag["onboard_autonomy_apriltag_adapter"] --> DetectorPort
     Presentation["onboard_autonomy_console_presentation"] --> Application
+    CLI["onboard_autonomy_cli_presentation"]
     Executable["onboard_autonomy"] --> Application
     Executable --> Transport
     Executable --> Presentation
+    Executable --> CLI
 ```
 
 ## Design boundaries
@@ -86,6 +88,11 @@ it returns the bytes already available or `0` immediately. UDP uses a
 non-blocking socket, while serial uses `VMIN=0` and `VTIME=0`. MAVLink
 frames remain independent of read boundaries, and the five-millisecond
 main-loop sleep prevents busy spinning when all inputs are quiet.
+
+The CLI represents transport as a typed `udp|serial` choice and validates
+backend-specific options before constructing an adapter. UDP remains the
+documented default for observation-only startup; selecting serial requires an
+explicit device path.
 
 ### Camera source and monitor
 

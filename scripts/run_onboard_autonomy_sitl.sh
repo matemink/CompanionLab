@@ -13,6 +13,7 @@ if [[ ! -x "${COMPANION}" ]]; then
 fi
 
 arguments=(
+    --transport udp
     --sitl
     --udp-bind 127.0.0.1
     --udp-port 14550
