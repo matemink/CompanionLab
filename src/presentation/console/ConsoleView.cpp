@@ -441,6 +441,8 @@ std::string camera_phase_name(
             return "CAMERA STARTING";
         case application::ports::CameraSourcePhase::streaming:
             return "CAMERA STREAMING";
+        case application::ports::CameraSourcePhase::reconnecting:
+            return "CAMERA RECONNECTING";
         case application::ports::CameraSourcePhase::stopped:
             return "CAMERA STOPPED";
         case application::ports::CameraSourcePhase::failed:
@@ -455,6 +457,8 @@ Tone camera_tone(const application::CameraSnapshot& camera) {
             return Tone::waiting;
         case application::ports::CameraSourcePhase::streaming:
             return Tone::good;
+        case application::ports::CameraSourcePhase::reconnecting:
+            return Tone::waiting;
         case application::ports::CameraSourcePhase::stopped:
             return Tone::dim;
         case application::ports::CameraSourcePhase::failed:
@@ -477,6 +481,10 @@ std::string camera_stream_detail(
                << *camera.measured_fps << " FPS";
     }
     detail << "   |   " << camera.received_frames << " FRAMES";
+    if (camera.camera_restarts > 0U) {
+        detail << "   |   " << camera.camera_restarts
+               << " RESTARTS";
+    }
     return detail.str();
 }
 

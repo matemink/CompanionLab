@@ -285,6 +285,7 @@ void camera_pipeline_metrics_are_visible() {
         .width = 640,
         .height = 480,
         .received_frames = 120,
+        .camera_restarts = 2,
         .frames_with_capture_timestamp = 120,
         .measured_fps = 30.01,
         .latest_latency_ms = 42.1,
@@ -302,7 +303,8 @@ void camera_pipeline_metrics_are_visible() {
     require(
         output.find("CAMERA STREAMING") != std::string::npos &&
             output.find("640x480 YUV420") != std::string::npos &&
-            output.find("30.0 FPS") != std::string::npos,
+            output.find("30.0 FPS") != std::string::npos &&
+            output.find("2 RESTARTS") != std::string::npos,
         "console must show the live camera stream"
     );
     require(

@@ -22,6 +22,7 @@ struct CameraSnapshot {
     std::uint32_t height{0};
     std::uint64_t received_frames{0};
     std::uint64_t dropped_before_processing{0};
+    std::uint64_t camera_restarts{0};
     std::uint64_t frames_with_capture_timestamp{0};
     std::optional<double> measured_fps;
     std::optional<double> latest_latency_ms;

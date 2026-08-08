@@ -14,6 +14,8 @@ struct GStreamerCameraConfig {
     std::uint32_t height{480};
     std::uint16_t udp_port{5601};
     std::uint32_t jitter_latency_ms{50};
+    std::uint32_t frame_timeout_ms{2000};
+    std::uint32_t restart_delay_ms{500};
     std::string command{"gst-launch-1.0"};
 };
 

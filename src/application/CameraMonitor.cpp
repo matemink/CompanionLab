@@ -93,6 +93,7 @@ public:
                     dropped_before_processing_,
                     source_status.overwritten_frames
                 ),
+            .camera_restarts = source_status.restart_count,
             .frames_with_capture_timestamp =
                 frames_with_capture_timestamp_,
             .measured_fps = std::nullopt,

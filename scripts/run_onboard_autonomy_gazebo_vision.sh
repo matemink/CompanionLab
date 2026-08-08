@@ -9,7 +9,7 @@ export GZ_VERSION="${GZ_VERSION:-harmonic}"
 
 set_camera_streaming() {
     local readonly enabled="$1"
-    gz topic \
+    timeout 2s gz topic \
         -t "${enable_topic}" \
         -m gz.msgs.Boolean \
         -p "data: ${enabled}"

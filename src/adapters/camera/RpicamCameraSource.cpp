@@ -39,11 +39,14 @@ std::size_t checked_frame_size(
 ) {
     if (config.width == 0U || config.height == 0U ||
         config.frames_per_second == 0U ||
+        config.frame_timeout_ms == 0U ||
+        config.restart_delay_ms == 0U ||
         config.width % 2U != 0U ||
         config.height % 2U != 0U) {
         throw std::invalid_argument(
             "camera width, height and FPS must be positive; "
-            "YUV420 dimensions must be even"
+            "recovery timings must be non-zero; YUV420 dimensions "
+            "must be even"
         );
     }
 
@@ -103,10 +106,31 @@ private:
         complete,
         stopped,
         end_of_file,
+        timed_out,
         failed,
     };
 
     void run(const std::stop_token stop_token) {
+        while (!stop_token.stop_requested()) {
+            prepare_attempt();
+            run_once(stop_token);
+            if (stop_token.stop_requested()) {
+                break;
+            }
+
+            auto failure = status().error;
+            if (failure.empty()) {
+                failure = "rpicam camera stopped unexpectedly";
+            }
+            set_reconnecting(std::move(failure));
+            if (!wait_for_restart(stop_token)) {
+                break;
+            }
+        }
+        set_stopped();
+    }
+
+    void run_once(const std::stop_token stop_token) {
         int video_pipe[2]{-1, -1};
         int metadata_pipe[2]{-1, -1};
         int error_pipe[2]{-1, -1};
@@ -204,11 +228,10 @@ private:
             }
         };
 
-        std::uint64_t sequence = 0;
         ReadResult read_result = ReadResult::complete;
         while (!stop_token.stop_requested()) {
             application::ports::CameraFrame frame{
-                .sequence = ++sequence,
+                .sequence = 0U,
                 .width = config_.width,
                 .height = config_.height,
                 .yuv420 = std::vector<std::uint8_t>(frame_size_),
@@ -218,11 +241,15 @@ private:
             read_result = read_exact(
                 video_pipe[0],
                 frame.yuv420,
-                stop_token
+                stop_token,
+                std::chrono::milliseconds{
+                    config_.frame_timeout_ms
+                }
             );
             if (read_result != ReadResult::complete) {
                 break;
             }
+            frame.sequence = ++next_sequence_;
             frame.received_at =
                 std::chrono::system_clock::now();
 
@@ -260,7 +287,6 @@ private:
         ::close(error_pipe[0]);
 
         if (stop_token.stop_requested()) {
-            set_stopped();
             return;
         }
         if (status().phase ==
@@ -273,7 +299,14 @@ private:
             std::scoped_lock lock(state_mutex_);
             detail = last_process_message_;
         }
-        if (WIFEXITED(child_status)) {
+        if (read_result == ReadResult::timed_out) {
+            set_failure(
+                "rpicam frame stalled for " +
+                std::to_string(config_.frame_timeout_ms) + " ms"
+            );
+        } else if (read_result == ReadResult::failed) {
+            set_failure("failed to read the rpicam YUV stream");
+        } else if (WIFEXITED(child_status)) {
             set_failure(
                 "rpicam-vid exited with status " +
                 std::to_string(WEXITSTATUS(child_status)) +
@@ -284,8 +317,6 @@ private:
                 "rpicam-vid stopped by signal " +
                 std::to_string(WTERMSIG(child_status))
             );
-        } else if (read_result == ReadResult::failed) {
-            set_failure("failed to read the rpicam YUV stream");
         } else {
             set_failure("rpicam YUV stream ended unexpectedly");
         }
@@ -369,9 +400,11 @@ private:
     static ReadResult read_exact(
         const int fd,
         std::vector<std::uint8_t>& destination,
-        const std::stop_token stop_token
+        const std::stop_token stop_token,
+        const std::chrono::milliseconds frame_timeout
     ) {
         std::size_t offset = 0;
+        auto last_progress = std::chrono::steady_clock::now();
         while (offset < destination.size()) {
             if (stop_token.stop_requested()) {
                 return ReadResult::stopped;
@@ -383,6 +416,11 @@ private:
             };
             const int ready = ::poll(&descriptor, 1, 100);
             if (ready == 0) {
+                if (std::chrono::steady_clock::now() -
+                        last_progress >=
+                    frame_timeout) {
+                    return ReadResult::timed_out;
+                }
                 continue;
             }
             if (ready < 0) {
@@ -406,6 +444,7 @@ private:
                 return ReadResult::failed;
             }
             offset += static_cast<std::size_t>(count);
+            last_progress = std::chrono::steady_clock::now();
         }
         return ReadResult::complete;
     }
@@ -415,7 +454,7 @@ private:
         std::unique_lock lock(metadata_mutex_);
         const bool ready = metadata_ready_.wait_for(
             lock,
-            std::chrono::seconds(2),
+            std::chrono::milliseconds{config_.frame_timeout_ms},
             [this, stop_token] {
                 return !metadata_timestamps_.empty() ||
                        stop_token.stop_requested();
@@ -427,6 +466,35 @@ private:
         const auto timestamp = metadata_timestamps_.front();
         metadata_timestamps_.pop_front();
         return timestamp;
+    }
+
+    void prepare_attempt() {
+        {
+            std::scoped_lock lock(state_mutex_);
+            last_process_message_.clear();
+            latest_frame_.reset();
+        }
+        {
+            std::scoped_lock lock(metadata_mutex_);
+            metadata_timestamps_.clear();
+        }
+    }
+
+    [[nodiscard]] bool wait_for_restart(
+        const std::stop_token stop_token
+    ) const {
+        const auto deadline =
+            std::chrono::steady_clock::now() +
+            std::chrono::milliseconds{config_.restart_delay_ms};
+        while (std::chrono::steady_clock::now() < deadline) {
+            if (stop_token.stop_requested()) {
+                return false;
+            }
+            std::this_thread::sleep_for(
+                std::chrono::milliseconds{25}
+            );
+        }
+        return !stop_token.stop_requested();
     }
 
     void publish(application::ports::CameraFrame frame) {
@@ -448,6 +516,15 @@ private:
         status_.error = std::move(error);
     }
 
+    void set_reconnecting(std::string error) {
+        std::scoped_lock lock(state_mutex_);
+        latest_frame_.reset();
+        status_.phase =
+            application::ports::CameraSourcePhase::reconnecting;
+        status_.error = std::move(error);
+        ++status_.restart_count;
+    }
+
     void set_stopped() {
         std::scoped_lock lock(state_mutex_);
         status_.phase =
@@ -467,6 +544,7 @@ private:
     application::ports::CameraSourceStatus status_;
     std::optional<application::ports::CameraFrame> latest_frame_;
     std::string last_process_message_;
+    std::uint64_t next_sequence_{0U};
     std::mutex metadata_mutex_;
     std::condition_variable metadata_ready_;
     std::deque<std::int64_t> metadata_timestamps_;

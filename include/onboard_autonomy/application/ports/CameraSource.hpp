@@ -11,6 +11,7 @@ namespace onboard_autonomy::application::ports {
 enum class CameraSourcePhase {
     starting,
     streaming,
+    reconnecting,
     stopped,
     failed,
 };
@@ -30,6 +31,7 @@ struct CameraSourceStatus {
     std::string error;
     std::uint64_t produced_frames{0};
     std::uint64_t overwritten_frames{0};
+    std::uint64_t restart_count{0};
 };
 
 class CameraSource {

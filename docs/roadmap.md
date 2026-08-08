@@ -98,7 +98,8 @@ tests, observability, and developer tooling.
   receiver using per-frame `FrameWallClock` metadata.
 - [x] Run Camera Module 3 and Pixhawk telemetry concurrently at 30 FPS
   without blocking the application loop.
-- [ ] Reconnect after camera or stream loss.
+- [x] Reconnect both camera adapters after process or stream loss and prove
+  GStreamer recovery without restarting the companion process.
 
 Engineering focus: GStreamer, video streaming, profiling, ARM.
 
@@ -108,6 +109,10 @@ background instead of the scene entities. The server-side world,
 camera, physics, and automated flight continued to run, but the
 user-visible result did not satisfy the acceptance criterion. See
 `docs/learning/14-gazebo-airfield-failed-experiment.uk.md`.
+
+Recovery acceptance evidence: the same process consumed 11 frames, exposed a
+2-second stream stall and reconnect state, then consumed 22 frames after the
+Gazebo producer restarted. See `docs/evidence/camera-recovery.md`.
 
 ## Milestone 4: Vision and precision landing
 

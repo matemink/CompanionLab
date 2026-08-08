@@ -16,6 +16,8 @@ std::string_view camera_phase_name(
             return "starting";
         case ports::CameraSourcePhase::streaming:
             return "streaming";
+        case ports::CameraSourcePhase::reconnecting:
+            return "reconnecting";
         case ports::CameraSourcePhase::stopped:
             return "stopped";
         case ports::CameraSourcePhase::failed:
@@ -205,6 +207,8 @@ std::string AppSnapshot::to_json() const {
                << camera->received_frames;
         output << ",\"dropped_before_processing\":"
                << camera->dropped_before_processing;
+        output << ",\"camera_restarts\":"
+               << camera->camera_restarts;
         output << ",\"frames_with_capture_timestamp\":"
                << camera->frames_with_capture_timestamp;
         output << ",\"measured_fps\":";
