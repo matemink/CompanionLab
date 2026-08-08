@@ -369,6 +369,7 @@ if(BUILD_TESTING)
         tests/TelemetryStreamConfiguratorTests.cpp
         tests/TargetTrackerTests.cpp
         tests/TargetTransformTests.cpp
+        tests/TransportTests.cpp
         tests/VehicleStateTests.cpp
         tests/TestMain.cpp
     )
@@ -386,6 +387,7 @@ if(BUILD_TESTING)
             onboard_autonomy_domain
             onboard_autonomy_mavlink_adapter
             onboard_autonomy_console_presentation
+            onboard_autonomy_transport_adapter
             onboard_autonomy_transport_port
             apriltag
     )

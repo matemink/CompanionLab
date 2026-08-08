@@ -12,9 +12,9 @@
 #include <Ws2tcpip.h>
 #else
 #include <arpa/inet.h>
+#include <fcntl.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
-#include <sys/time.h>
 #include <unistd.h>
 #endif
 
@@ -37,6 +37,17 @@ void close_socket(const SocketHandle socket_handle) {
 #endif
 }
 
+bool set_non_blocking(const SocketHandle socket_handle) {
+#ifdef _WIN32
+    u_long enabled = 1;
+    return ioctlsocket(socket_handle, FIONBIO, &enabled) == 0;
+#else
+    const int flags = fcntl(socket_handle, F_GETFL, 0);
+    return flags >= 0 &&
+           fcntl(socket_handle, F_SETFL, flags | O_NONBLOCK) == 0;
+#endif
+}
+
 class UdpTransport final : public application::ports::Transport {
 public:
     UdpTransport(std::string bind_address, const std::uint16_t port)
@@ -54,6 +65,15 @@ public:
             throw std::runtime_error("Unable to create UDP socket");
         }
 
+        if (!set_non_blocking(socket_)) {
+            close_socket(socket_);
+            socket_ = kInvalidSocket;
+            cleanup_network();
+            throw std::runtime_error(
+                "Unable to configure non-blocking UDP socket"
+            );
+        }
+
         const int reuse_address = 1;
         setsockopt(
             socket_,
@@ -62,29 +82,6 @@ public:
             reinterpret_cast<const char*>(&reuse_address),
             sizeof(reuse_address)
         );
-
-#ifdef _WIN32
-        const DWORD timeout_ms = 250;
-        setsockopt(
-            socket_,
-            SOL_SOCKET,
-            SO_RCVTIMEO,
-            reinterpret_cast<const char*>(&timeout_ms),
-            sizeof(timeout_ms)
-        );
-#else
-        const timeval timeout{
-            .tv_sec = 0,
-            .tv_usec = 250000,
-        };
-        setsockopt(
-            socket_,
-            SOL_SOCKET,
-            SO_RCVTIMEO,
-            &timeout,
-            sizeof(timeout)
-        );
-#endif
 
         sockaddr_in address{};
         address.sin_family = AF_INET;
@@ -120,6 +117,10 @@ public:
     }
 
     std::size_t read(std::span<std::uint8_t> destination) override {
+        if (destination.empty()) {
+            return 0;
+        }
+
         sockaddr_storage sender{};
 #ifdef _WIN32
         int sender_length = sizeof(sender);

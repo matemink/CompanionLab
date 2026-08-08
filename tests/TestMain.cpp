@@ -19,6 +19,7 @@ int main() {
         run_vision_monitor_tests();
         run_camera_calibration_loader_tests();
         run_camera_extrinsics_loader_tests();
+        run_transport_tests();
         std::cout << "All OnboardAutonomy tests passed\n";
         return 0;
     } catch (const std::exception& error) {

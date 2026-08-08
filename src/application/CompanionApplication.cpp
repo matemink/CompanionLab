@@ -431,15 +431,28 @@ public:
         }
     }
 
+    void poll() {
+        poll(std::nullopt);
+    }
+
     void poll(const domain::TimePoint now) {
+        poll(std::optional{now});
+    }
+
+private:
+    void poll(const std::optional<domain::TimePoint> fixed_now) {
+        const auto camera_now = fixed_now.value_or(
+            domain::Clock::now()
+        );
         if (!started_at_.has_value()) {
-            started_at_ = now;
+            started_at_ = camera_now;
         }
         if (camera_monitor_.has_value()) {
-            camera_monitor_->poll(now);
+            camera_monitor_->poll(camera_now);
         }
 
         const std::size_t received = transport_.read(receive_buffer_);
+        const auto now = fixed_now.value_or(domain::Clock::now());
         if (received > 0) {
             decoder_.ingest(
                 std::span<const std::uint8_t>{
@@ -583,6 +596,7 @@ public:
         }
     }
 
+public:
     bool trigger_scenario(
         const ScenarioId id,
         const domain::TimePoint now
@@ -945,6 +959,10 @@ CompanionApplication::~CompanionApplication() = default;
 
 void CompanionApplication::poll(const domain::TimePoint now) {
     impl_->poll(now);
+}
+
+void CompanionApplication::poll() {
+    impl_->poll();
 }
 
 bool CompanionApplication::trigger_scenario(

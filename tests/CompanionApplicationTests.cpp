@@ -97,6 +97,19 @@ std::uint32_t message_id(const std::vector<std::uint8_t>& frame) {
     throw std::runtime_error("application emitted an invalid frame");
 }
 
+std::size_t count_messages(
+    const std::vector<std::vector<std::uint8_t>>& frames,
+    const std::uint32_t expected_id
+) {
+    return static_cast<std::size_t>(std::count_if(
+        frames.begin(),
+        frames.end(),
+        [expected_id](const auto& frame) {
+            return message_id(frame) == expected_id;
+        }
+    ));
+}
+
 std::vector<std::uint8_t> autopilot_heartbeat() {
     mavlink_message_t message{};
     mavlink_msg_heartbeat_pack(
@@ -236,6 +249,32 @@ void application_orchestrates_the_complete_telemetry_setup() {
     );
 }
 
+void quiet_transport_does_not_stall_runtime_scheduling() {
+    FakeTransport transport;
+    onboard_autonomy::application::CompanionApplication application{
+        transport
+    };
+    const onboard_autonomy::domain::TimePoint start{};
+
+    transport.enqueue(autopilot_heartbeat());
+    application.poll(start);
+    const auto initial_heartbeats = count_messages(
+        transport.outgoing(),
+        MAVLINK_MSG_ID_HEARTBEAT
+    );
+
+    application.poll(start + std::chrono::seconds(1));
+    const auto later_heartbeats = count_messages(
+        transport.outgoing(),
+        MAVLINK_MSG_ID_HEARTBEAT
+    );
+
+    require(
+        initial_heartbeats == 1 && later_heartbeats == 2,
+        "quiet transport must not stop scheduled companion heartbeat"
+    );
+}
+
 void interactive_motion_commands_are_guarded() {
     const onboard_autonomy::domain::TimePoint start{};
 
@@ -353,6 +392,7 @@ void startup_precision_landing_requires_vision_guidance() {
 
 void run_companion_application_tests() {
     application_orchestrates_the_complete_telemetry_setup();
+    quiet_transport_does_not_stall_runtime_scheduling();
     interactive_motion_commands_are_guarded();
     startup_precision_landing_requires_vision_guidance();
 }

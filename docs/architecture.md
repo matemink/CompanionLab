@@ -74,9 +74,11 @@ flowchart LR
 The application-owned `Transport` port moves bytes only. UDP and Linux
 serial adapters implement that contract without understanding MAVLink
 or vehicle readiness. UDP is used for SITL; Linux serial is used for
-the Pixhawk bench connection. Serial reads use `VMIN=0` and `VTIME=0`
-because timing belongs to the application loop; a transport read must
-not stall camera or scenario polling.
+the Pixhawk bench connection. Every `Transport::read()` is non-blocking:
+it returns the bytes already available or `0` immediately. UDP uses a
+non-blocking socket, while serial uses `VMIN=0` and `VTIME=0`. MAVLink
+frames remain independent of read boundaries, and the five-millisecond
+main-loop sleep prevents busy spinning when all inputs are quiet.
 
 ### Camera source and monitor
 
