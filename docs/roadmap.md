@@ -9,12 +9,11 @@ C++ and Python, MAVLink, Embedded Linux, ARM deployment, video
 processing, hardware interfaces, automated tests, and measurable
 performance.
 
-The terminal dashboard, scenario selector, one-command launchers,
-camera preview, activity animation, readable reports, and other
-operator conveniences are intentional engineering deliverables. They
-make command flow observable, experiments repeatable, and hardware
-failures diagnosable. They are not considered a deviation from the
-autonomy work.
+The terminal dashboard, one-command launchers, camera preview, activity
+animation, readable reports, and other operator conveniences are
+intentional engineering deliverables. They make command flow observable,
+experiments repeatable, and hardware failures diagnosable. They are not
+considered a deviation from the autonomy work.
 
 The next feature priority is the complete vision-to-guidance vertical
 slice. Further interface work should solve a concrete usability or
@@ -67,12 +66,12 @@ Status: implemented and verified locally against ArduCopter 4.6.3.
   MAVLink-to-domain path.
 - [x] Visualize outbound commands, inbound acknowledgements, and
   telemetry confirmations in a bounded live terminal view.
-- [x] Trigger the guarded demo scenario or a manual LAND command from
-  the live terminal while keeping serial hardware blocked.
-- [x] Replace the fixed demo with a typed C++ Scenario Runner and five
-  selectable SITL scenarios.
-- [x] Verify local-NED route steps, RTL, and MAVLink `LANDING_TARGET`
-  encoding before connecting the vision source.
+- [x] Exercise guarded command sequences and manual LAND from the live
+  terminal while keeping serial hardware blocked.
+- [x] Verify local-NED routing, RTL, acknowledgements, state confirmation,
+  and MAVLink `LANDING_TARGET` encoding before connecting vision.
+- [x] Replace scripted product demos with a startup controller and
+  continuous autonomy runtime driven by current world state.
 
 Engineering focus: Python, Embedded Linux, ArduPilot, integration
 tests, observability, and developer tooling.
@@ -133,10 +132,15 @@ user-visible result did not satisfy the acceptance criterion. See
 - [x] Validate the complete precision-landing sequence in Gazebo.
 - [x] Test lost-target, reacquisition, outlier, and noisy-observation
   behavior.
+- [x] Separate world state, decision intent, safety supervision, flight
+  startup, and continuous runtime into tested application components.
+- [x] Stop stale target guidance immediately and request a bounded fallback
+  LAND when vision remains unavailable.
 
-Simulation acceptance evidence: 72 valid body-FRD `LANDING_TARGET`
-messages, accepted LAND, automatic DISARMED, and 0.456 m final horizontal
-error. See `docs/evidence/precision-landing-sitl.md`.
+Production simulation acceptance evidence: 78 valid body-FRD
+`LANDING_TARGET` messages, accepted GUIDED/ARM/TAKEOFF/LAND, automatic
+DISARMED, and 0.000 m final horizontal error in the recorded run. See
+`docs/evidence/precision-landing-sitl.md`.
 
 Engineering focus: computer vision, guidance integration, algorithms.
 

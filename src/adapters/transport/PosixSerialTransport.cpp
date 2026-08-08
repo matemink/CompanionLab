@@ -74,7 +74,7 @@ public:
         options.c_cflag |= CS8;
         options.c_cc[VMIN] = 0;
         // The application loop owns timing; transport reads must not
-        // stall camera and scenario polling.
+        // stall camera and autonomy polling.
         options.c_cc[VTIME] = 0;
 
         if (tcsetattr(file_descriptor_, TCSANOW, &options) != 0) {

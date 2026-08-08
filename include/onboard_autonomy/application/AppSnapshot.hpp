@@ -1,7 +1,8 @@
 #pragma once
 
+#include "onboard_autonomy/application/AutonomyRuntime.hpp"
 #include "onboard_autonomy/application/CameraMonitor.hpp"
-#include "onboard_autonomy/application/ScenarioRunner.hpp"
+#include "onboard_autonomy/application/FlightStartupController.hpp"
 #include "onboard_autonomy/domain/VehicleState.hpp"
 
 #include <chrono>
@@ -66,7 +67,8 @@ struct AppSnapshot {
     TelemetryStatus telemetry;
     std::optional<CameraSnapshot> camera;
     std::optional<VisionSnapshot> vision;
-    ScenarioSnapshot scenario;
+    FlightStartupSnapshot flight_startup;
+    AutonomyRuntimeSnapshot autonomy;
     bool motion_commands_allowed{false};
     std::vector<LinkEvent> link_events;
     std::chrono::milliseconds elapsed{};

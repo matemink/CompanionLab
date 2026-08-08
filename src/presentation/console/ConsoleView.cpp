@@ -622,39 +622,63 @@ std::string battery_detail(const domain::VehicleSnapshot& vehicle) {
     return output.str();
 }
 
-std::string scenario_phase_name(
-    const application::ScenarioRunnerPhase phase
+std::string startup_phase_name(
+    const application::FlightStartupPhase phase
 ) {
     switch (phase) {
-        case application::ScenarioRunnerPhase::disabled:
+        case application::FlightStartupPhase::disabled:
             return "IDLE";
-        case application::ScenarioRunnerPhase::waiting_for_vehicle:
-        case application::ScenarioRunnerPhase::waiting_for_readiness:
+        case application::FlightStartupPhase::waiting_for_vehicle:
+        case application::FlightStartupPhase::waiting_for_readiness:
             return "WAITING";
-        case application::ScenarioRunnerPhase::executing:
-            return "RUNNING";
-        case application::ScenarioRunnerPhase::completed:
+        case application::FlightStartupPhase::setting_guided:
+            return "GUIDED";
+        case application::FlightStartupPhase::arming:
+            return "ARMING";
+        case application::FlightStartupPhase::taking_off:
+            return "TAKEOFF";
+        case application::FlightStartupPhase::completed:
             return "COMPLETE";
-        case application::ScenarioRunnerPhase::failed:
+        case application::FlightStartupPhase::failed:
             return "FAILED";
     }
     return "UNKNOWN";
 }
 
-Tone scenario_tone(
-    const application::ScenarioRunnerPhase phase
+std::string autonomy_phase_name(
+    const application::AutonomyRuntimePhase phase
 ) {
     switch (phase) {
-        case application::ScenarioRunnerPhase::completed:
+        case application::AutonomyRuntimePhase::disabled:
+            return "IDLE";
+        case application::AutonomyRuntimePhase::waiting_for_startup:
+            return "WAITING";
+        case application::AutonomyRuntimePhase::active:
+            return "ACTIVE";
+        case application::AutonomyRuntimePhase::landing:
+            return "LANDING";
+        case application::AutonomyRuntimePhase::completed:
+            return "COMPLETE";
+        case application::AutonomyRuntimePhase::failed:
+            return "FAILED";
+    }
+    return "UNKNOWN";
+}
+
+Tone autonomy_tone(
+    const application::AutonomyRuntimePhase phase
+) {
+    switch (phase) {
+        case application::AutonomyRuntimePhase::completed:
             return Tone::good;
-        case application::ScenarioRunnerPhase::failed:
+        case application::AutonomyRuntimePhase::failed:
             return Tone::bad;
-        case application::ScenarioRunnerPhase::executing:
+        case application::AutonomyRuntimePhase::active:
+        case application::AutonomyRuntimePhase::landing:
             return Tone::accent;
-        case application::ScenarioRunnerPhase::disabled:
+        case application::AutonomyRuntimePhase::disabled:
             return Tone::dim;
-        case application::ScenarioRunnerPhase::waiting_for_vehicle:
-        case application::ScenarioRunnerPhase::waiting_for_readiness:
+        case application::AutonomyRuntimePhase::waiting_for_startup:
             return Tone::waiting;
     }
     return Tone::normal;
@@ -737,20 +761,22 @@ std::string overall_status(
     const application::AppSnapshot& snapshot
 ) {
     const auto& vehicle = snapshot.vehicle;
-    const auto phase = snapshot.scenario.phase;
+    const auto phase = snapshot.autonomy.phase;
     const bool telemetry_complete =
         vehicle.gps_fix_type.has_value() &&
         vehicle.battery_voltage_v.has_value() &&
         vehicle.system_health_known;
 
-    if (phase == application::ScenarioRunnerPhase::completed) {
+    if (phase == application::AutonomyRuntimePhase::completed) {
         return "FLIGHT COMPLETE";
     }
-    if (phase == application::ScenarioRunnerPhase::failed) {
+    if (phase == application::AutonomyRuntimePhase::failed ||
+        snapshot.flight_startup.phase ==
+            application::FlightStartupPhase::failed) {
         return "FLIGHT FAILED";
     }
-    if (phase != application::ScenarioRunnerPhase::disabled) {
-        return "SCENARIO RUNNING";
+    if (phase != application::AutonomyRuntimePhase::disabled) {
+        return "AUTONOMY RUNNING";
     }
     if (!vehicle.connected) {
         return "WAITING FOR FLIGHT CONTROLLER";
@@ -769,7 +795,7 @@ Tone overall_tone(const application::AppSnapshot& snapshot) {
     if (status == "NOT READY" || status == "FLIGHT FAILED") {
         return Tone::bad;
     }
-    if (status == "SCENARIO RUNNING") {
+    if (status == "AUTONOMY RUNNING") {
         return Tone::accent;
     }
     return Tone::waiting;
@@ -784,7 +810,8 @@ std::string render_console(
     const BoardTypeResolver* board_type_resolver
 ) {
     const auto& vehicle = snapshot.vehicle;
-    const auto& scenario = snapshot.scenario;
+    const auto& startup = snapshot.flight_startup;
+    const auto& autonomy = snapshot.autonomy;
 
     const std::string link_status =
         vehicle.connected ? "ONLINE" : "WAITING";
@@ -971,42 +998,33 @@ std::string render_console(
     write_border(output, '-', use_color);
     write_line(
         output,
-        " SCENARIO: " + scenario.scenario_name +
-            " | " + scenario_phase_name(scenario.phase) +
-            (scenario.total_steps == 0
-                ? ""
-                : " | STEP " +
-                      std::to_string(scenario.current_step) + "/" +
-                      std::to_string(scenario.total_steps) +
-                      " " + scenario.step_name),
-        scenario_tone(scenario.phase),
+        " AUTONOMY: " + autonomy_phase_name(autonomy.phase) +
+            " | STARTUP: " + startup_phase_name(startup.phase),
+        autonomy_tone(autonomy.phase),
         use_color
     );
     write_line(
         output,
-        " " + scenario.detail,
-        scenario_tone(scenario.phase),
+        " " +
+            (startup.phase ==
+                         application::FlightStartupPhase::completed ||
+                     startup.phase ==
+                         application::FlightStartupPhase::disabled
+                 ? autonomy.detail
+                 : startup.detail),
+        autonomy_tone(autonomy.phase),
         use_color
     );
     write_centered_line(
         output,
         snapshot.motion_commands_allowed
-            ? "[1] HOVER  [2] OUT+RTL  [3] SQUARE  "
-              "[4] SEARCH  [5] PRECISION"
+            ? "[L] LAND NOW     [Q] QUIT"
             : "LIVE VIEW     MOTION KEYS DISABLED     CTRL+C EXIT",
         snapshot.motion_commands_allowed
             ? Tone::normal
             : Tone::dim,
         use_color
     );
-    if (snapshot.motion_commands_allowed) {
-        write_centered_line(
-            output,
-            "[L] LAND NOW     [Q] QUIT",
-            Tone::normal,
-            use_color
-        );
-    }
     write_border(output, '=', use_color);
     return output.str();
 }

@@ -86,6 +86,17 @@ mavproxy_args=(
     --streamrate=-1
 )
 
+if [[ -n "${ONBOARD_AUTONOMY_TLOG:-}" ]]; then
+    mavproxy_args+=(--logfile="${ONBOARD_AUTONOMY_TLOG}")
+fi
+
+if [[ -n "${ONBOARD_AUTONOMY_MAVPROXY_STATE_DIR:-}" ]]; then
+    mkdir -p "${ONBOARD_AUTONOMY_MAVPROXY_STATE_DIR}"
+    mavproxy_args+=(
+        --state-basedir="${ONBOARD_AUTONOMY_MAVPROXY_STATE_DIR}"
+    )
+fi
+
 if [[ ! -t 0 ]]; then
     mavproxy_args+=(--non-interactive)
 fi

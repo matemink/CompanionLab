@@ -120,15 +120,12 @@ void disconnected_snapshot_is_waiting() {
 void command_bus_shows_both_directions() {
     onboard_autonomy::application::AppSnapshot snapshot;
     snapshot.motion_commands_allowed = true;
-    snapshot.scenario.phase =
-        onboard_autonomy::application::ScenarioRunnerPhase::executing;
-    snapshot.scenario.scenario_id =
-        onboard_autonomy::application::ScenarioId::square_patrol;
-    snapshot.scenario.scenario_name = "SQUARE PATROL";
-    snapshot.scenario.step_name = "MOVE EAST";
-    snapshot.scenario.detail = "EAST: 4.00 m remaining";
-    snapshot.scenario.current_step = 5;
-    snapshot.scenario.total_steps = 9;
+    snapshot.flight_startup.phase =
+        onboard_autonomy::application::FlightStartupPhase::completed;
+    snapshot.flight_startup.detail = "Takeoff complete";
+    snapshot.autonomy.phase =
+        onboard_autonomy::application::AutonomyRuntimePhase::active;
+    snapshot.autonomy.detail = "Vision target F/R/D 0.4/-0.2/8.1 m";
     snapshot.elapsed = std::chrono::milliseconds(1200);
     snapshot.tx_activity = onboard_autonomy::application::LinkActivity{
         .sequence = 1,
@@ -167,15 +164,15 @@ void command_bus_shows_both_directions() {
         "command and acknowledgement labels must be visible"
     );
     require(
-        output.find("[1] HOVER") != std::string::npos &&
-            output.find("[5] PRECISION") != std::string::npos &&
-            output.find("[L] LAND NOW") != std::string::npos,
+        output.find("[L] LAND NOW") != std::string::npos &&
+            output.find("[Q] QUIT") != std::string::npos,
         "interactive command hints must be visible"
     );
     require(
-        output.find("SQUARE PATROL") != std::string::npos &&
-            output.find("STEP 5/9 MOVE EAST") != std::string::npos,
-        "active scenario and step progress must be visible"
+        output.find("AUTONOMY: ACTIVE") != std::string::npos &&
+            output.find("STARTUP: COMPLETE") != std::string::npos &&
+            output.find("Vision target F/R/D") != std::string::npos,
+        "production startup and runtime state must be visible"
     );
 
     snapshot.elapsed = std::chrono::milliseconds(1320);

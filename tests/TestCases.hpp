@@ -2,13 +2,13 @@
 
 void run_vehicle_state_tests();
 void run_companion_application_tests();
+void run_app_snapshot_tests();
 void run_mavlink_decoder_tests();
 void run_mavlink_encoder_tests();
 void run_telemetry_stream_configurator_tests();
 void run_target_tracker_tests();
 void run_target_transform_tests();
 void run_console_view_tests();
-void run_scenario_runner_tests();
 void run_board_type_catalog_tests();
 void run_camera_monitor_tests();
 void run_vision_monitor_tests();
@@ -16,3 +16,6 @@ void run_camera_calibration_loader_tests();
 void run_camera_extrinsics_loader_tests();
 void run_transport_tests();
 void run_motion_safety_policy_tests();
+void run_autonomy_core_tests();
+void run_flight_startup_controller_tests();
+void run_autonomy_runtime_tests();

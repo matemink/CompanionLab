@@ -1,0 +1,55 @@
+#include "TestCases.hpp"
+
+#include "onboard_autonomy/application/AppSnapshot.hpp"
+
+#include <nlohmann/json.hpp>
+
+#include <stdexcept>
+#include <string>
+
+namespace {
+
+void require(const bool condition, const std::string& message) {
+    if (!condition) {
+        throw std::runtime_error(message);
+    }
+}
+
+void snapshot_keeps_runtime_state_without_camera_data() {
+    onboard_autonomy::application::AppSnapshot snapshot;
+    snapshot.flight_startup.phase =
+        onboard_autonomy::application::
+            FlightStartupPhase::waiting_for_vehicle;
+    snapshot.flight_startup.detail = "Waiting for controller";
+    snapshot.autonomy.phase =
+        onboard_autonomy::application::AutonomyRuntimePhase::active;
+    snapshot.autonomy.detail = "Autonomy active";
+    snapshot.autonomy.vision_landing_target_active = true;
+    snapshot.motion_commands_allowed = true;
+
+    const auto json = nlohmann::json::parse(snapshot.to_json());
+
+    require(json.at("camera").is_null(), "missing camera must be null");
+    require(json.at("vision").is_null(), "missing vision must be null");
+    require(
+        json.at("flight_startup").at("phase") ==
+            "waiting_for_vehicle",
+        "startup phase must remain in a camera-free snapshot"
+    );
+    require(
+        json.at("autonomy").at("phase") == "active" &&
+            json.at("autonomy")
+                .at("vision_landing_target_active") == true,
+        "autonomy state must remain in a camera-free snapshot"
+    );
+    require(
+        json.at("motion_commands_allowed") == true,
+        "JSON booleans must not be encoded as integers"
+    );
+}
+
+}  // namespace
+
+void run_app_snapshot_tests() {
+    snapshot_keeps_runtime_state_without_camera_data();
+}
