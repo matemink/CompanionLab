@@ -99,6 +99,100 @@ void partial_heartbeat_is_reassembled() {
     );
 }
 
+void multiple_frames_in_one_read_are_decoded() {
+    onboard_autonomy::domain::VehicleState state;
+    std::size_t observed_messages = 0;
+    onboard_autonomy::adapters::mavlink::MavlinkDecoder decoder{
+        state,
+        {},
+        [&observed_messages](
+            const onboard_autonomy::adapters::mavlink::
+                MessageObservation&,
+            const onboard_autonomy::domain::TimePoint
+        ) {
+            ++observed_messages;
+        },
+    };
+    const onboard_autonomy::domain::TimePoint now{};
+
+    mavlink_message_t heartbeat{};
+    mavlink_msg_heartbeat_pack(
+        1,
+        MAV_COMP_ID_AUTOPILOT1,
+        &heartbeat,
+        MAV_TYPE_QUADROTOR,
+        MAV_AUTOPILOT_ARDUPILOTMEGA,
+        0,
+        0,
+        MAV_STATE_STANDBY
+    );
+    mavlink_gps_raw_int_t gps{};
+    gps.fix_type = 3;
+    gps.satellites_visible = 12;
+    mavlink_message_t gps_message{};
+    mavlink_msg_gps_raw_int_encode(
+        1,
+        MAV_COMP_ID_AUTOPILOT1,
+        &gps_message,
+        &gps
+    );
+
+    auto bytes = serialize(heartbeat);
+    const auto gps_bytes = serialize(gps_message);
+    bytes.insert(bytes.end(), gps_bytes.begin(), gps_bytes.end());
+    decoder.ingest(bytes, now);
+
+    const auto snapshot = state.snapshot(now);
+    require(
+        snapshot.connected && snapshot.gps_ready,
+        "one read may update state from several MAVLink frames"
+    );
+    require(
+        observed_messages == 2,
+        "every complete frame in one read must be observed"
+    );
+}
+
+void inbound_burst_preserves_every_frame() {
+    onboard_autonomy::domain::VehicleState state;
+    std::size_t observed_messages = 0;
+    onboard_autonomy::adapters::mavlink::MavlinkDecoder decoder{
+        state,
+        {},
+        [&observed_messages](
+            const onboard_autonomy::adapters::mavlink::
+                MessageObservation&,
+            const onboard_autonomy::domain::TimePoint
+        ) {
+            ++observed_messages;
+        },
+    };
+    std::vector<std::uint8_t> burst;
+
+    constexpr std::size_t kBurstSize = 32;
+    for (std::size_t index = 0; index < kBurstSize; ++index) {
+        mavlink_message_t heartbeat{};
+        mavlink_msg_heartbeat_pack(
+            1,
+            MAV_COMP_ID_AUTOPILOT1,
+            &heartbeat,
+            MAV_TYPE_QUADROTOR,
+            MAV_AUTOPILOT_ARDUPILOTMEGA,
+            0,
+            static_cast<std::uint32_t>(index),
+            MAV_STATE_STANDBY
+        );
+        const auto frame = serialize(heartbeat);
+        burst.insert(burst.end(), frame.begin(), frame.end());
+    }
+
+    decoder.ingest(burst, onboard_autonomy::domain::TimePoint{});
+    require(
+        observed_messages == kBurstSize,
+        "decoder must preserve every frame in an inbound burst"
+    );
+}
+
 void minimum_message_set_updates_vehicle_state() {
     onboard_autonomy::domain::VehicleState state;
     onboard_autonomy::adapters::mavlink::MavlinkDecoder decoder{state};
@@ -398,6 +492,8 @@ void command_ack_is_forwarded_to_its_handler() {
 
 void run_mavlink_decoder_tests() {
     partial_heartbeat_is_reassembled();
+    multiple_frames_in_one_read_are_decoded();
+    inbound_burst_preserves_every_frame();
     minimum_message_set_updates_vehicle_state();
     statustext_prearm_is_extracted();
     autopilot_version_is_unpacked_into_domain_metadata();

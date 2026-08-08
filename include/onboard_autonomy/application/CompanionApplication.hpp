@@ -32,6 +32,10 @@ public:
     CompanionApplication(CompanionApplication&&) = delete;
     CompanionApplication& operator=(CompanionApplication&&) = delete;
 
+    // Production polling captures its scheduling timestamp after the
+    // non-blocking transport read. The explicit-time overload keeps tests
+    // deterministic.
+    void poll();
     void poll(domain::TimePoint now);
     [[nodiscard]] bool trigger_scenario(
         ScenarioId id,

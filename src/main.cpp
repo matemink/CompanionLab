@@ -574,9 +574,9 @@ int main(const int argc, char** argv) {
         ConsoleSession console_session{!options.json_output};
 
         while (keep_running) {
-            const auto now = std::chrono::steady_clock::now();
-
             while (const auto key = console_input.poll()) {
+                const auto command_time =
+                    std::chrono::steady_clock::now();
                 if (*key >= '1' && *key <= '5') {
                     const auto scenario_id =
                         static_cast<
@@ -585,15 +585,15 @@ int main(const int argc, char** argv) {
                     static_cast<void>(
                         application.trigger_scenario(
                             scenario_id,
-                            now
+                            command_time
                         )
                     );
-                    next_snapshot = now;
+                    next_snapshot = command_time;
                 } else if (*key == 'l' || *key == 'L') {
                     static_cast<void>(
-                        application.request_land(now)
+                        application.request_land(command_time)
                     );
-                    next_snapshot = now;
+                    next_snapshot = command_time;
                 } else if (*key == 'q' || *key == 'Q') {
                     keep_running = false;
                 }
@@ -602,7 +602,8 @@ int main(const int argc, char** argv) {
                 break;
             }
 
-            application.poll(now);
+            application.poll();
+            const auto now = std::chrono::steady_clock::now();
 
             if (now >= next_snapshot) {
                 const auto snapshot = application.snapshot(now);
